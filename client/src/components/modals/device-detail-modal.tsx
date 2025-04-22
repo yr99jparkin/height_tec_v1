@@ -49,6 +49,12 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
   // Get device thresholds
   const { data: thresholds } = useQuery({
     queryKey: ["/api/thresholds", deviceId],
+    queryFn: async () => {
+      if (!deviceId) throw new Error("No device ID provided");
+      const response = await apiRequest("GET", `/api/thresholds/${deviceId}`);
+      if (!response.ok) throw new Error("Failed to fetch thresholds");
+      return await response.json();
+    },
     enabled: !!deviceId && open,
   });
 
@@ -67,6 +73,12 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
   // Get wind data history
   const { data: windData } = useQuery<WindData[]>({
     queryKey: ["/api/wind/history", deviceId, timeRange],
+    queryFn: async () => {
+      if (!deviceId) throw new Error("No device ID provided");
+      const response = await apiRequest("GET", `/api/wind/history/${deviceId}?range=${timeRange}`);
+      if (!response.ok) throw new Error("Failed to fetch wind history");
+      return await response.json();
+    },
     enabled: !!deviceId && open,
   });
 
