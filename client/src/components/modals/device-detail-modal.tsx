@@ -41,6 +41,7 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
       const response = await apiRequest("GET", `/api/devices/${deviceId}`);
       if (!response.ok) throw new Error("Failed to fetch device");
       const data = await response.json();
+      console.log("Device data received:", data);
       return data;
     },
     enabled: !!deviceId && open,
@@ -306,14 +307,24 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                   <h3 className="font-medium mb-4">Device Location</h3>
                   <div className="h-64 bg-neutral-200 rounded relative">
                     {device?.latitude && device?.longitude ? (
-                      <iframe
-                        width="100%"
-                        height="100%"
-                        frameBorder="0"
-                        style={{ border: 0, borderRadius: "0.25rem" }}
-                        src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBUxvIhcqHLF_li7llmHlC9_XM0wQ9j_L0&q=${device.latitude},${device.longitude}&zoom=15`}
-                        allowFullScreen
-                      />
+                      <>
+                        <iframe
+                          width="100%"
+                          height="100%"
+                          frameBorder="0"
+                          style={{ border: 0, borderRadius: "0.25rem" }}
+                          src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBUxvIhcqHLF_li7llmHlC9_XM0wQ9j_L0&q=${device.latitude},${device.longitude}&zoom=15`}
+                          allowFullScreen
+                        />
+                        <div className="mt-3">
+                          <p className="text-sm text-neutral-600">
+                            {device.location || "Location not specified"}
+                          </p>
+                          <p className="text-xs text-neutral-500 mt-1">
+                            Coordinates: {device.latitude.toFixed(4)}, {device.longitude.toFixed(4)}
+                          </p>
+                        </div>
+                      </>
                     ) : (
                       <div className="flex items-center justify-center h-full bg-neutral-50 rounded-md">
                         <p className="text-neutral-500">Location data not available</p>
