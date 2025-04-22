@@ -41,9 +41,8 @@ const passwordChangeSchema = z.object({
 });
 
 export default function AuthPage() {
-  const [activeTab, setActiveTab] = useState("login");
   const [showPasswordChange, setShowPasswordChange] = useState(false);
-  const { user, loginMutation, registerMutation, changePasswordMutation } = useAuth();
+  const { user, loginMutation, changePasswordMutation } = useAuth();
   const [, setLocation] = useLocation();
 
   // Redirect if already logged in and password doesn't need changing
@@ -66,16 +65,7 @@ export default function AuthPage() {
     },
   });
 
-  // Register form
-  const registerForm = useForm<z.infer<typeof registerSchema>>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      username: "",
-      password: "",
-      email: "",
-      fullName: "",
-    },
-  });
+  // Register form removed
 
   // Password change form
   const passwordChangeForm = useForm<z.infer<typeof passwordChangeSchema>>({
@@ -91,9 +81,7 @@ export default function AuthPage() {
     loginMutation.mutate(data);
   };
 
-  const onRegisterSubmit = (data: z.infer<typeof registerSchema>) => {
-    registerMutation.mutate(data);
-  };
+  // Removed register mutation handler
 
   const onPasswordChangeSubmit = (data: z.infer<typeof passwordChangeSchema>) => {
     const passwordData: PasswordChangeRequest = {
@@ -178,7 +166,7 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Left side - Login/Register Forms */}
+      {/* Left side - Login Form */}
       <div className="w-full md:w-1/2 flex items-center justify-center p-4 bg-white">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
@@ -186,118 +174,48 @@ export default function AuthPage() {
             <p className="text-neutral-500 mt-2">Wind Monitoring Platform</p>
           </div>
           
-          <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-2 mb-6">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="register">Register</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login">
-              <Form {...loginForm}>
-                <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
-                  <FormField
-                    control={loginForm.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Username</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter your username" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={loginForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="Enter your password" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button 
-                    type="submit" 
-                    className="w-full py-3"
-                    disabled={loginMutation.isPending}
-                  >
-                    {loginMutation.isPending ? "Signing In..." : "Sign In"}
-                  </Button>
-                </form>
-              </Form>
-            </TabsContent>
-            
-            <TabsContent value="register">
-              <Form {...registerForm}>
-                <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
-                  <FormField
-                    control={registerForm.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Username</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Choose a username" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={registerForm.control}
-                    name="fullName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Full Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter your full name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={registerForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="Enter your email" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={registerForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="Create a password" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button 
-                    type="submit" 
-                    className="w-full py-3"
-                    disabled={registerMutation.isPending}
-                  >
-                    {registerMutation.isPending ? "Creating Account..." : "Create Account"}
-                  </Button>
-                </form>
-              </Form>
-            </TabsContent>
-          </Tabs>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold">Sign In</h2>
+            <p className="text-neutral-500">Enter your credentials to access your account</p>
+          </div>
+          
+          <Form {...loginForm}>
+            <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+              <FormField
+                control={loginForm.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Username</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your username" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={loginForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Enter your password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button 
+                type="submit" 
+                className="w-full py-3"
+                disabled={loginMutation.isPending}
+              >
+                {loginMutation.isPending ? "Signing In..." : "Sign In"}
+              </Button>
+            </form>
+          </Form>
         </div>
       </div>
       
