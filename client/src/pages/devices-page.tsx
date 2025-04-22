@@ -119,39 +119,67 @@ export default function DevicesPage() {
           {/* Right Panel (Map View) */}
           <div className="lg:w-1/2 bg-neutral-100 p-4 lg:p-6 border-t lg:border-t-0 lg:border-l border-neutral-300">
             <h2 className="text-xl font-heading font-semibold text-neutral-800 mb-4">Device Locations</h2>
-            <div className="bg-white rounded-lg shadow-sm h-[calc(100%-3rem)] overflow-hidden relative">
+            <div className="bg-white rounded-lg shadow-sm h-[calc(100%-3rem)] flex flex-col overflow-hidden relative">
               {devices.length > 0 && devices.some(d => d.latitude && d.longitude) ? (
-                <iframe
-                  width="100%"
-                  height="100%"
-                  frameBorder="0"
-                  style={{ border: 0 }}
-                  src={(() => {
-                    const devicesWithCoords = devices.filter(d => d.latitude && d.longitude);
-                    
-                    // If only one device with coordinates, use "place" mode
-                    if (devicesWithCoords.length === 1) {
-                      const device = devicesWithCoords[0];
-                      return `https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${device.latitude},${device.longitude}&zoom=15`;
-                    }
-                    
-                    // For multiple devices use "search" mode which supports multiple locations
-                    const markers = devicesWithCoords
-                      .map(d => `${d.latitude},${d.longitude}`)
-                      .join('|');
-                    
-                    return `https://www.google.com/maps/embed/v1/search?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=wind+sensor+location&zoom=5&center=${
-                      // Calculate average lat/lng for centering
-                      (() => {
-                        if (devicesWithCoords.length === 0) return '-33.85,151.21'; // Default
+                <>
+                  <div className="flex-1">
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      frameBorder="0" 
+                      style={{ border: 0 }}
+                      src={(() => {
+                        const devicesWithCoords = devices.filter(d => d.latitude && d.longitude);
+                        
+                        // If no devices have coordinates, return default map
+                        if (devicesWithCoords.length === 0) {
+                          return `https://www.google.com/maps/embed/v1/view?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&center=-33.85,151.21&zoom=5`;
+                        }
+                        
+                        // If only one device, use place mode which works reliably
+                        if (devicesWithCoords.length === 1) {
+                          const device = devicesWithCoords[0];
+                          return `https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${device.latitude},${device.longitude}&zoom=15`;
+                        } 
+                        
+                        // For multiple devices, calculate average lat/lng for map center
                         const avgLat = devicesWithCoords.reduce((sum, d) => sum + (d.latitude || 0), 0) / devicesWithCoords.length;
                         const avgLng = devicesWithCoords.reduce((sum, d) => sum + (d.longitude || 0), 0) / devicesWithCoords.length;
-                        return `${avgLat},${avgLng}`;
-                      })()
-                    }&location=${markers}`;
-                  })()}
-                  allowFullScreen
-                />
+                        
+                        // Use view mode with calculated center point
+                        return `https://www.google.com/maps/embed/v1/view?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&center=${avgLat},${avgLng}&zoom=4`;
+                      })()}
+                      allowFullScreen
+                    />
+                  </div>
+                  
+                  {/* Device Location List */}
+                  {devices.filter(d => d.latitude && d.longitude).length > 1 && (
+                    <div className="p-3 border-t border-neutral-200 bg-neutral-50">
+                      <h3 className="text-sm font-medium mb-2">Device Coordinates</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        {devices
+                          .filter(d => d.latitude && d.longitude)
+                          .map(device => (
+                            <div 
+                              key={device.deviceId} 
+                              className="flex items-center p-2 bg-white border border-neutral-200 rounded"
+                              onClick={() => handleDeviceClick(device.deviceId)}
+                            >
+                              <div className="w-2 h-2 rounded-full bg-primary mr-2"></div>
+                              <div>
+                                <span className="font-medium">{device.deviceName}</span>
+                                <div className="text-neutral-500">
+                                  {device.latitude?.toFixed(4)}, {device.longitude?.toFixed(4)}
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="absolute inset-0 bg-neutral-200 flex items-center justify-center">
                   <p className="text-neutral-500">No device locations available</p>
