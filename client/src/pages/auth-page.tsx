@@ -45,14 +45,11 @@ export default function AuthPage() {
   const { user, loginMutation, changePasswordMutation } = useAuth();
   const [, setLocation] = useLocation();
 
-  // Redirect if already logged in and password doesn't need changing
+  // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      if (user.passwordRequiresChange) {
-        setShowPasswordChange(true);
-      } else {
-        setLocation("/");
-      }
+      // Since we removed password change feature, always redirect to home
+      setLocation("/");
     }
   }, [user, setLocation]);
 

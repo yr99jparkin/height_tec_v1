@@ -313,7 +313,7 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                           height="100%"
                           frameBorder="0"
                           style={{ border: 0, borderRadius: "0.25rem" }}
-                          src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${device.latitude},${device.longitude}&zoom=15`}
+                          src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBUxvIhcqHLF_li7llmHlC9_XM0wQ9j_L0&q=${device.latitude},${device.longitude}&zoom=15`}
                           allowFullScreen
                         />
                         <div className="mt-3">
