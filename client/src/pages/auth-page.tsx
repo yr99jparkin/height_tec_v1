@@ -48,8 +48,11 @@ export default function AuthPage() {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      // Since we removed password change feature, always redirect to home
-      setLocation("/");
+      if (user.passwordRequiresChange) {
+        setShowPasswordChange(true);
+      } else {
+        setLocation("/");
+      }
     }
   }, [user, setLocation]);
 
