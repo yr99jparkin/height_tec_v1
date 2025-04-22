@@ -39,9 +39,11 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
   const { data: device } = useQuery<Device>({
     queryKey: ["/api/devices", deviceId],
     queryFn: async () => {
+      if (!deviceId) throw new Error("No device ID provided");
       const response = await apiRequest("GET", `/api/devices/${deviceId}`);
+      if (!response.ok) throw new Error("Failed to fetch device");
       return response.json();
-      },
+    },
     enabled: !!deviceId && open,
   });
 
