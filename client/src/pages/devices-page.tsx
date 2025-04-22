@@ -4,7 +4,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { DeviceCard } from "@/components/ui/device-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Filter } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { DeviceWithLatestData } from "@shared/types";
 import { DeviceDetailModal } from "@/components/modals/device-detail-modal";
@@ -65,21 +65,18 @@ export default function DevicesPage() {
               </Button>
             </div>
             
-            {/* Search and Filter Bar */}
-            <div className="bg-white p-3 rounded-lg shadow-sm mb-4 flex flex-wrap gap-2">
-              <div className="relative flex-grow">
+            {/* Search Bar */}
+            <div className="bg-white p-3 rounded-lg shadow-sm mb-4">
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 h-4 w-4" />
                 <Input
                   type="text"
                   placeholder="Search devices..."
-                  className="pl-10 bg-neutral-100"
+                  className="pl-10 bg-neutral-100 w-full"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Button variant="outline" className="flex-shrink-0">
-                <Filter className="mr-2 h-4 w-4" /> Filter
-              </Button>
             </div>
             
             {/* Device Cards */}
