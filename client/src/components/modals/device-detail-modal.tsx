@@ -322,11 +322,11 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                               latitude: device.latitude,
                               longitude: device.longitude,
                               active: device.active,
-                              lastSeen: device.lastSeen,
+                              lastSeen: device.lastSeen ? new Date(device.lastSeen).toISOString() : undefined,
                               avgWindSpeed: (windStats as any).avgWindSpeed || 0,
                               maxWindSpeed: (windStats as any).maxWindSpeed || 0,
                               alertState: (windStats as any).alertState || false
-                            } as DeviceWithLatestData]} 
+                            } as unknown as DeviceWithLatestData]} 
                           />
                         </div>
                         <div className="mt-3">

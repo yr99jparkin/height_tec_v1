@@ -101,7 +101,7 @@ export function GoogleMap({ devices, onDeviceClick }: GoogleMapProps) {
           <div style="padding: 10px;">
             <h3 style="margin: 0 0 8px 0; font-size: 14px;">${device.deviceName}</h3>
             <p style="margin: 0; font-size: 12px;">
-              Wind Speed: ${device.avgWindSpeed.toFixed(1)} km/h
+              Wind Speed: ${typeof device.avgWindSpeed === 'number' ? device.avgWindSpeed.toFixed(1) : Number(device.avgWindSpeed).toFixed(1)} km/h
             </p>
           </div>
         `;
@@ -191,7 +191,7 @@ export function GoogleMap({ devices, onDeviceClick }: GoogleMapProps) {
         <div style="padding: 10px;">
           <h3 style="margin: 0 0 8px 0; font-size: 14px;">${device.deviceName}</h3>
           <p style="margin: 0; font-size: 12px;">
-            Wind Speed: ${device.avgWindSpeed.toFixed(1)} km/h
+            Wind Speed: ${typeof device.avgWindSpeed === 'number' ? device.avgWindSpeed.toFixed(1) : Number(device.avgWindSpeed).toFixed(1)} km/h
           </p>
         </div>
       `;
