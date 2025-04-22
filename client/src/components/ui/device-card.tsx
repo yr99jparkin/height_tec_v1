@@ -26,7 +26,9 @@ export function DeviceCard({ device, onDeviceClick }: DeviceCardProps) {
   const getLastUpdatedText = () => {
     if (!device.lastSeen) return "No data yet";
     try {
-      return `Updated ${formatDistanceToNow(new Date(device.lastSeen), { addSuffix: true })}`;
+      // Create Date object and force it to be interpreted as UTC
+      const lastSeenDate = new Date(device.lastSeen + 'Z');
+      return `Updated ${formatDistanceToNow(lastSeenDate, { addSuffix: true })}`;
     } catch (error) {
       return "Unknown update time";
     }
