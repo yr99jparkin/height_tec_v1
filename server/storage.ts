@@ -15,7 +15,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserPassword(userId: number, newPassword: string): Promise<void>;
-  
+
   // Device operations
   getDeviceById(id: number): Promise<Device | undefined>;
   getDeviceByDeviceId(deviceId: string): Promise<Device | undefined>;
@@ -104,12 +104,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteDevice(id: number): Promise<void> {
-     const device = await this.getDeviceById(id);
-      if (!device) return;
+    const device = await this.getDeviceById(id);
+    if (!device) return;
 
-      // Delete related data first
-      await db.delete(windAlertThresholds).where(eq(windAlertThresholds.deviceId, device.deviceId));
-      await db.delete(windData).where(eq(windData.deviceId, device.deviceId));
+    // Delete related data first due to foreign key constraints
+    await db.delete(windAlertThresholds).where(eq(windAlertThresholds.deviceId, device.deviceId));
+    await db.delete(windData).where(eq(windData.deviceId, device.deviceId));
     await db.delete(devices).where(eq(devices.id, id));
   }
 
@@ -121,11 +121,11 @@ export class DatabaseStorage implements IStorage {
 
   async updateDeviceStockStatus(deviceId: string, status: string, username?: string): Promise<void> {
     const updateData: { status: string; lastAllocatedTo?: string } = { status };
-    
+
     if (username) {
       updateData.lastAllocatedTo = username;
     }
-    
+
     await db.update(deviceStock)
       .set(updateData)
       .where(eq(deviceStock.deviceId, deviceId));
@@ -148,7 +148,7 @@ export class DatabaseStorage implements IStorage {
   async updateThresholds(deviceId: string, thresholds: Partial<InsertWindAlertThreshold>): Promise<WindAlertThreshold> {
     // Create a new Date for updatedAt
     const updatedAt = new Date();
-    
+
     const [updatedThresholds] = await db.update(windAlertThresholds)
       .set({
         ...thresholds,
@@ -187,7 +187,7 @@ export class DatabaseStorage implements IStorage {
 
   async getWindStatsForDevice(deviceId: string, minutes: number): Promise<WindStatsResponse> {
     const timeThreshold = new Date(Date.now() - minutes * 60 * 1000);
-    
+
     const [stats] = await db
       .select({
         avgWindSpeed: avg(windData.windSpeed).as("avgWindSpeed"),
@@ -200,7 +200,7 @@ export class DatabaseStorage implements IStorage {
           gte(windData.timestamp, timeThreshold)
         )
       );
-    
+
     const [latestData] = await db
       .select()
       .from(windData)
