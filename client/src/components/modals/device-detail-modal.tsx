@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WindChart } from "@/components/ui/wind-chart";
+import { GoogleMap } from "@/components/ui/google-map";
 import { Trash2, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { WindData, Device } from "@shared/schema";
+import { DeviceWithLatestData } from "@shared/types";
 import { RemoveDeviceModal } from "./remove-device-modal";
 import { format } from "date-fns";
 
@@ -310,14 +312,23 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                   <div className="h-64 bg-neutral-200 rounded relative">
                     {device?.latitude && device?.longitude ? (
                       <>
-                        <iframe
-                          width="100%"
-                          height="100%"
-                          frameBorder="0"
-                          style={{ border: 0, borderRadius: "0.25rem" }}
-                          src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${device.latitude},${device.longitude}&zoom=15`}
-                          allowFullScreen
-                        />
+                        <div style={{ height: "100%", borderRadius: "0.25rem", overflow: "hidden" }}>
+                          <GoogleMap 
+                            devices={[{
+                              id: device.id,
+                              deviceId: device.deviceId,
+                              deviceName: device.deviceName,
+                              location: device.location,
+                              latitude: device.latitude,
+                              longitude: device.longitude,
+                              active: device.active,
+                              lastSeen: device.lastSeen,
+                              avgWindSpeed: (windStats as any).avgWindSpeed || 0,
+                              maxWindSpeed: (windStats as any).maxWindSpeed || 0,
+                              alertState: (windStats as any).alertState || false
+                            } as DeviceWithLatestData]} 
+                          />
+                        </div>
                         <div className="mt-3">
                           <p className="text-sm text-neutral-600">
                             {device.location || "Location not specified"}
