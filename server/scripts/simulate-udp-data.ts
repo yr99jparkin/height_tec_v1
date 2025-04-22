@@ -1,26 +1,40 @@
+
 import dgram from "dgram";
 
 const client = dgram.createSocket("udp4");
 
-function sendWindData() {
-  const data = {
+const devices = [
+  {
     deviceId: "HT-ANEM-002",
-    timestamp: new Date().toISOString(),
-    windSpeed: Math.random() * 35, // Random speed between 0-35 km/h
-    gps: "-33.8688,151.2093" // Sydney coordinates
-  };
+    location: { lat: -33.8688, lng: 151.2093 } // Sydney
+  },
+  {
+    deviceId: "HT-ANEM-003",
+    location: { lat: -37.8136, lng: 144.9631 } // Melbourne
+  }
+];
 
-  const message = Buffer.from(JSON.stringify(data));
-  client.send(message, 8125, "0.0.0.0", (err) => {
-    if (err) {
-      console.error("Failed to send data:", err);
-      return;
-    }
-    console.log("Sent wind data:", data);
+function sendWindData() {
+  devices.forEach(device => {
+    const data = {
+      deviceId: device.deviceId,
+      timestamp: new Date().toISOString(),
+      windSpeed: Math.random() * 35, // Random speed between 0-35 km/h
+      gps: `${device.location.lat},${device.location.lng}`
+    };
+
+    const message = Buffer.from(JSON.stringify(data));
+    client.send(message, 8125, "0.0.0.0", (err) => {
+      if (err) {
+        console.error(`Failed to send data for ${device.deviceId}:`, err);
+        return;
+      }
+      console.log(`Sent wind data for ${device.deviceId}:`, data);
+    });
   });
 }
 
-console.log("Starting simulation...");
+// Send data every 5 seconds
 const interval = setInterval(sendWindData, 5000);
 sendWindData(); // Send first data immediately
 
