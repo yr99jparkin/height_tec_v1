@@ -4,9 +4,58 @@ import { Server } from "http";
 import { AddressInfo } from "net";
 import { log } from "./vite";
 import { WindDataPacket, WindDataWithAlert } from "@shared/types";
+import axios from "axios";
 
 // Default UDP port
 const DEFAULT_UDP_PORT = 8125;
+
+// Function to get human-readable location from coordinates using Google Maps Geocoding API
+async function getLocationFromCoordinates(latitude: number, longitude: number): Promise<string | null> {
+  try {
+    const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      log("Google Maps API key not found", "udp");
+      return null;
+    }
+
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`;
+    const response = await axios.get(url);
+    
+    if (response.data.status === 'OK' && response.data.results && response.data.results.length > 0) {
+      // Extract locality (suburb) or neighborhood from results
+      const addressComponents = response.data.results[0].address_components;
+      
+      // Try to find a neighborhood, locality, or administrative area
+      for (const component of addressComponents) {
+        if (component.types.includes('neighborhood') || component.types.includes('sublocality')) {
+          return component.long_name;
+        }
+      }
+      
+      for (const component of addressComponents) {
+        if (component.types.includes('locality')) {
+          return component.long_name;
+        }
+      }
+      
+      for (const component of addressComponents) {
+        if (component.types.includes('administrative_area_level_2')) {
+          return component.long_name;
+        }
+      }
+      
+      // Fallback to first result's formatted address, but only take the first part
+      const formattedAddress = response.data.results[0].formatted_address;
+      const parts = formattedAddress.split(',');
+      return parts[0].trim();
+    }
+    
+    return null;
+  } catch (error) {
+    log(`Error getting location from coordinates: ${error}`, "udp");
+    return null;
+  }
+}
 
 export function setupUdpListener(httpServer: Server) {
   // Create UDP server
@@ -51,11 +100,31 @@ export function setupUdpListener(httpServer: Server) {
 
       // Update device with latest location if available
       if (latitude !== undefined && longitude !== undefined) {
-        await storage.updateDevice(device.id, {
+        const updateData: {
+          latitude: number;
+          longitude: number;
+          lastSeen: Date;
+          location?: string;
+        } = {
           latitude,
           longitude,
           lastSeen: new Date()
-        });
+        };
+        
+        // Only try to get a location name if one isn't already set
+        if (!device.location) {
+          try {
+            const locationName = await getLocationFromCoordinates(latitude, longitude);
+            if (locationName) {
+              updateData.location = locationName;
+              log(`Updated location for device ${data.deviceId} to ${locationName}`, "udp");
+            }
+          } catch (error) {
+            log(`Error getting location name: ${error}`, "udp");
+          }
+        }
+        
+        await storage.updateDevice(device.id, updateData);
       } else {
         await storage.updateDevice(device.id, {
           lastSeen: new Date()
