@@ -126,7 +126,7 @@ export default function DevicesPage() {
                   height="100%"
                   frameBorder="0"
                   style={{ border: 0 }}
-                  src={`https://www.google.com/maps/embed/v1/view?key=AIzaSyBUxvIhcqHLF_li7llmHlC9_XM0wQ9j_L0&center=${devices[0]?.latitude || -33.85},${devices[0]?.longitude || 151.21}&zoom=10`}
+                  src={`https://www.google.com/maps/embed/v1/view?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&center=${devices[0]?.latitude || -33.85},${devices[0]?.longitude || 151.21}&zoom=10`}
                   allowFullScreen
                 />
               ) : (
