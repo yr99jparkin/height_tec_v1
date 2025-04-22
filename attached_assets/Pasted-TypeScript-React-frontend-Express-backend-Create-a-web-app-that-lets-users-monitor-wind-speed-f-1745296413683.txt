@@ -1,0 +1,74 @@
+TypeScript + React frontend + Express backend
+
+Create a web app that lets users monitor wind speed from associated devices in real time at remote construction sites using smart, cloud-connected anemometers. This will work by having a physical wind sensor (anemometer) installed on-site, which sends data via a 4G/Ethernet data logger to a cloud server. The web app will pull this data and allow users to view recent wind speeds, track historical trends and manage multiple devices from one dashboard.
+
+The logger will upload data regularly via UDP to a port on our cloud hosted server. Data will look similar to: {"deviceId":"WX001", "timestamp":"2025-04-08T12:00:00Z", "windSpeed":13.5, "gps":"-33.85,151.21"}. This schema should be flexible. 
+
+Build a UDP listener service that
+Accepts incoming packets from the data logger
+Parses and validates the payloads 
+Inserts structured data into a PostgreSQL DB
+Stores an alert state alongside wind data (e.g., threshold breaches) 
+Uses device-specific thresholds configured by the user and stored in the device DB table
+Create REST endpoints as required for the frontend, for example:
+/api/wind/latest
+/api/wind/history?range=1h
+/api/devices
+PostgreSQL DB - suggestions for MVP columns below. Define an appropriate schema that makes sense for these requirements.
+Users
+id: Serial primary key
+username: Unique text
+password: Text - read below about MVP user creation flow
+email: Unique text
+fullName: Text
+createdAt: Timestamp
+Devices
+id: Serial primary key
+deviceId: Unique text
+deviceName: Unique text
+userId: Foreign key to users
+location: Optional text
+latitude/longitude: Optional doubles
+active: Boolean
+lastSeen: Optional timestamp
+createdAt: Timestamp
+windAlertThresholds
+windData
+id: Serial primary key
+deviceId: Text
+timestamp: Timestamp
+windSpeed: Double
+latitude/longitude: Optional doubles
+alertState: Boolean
+createdAt: Timestamp
+From a front end perspective, users will access the platform through a responsive web portal. The brand name is Height Tec and is based in Australia. Any units used in this project should be Australian (e.g. Kilometres, $AUD)
+
+The type of customer targeted are construction companies, crane operators, site safety managers, and project managers who need real-time wind monitoring for safety compliance and operational decision-making [define more specific look and feel desires] 
+
+The main landing page is a simple login page. User creation will be a manual process to begin with, controlled in the backend by system admin.
+
+Users will be manually added to the database with a plain text password initially. On first login, the system detects an unhashed password and requires this to change. Users must change passwords before gaining full access to the portal. All subsequent logins by users then use hashed passwords
+
+Upon login, users will land on a clean page titled “Devices”. Here they can view the most up to date wind speed data for all associated devices on this single page. Users can only view devices associated with their profile.
+
+There should be an “Add Device” function on the devices page. Users can click this and add a new device by providing the Device ID and giving the device a unique name. 
+
+The “Add Device” function references a separate DB table dedicated to tracking device stock. If a Device ID is present in this stock table and has the status “Available” it can be associated with a user's account. 
+
+If devices are of status “Allocated” then they cannot be added to an account. The device stock table also captures the username of the last user account that the device was allocated to. For new devices, this value would be ‘new’ or similar. 
+
+On the Devices page, each device is shown as a card on the left hand half of screen, and each card shows
+Device Name (can be changed by the user)
+Device ID (associated with the data logger)
+Location, generalised from the GPS coordinates to the suburb
+Average Wind Speed (last ten mins)
+Max Wind Speed (last ten mins)
+The colour of the wind speed data should change based on the alerting thresholds set by the user
+If a user clicks on a device card, they drill into the device specific page where they can: 
+Visualise historical wind data for the selected device via a responsive & flexible graphical UI
+See & set device specific alert threshold data relating to wind speed; Average & Max over the last ten mins to begin with
+See device location on a live map using GPS data sent by the logger
+Download wind data to CSV based on a custom timeframe selector
+Remove the device from their account/profile - if a user performs this step, the device should change status in the stock table to be “available”.
+The right hand half of the Devices page is a map view using Google Maps, this panel shows all the users devices based on their geolocation. Users can click the device on the map and drill into the afore mentioned device specific page
+Overall, the app will look and feel professional, clean, and trusted. It should have a professional color palette, soft shadows, and large, legible typography. 
