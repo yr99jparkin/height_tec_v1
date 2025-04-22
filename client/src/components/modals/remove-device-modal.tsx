@@ -58,7 +58,7 @@ export function RemoveDeviceModal({
           </div>
           <DialogTitle className="text-xl mb-1">Remove Device?</DialogTitle>
           <DialogDescription>
-            Are you sure you want to remove "{deviceName}" from your account? This device will be made available for other users.
+            Are you sure you want to remove "{deviceName}" from your account? This device will be made available for other users and all your device data will be deleted.
           </DialogDescription>
           
           <div className="flex justify-center gap-3 mt-6">
