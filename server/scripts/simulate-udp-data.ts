@@ -1,4 +1,3 @@
-
 import dgram from "dgram";
 
 const client = dgram.createSocket("udp4");
@@ -21,7 +20,7 @@ function sendWindData() {
   });
 }
 
-// Send data every 5 seconds
+console.log("Starting simulation...");
 const interval = setInterval(sendWindData, 5000);
 sendWindData(); // Send first data immediately
 
