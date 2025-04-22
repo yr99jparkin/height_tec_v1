@@ -42,7 +42,8 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
       if (!deviceId) throw new Error("No device ID provided");
       const response = await apiRequest("GET", `/api/devices/${deviceId}`);
       if (!response.ok) throw new Error("Failed to fetch device");
-      return response.json();
+      const data = await response.json();
+      return data;
     },
     enabled: !!deviceId && open,
   });
