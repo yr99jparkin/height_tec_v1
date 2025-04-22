@@ -61,7 +61,7 @@ export function RemoveDeviceModal({
             Are you sure you want to remove "{deviceName}" from your account? This device will be made available for other users.
           </DialogDescription>
           
-          <DialogFooter className="flex justify-center space-x-3 mt-6 w-full">
+          <div className="flex justify-center gap-3 mt-6">
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
@@ -75,7 +75,7 @@ export function RemoveDeviceModal({
             >
               {removeDeviceMutation.isPending ? "Removing..." : "Remove Device"}
             </Button>
-          </DialogFooter>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
