@@ -85,6 +85,12 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
   // Get wind stats
   const { data: windStats = {} } = useQuery({
     queryKey: ["/api/wind/stats", deviceId],
+    queryFn: async () => {
+      if (!deviceId) throw new Error("No device ID provided");
+      const response = await apiRequest("GET", `/api/wind/stats/${deviceId}`);
+      if (!response.ok) throw new Error("Failed to fetch wind stats");
+      return await response.json();
+    },
     enabled: !!deviceId && open,
     refetchInterval: 30000, // Refresh every 30 seconds
   });
