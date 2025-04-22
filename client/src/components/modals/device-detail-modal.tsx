@@ -165,17 +165,26 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
       <Dialog open={open && !!deviceId} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col p-0">
           <div className="flex items-center justify-between border-b border-neutral-300 p-4">
-            <div>
+            <div className="flex items-center gap-2">
               <DialogTitle className="text-2xl">{device?.deviceName}</DialogTitle>
-              <p className="text-neutral-500">Device ID: {device?.deviceId}</p>
-            </div>
-            <div className="flex items-center">
               <Button
                 variant="ghost" 
                 size="icon"
                 onClick={() => setRemoveModalOpen(true)}
+                className="h-8 w-8"
               >
                 <Trash2 className="h-5 w-5 text-destructive" />
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <p className="text-neutral-500">Device ID: {device?.deviceId}</p>
+              <Button
+                variant="ghost" 
+                size="icon"
+                onClick={() => onOpenChange(false)}
+                className="ml-4"
+              >
+                <X className="h-5 w-5" />
               </Button>
             </div>
           </div>
