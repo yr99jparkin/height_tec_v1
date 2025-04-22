@@ -38,6 +38,10 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
   // Get device data
   const { data: device } = useQuery<Device>({
     queryKey: ["/api/devices", deviceId],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/devices/${deviceId}`);
+      return response.json();
+      },
     enabled: !!deviceId && open,
   });
 
