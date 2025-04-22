@@ -7,10 +7,7 @@ export function Sidebar() {
   const [location] = useLocation();
 
   const navItems = [
-    { icon: Wind, label: "Devices", href: "/" },
-    { icon: BarChart2, label: "Analytics", href: "/analytics" },
-    { icon: Bell, label: "Alerts", href: "/alerts" },
-    { icon: Settings, label: "Settings", href: "/settings" }
+    { icon: Wind, label: "Devices", href: "/" }
   ];
 
   return (
