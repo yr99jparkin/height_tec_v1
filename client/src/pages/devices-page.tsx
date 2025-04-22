@@ -126,10 +126,30 @@ export default function DevicesPage() {
                   height="100%"
                   frameBorder="0"
                   style={{ border: 0 }}
-                  src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${devices[0]?.latitude || -33.85},${devices[0]?.longitude || 151.21}&zoom=4&markers=color:red|${devices
-                    .filter(d => d.latitude && d.longitude)
-                    .map(d => `${d.latitude},${d.longitude}`)
-                    .join('|markers=color:red|')}`}
+                  src={(() => {
+                    const devicesWithCoords = devices.filter(d => d.latitude && d.longitude);
+                    
+                    // If only one device with coordinates, use "place" mode
+                    if (devicesWithCoords.length === 1) {
+                      const device = devicesWithCoords[0];
+                      return `https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${device.latitude},${device.longitude}&zoom=15`;
+                    }
+                    
+                    // For multiple devices use "search" mode which supports multiple locations
+                    const markers = devicesWithCoords
+                      .map(d => `${d.latitude},${d.longitude}`)
+                      .join('|');
+                    
+                    return `https://www.google.com/maps/embed/v1/search?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=wind+sensor+location&zoom=5&center=${
+                      // Calculate average lat/lng for centering
+                      (() => {
+                        if (devicesWithCoords.length === 0) return '-33.85,151.21'; // Default
+                        const avgLat = devicesWithCoords.reduce((sum, d) => sum + (d.latitude || 0), 0) / devicesWithCoords.length;
+                        const avgLng = devicesWithCoords.reduce((sum, d) => sum + (d.longitude || 0), 0) / devicesWithCoords.length;
+                        return `${avgLat},${avgLng}`;
+                      })()
+                    }&location=${markers}`;
+                  })()}
                   allowFullScreen
                 />
               ) : (
