@@ -125,10 +125,10 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
 
   const handleExportData = () => {
     if (!deviceId) return;
-    
+
     let startDate: string;
     let endDate: string = new Date().toISOString();
-    
+
     switch (exportRange) {
       case "1h":
         startDate = new Date(Date.now() - 60 * 60 * 1000).toISOString();
@@ -149,7 +149,7 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
       default:
         startDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     }
-    
+
     // Create a direct download link
     const downloadUrl = `/api/export/${deviceId}?start=${startDate}&end=${endDate}`;
     window.open(downloadUrl, '_blank');
@@ -190,7 +190,7 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
               </Button>
             </div>
           </div>
-          
+
           <div className="overflow-y-auto flex-1 p-4">
             <div className="space-y-6">
               {/* Wind Speed Cards */}
@@ -217,7 +217,7 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
                   <p className="text-sm uppercase font-medium text-neutral-500">Avg. Wind Speed (10m)</p>
                   <div className="flex items-baseline mt-2">
@@ -240,7 +240,7 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
                   <p className="text-sm uppercase font-medium text-neutral-500">Max Wind Speed (10m)</p>
                   <div className="flex items-baseline mt-2">
@@ -264,7 +264,7 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                   </div>
                 </div>
               </div>
-              
+
               {/* Wind Chart and Map Split */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Wind Speed Chart */}
@@ -305,7 +305,7 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                     )}
                   </div>
                 </div>
-                
+
                 {/* Location Map */}
                 <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
                   <h3 className="font-medium mb-4">Device Location</h3>
@@ -329,14 +329,6 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                             } as unknown as DeviceWithLatestData]} 
                           />
                         </div>
-                        <div className="mt-3">
-                          <p className="text-sm text-neutral-600">
-                            {device.location || "Location not specified"}
-                          </p>
-                          <p className="text-xs text-neutral-500 mt-1">
-                            Coordinates: {device.latitude.toFixed(4)}, {device.longitude.toFixed(4)}
-                          </p>
-                        </div>
                       </>
                     ) : (
                       <div className="flex items-center justify-center h-full bg-neutral-50 rounded-md">
@@ -346,7 +338,7 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                   </div>
                 </div>
               </div>
-              
+
               {/* Alert Thresholds */}
               <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
                 <h3 className="font-medium mb-4">Wind Alert Thresholds</h3>
@@ -367,7 +359,7 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                       Alerts will trigger when the 10-minute average exceeds this value
                     </p>
                   </div>
-                  
+
                   <div>
                     <div className="flex justify-between mb-2">
                       <p className="text-sm font-medium">Maximum Wind Speed Threshold</p>
@@ -395,7 +387,7 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
           </div>
         </DialogContent>
       </Dialog>
-      
+
       {device && (
         <RemoveDeviceModal
           open={removeModalOpen}
