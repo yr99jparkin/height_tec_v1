@@ -26,8 +26,8 @@ export default function DevicesPage() {
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  // Check if user password requires change
-  if (user && user.passwordRequiresChange) {
+  // Check if user exists and direct to auth page if not
+  if (!user) {
     setLocation("/auth");
     return null;
   }

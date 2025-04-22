@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -50,13 +50,19 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
   const { data: thresholds } = useQuery({
     queryKey: ["/api/thresholds", deviceId],
     enabled: !!deviceId && open,
-    onSuccess: (data: any) => {
-      if (data) {
-        setAvgThreshold(data.avgWindSpeedThreshold);
-        setMaxThreshold(data.maxWindSpeedThreshold);
-      }
-    },
   });
+
+  // Update thresholds when data is loaded
+  useEffect(() => {
+    if (thresholds && typeof thresholds === 'object') {
+      if ('avgWindSpeedThreshold' in thresholds) {
+        setAvgThreshold(thresholds.avgWindSpeedThreshold);
+      }
+      if ('maxWindSpeedThreshold' in thresholds) {
+        setMaxThreshold(thresholds.maxWindSpeedThreshold);
+      }
+    }
+  }, [thresholds]);
 
   // Get wind data history
   const { data: windData } = useQuery<WindData[]>({
