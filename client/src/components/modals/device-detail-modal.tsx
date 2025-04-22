@@ -55,10 +55,10 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
   // Update thresholds when data is loaded
   useEffect(() => {
     if (thresholds && typeof thresholds === 'object') {
-      if ('avgWindSpeedThreshold' in thresholds) {
+      if ('avgWindSpeedThreshold' in thresholds && typeof thresholds.avgWindSpeedThreshold === 'number') {
         setAvgThreshold(thresholds.avgWindSpeedThreshold);
       }
-      if ('maxWindSpeedThreshold' in thresholds) {
+      if ('maxWindSpeedThreshold' in thresholds && typeof thresholds.maxWindSpeedThreshold === 'number') {
         setMaxThreshold(thresholds.maxWindSpeedThreshold);
       }
     }
@@ -305,11 +305,9 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                   {device?.latitude && device?.longitude && (
                     <div className="mt-3">
                       <p className="text-sm text-neutral-600">
-                        <i className="fas fa-map-marker-alt mr-1 text-destructive"></i>
                         {device.location || "Location not specified"}
                       </p>
                       <p className="text-xs text-neutral-500 mt-1">
-                        <i className="fas fa-location-arrow mr-1"></i>
                         Coordinates: {device.latitude.toFixed(4)}, {device.longitude.toFixed(4)}
                       </p>
                     </div>
@@ -319,104 +317,45 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
               
               {/* Alert Thresholds */}
               <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
-                <h3 className="font-medium mb-4">Alert Thresholds</h3>
-                <div className="space-y-4">
+                <h3 className="font-medium mb-4">Wind Alert Thresholds</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <div className="flex justify-between mb-2">
-                      <label className="text-sm font-medium">Average Wind Speed (10 min)</label>
-                      <span className="text-sm font-mono">{avgThreshold} km/h</span>
+                      <p className="text-sm font-medium">Average Wind Speed Threshold</p>
+                      <p className="font-mono">{avgThreshold} km/h</p>
                     </div>
                     <Slider 
                       value={[avgThreshold]} 
-                      min={0} 
-                      max={50} 
+                      min={5} 
+                      max={40} 
                       step={1} 
-                      onValueChange={(value) => setAvgThreshold(value[0])}
+                      onValueChange={(values) => setAvgThreshold(values[0])} 
                     />
-                    <div className="flex justify-between text-xs text-neutral-500 mt-1">
-                      <span>0 km/h</span>
-                      <span>25 km/h</span>
-                      <span>50 km/h</span>
-                    </div>
+                    <p className="text-xs text-neutral-500 mt-2">
+                      Alerts will trigger when the 10-minute average exceeds this value
+                    </p>
                   </div>
                   
                   <div>
                     <div className="flex justify-between mb-2">
-                      <label className="text-sm font-medium">Maximum Wind Speed (10 min)</label>
-                      <span className="text-sm font-mono">{maxThreshold} km/h</span>
+                      <p className="text-sm font-medium">Maximum Wind Speed Threshold</p>
+                      <p className="font-mono">{maxThreshold} km/h</p>
                     </div>
                     <Slider 
                       value={[maxThreshold]} 
-                      min={0} 
+                      min={10} 
                       max={50} 
                       step={1} 
-                      onValueChange={(value) => setMaxThreshold(value[0])}
+                      onValueChange={(values) => setMaxThreshold(values[0])} 
                     />
-                    <div className="flex justify-between text-xs text-neutral-500 mt-1">
-                      <span>0 km/h</span>
-                      <span>25 km/h</span>
-                      <span>50 km/h</span>
-                    </div>
+                    <p className="text-xs text-neutral-500 mt-2">
+                      Alerts will trigger when any gust exceeds this value
+                    </p>
                   </div>
                 </div>
                 <div className="mt-4 flex justify-end">
-                  <Button 
-                    onClick={() => updateThresholdsMutation.mutate()}
-                    disabled={updateThresholdsMutation.isPending}
-                  >
+                  <Button onClick={() => updateThresholdsMutation.mutate()}>
                     {updateThresholdsMutation.isPending ? "Saving..." : "Save Thresholds"}
-                  </Button>
-                </div>
-              </div>
-              
-              {/* Export Data */}
-              <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
-                <h3 className="font-medium mb-4">Export Data</h3>
-                <div className="flex flex-wrap items-end gap-4">
-                  <div className="flex-grow max-w-xs">
-                    <label className="block text-sm font-medium mb-1">Date Range</label>
-                    <Select 
-                      value={exportRange} 
-                      onValueChange={setExportRange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1h">Last 1 hour</SelectItem>
-                        <SelectItem value="24h">Last 24 hours</SelectItem>
-                        <SelectItem value="7d">Last 7 days</SelectItem>
-                        <SelectItem value="30d">Last 30 days</SelectItem>
-                        <SelectItem value="custom">Custom range</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {exportRange === "custom" && (
-                    <div className="grid grid-cols-2 gap-2 flex-grow max-w-sm">
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Start Date</label>
-                        <input
-                          type="date"
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-md"
-                          value={customStartDate}
-                          onChange={(e) => setCustomStartDate(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">End Date</label>
-                        <input
-                          type="date"
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-md"
-                          value={customEndDate}
-                          onChange={(e) => setCustomEndDate(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  )}
-                  
-                  <Button onClick={handleExportData}>
-                    Export CSV
                   </Button>
                 </div>
               </div>
@@ -425,14 +364,15 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
         </DialogContent>
       </Dialog>
       
-      {removeModalOpen && (
+      {device && (
         <RemoveDeviceModal
           open={removeModalOpen}
           onOpenChange={setRemoveModalOpen}
-          deviceId={deviceId || ""}
-          deviceName={device?.deviceName || "this device"}
+          deviceId={device.deviceId}
+          deviceName={device.deviceName}
           onDeviceRemoved={() => {
             onOpenChange(false);
+            queryClient.invalidateQueries({ queryKey: ["/api/devices"] });
           }}
         />
       )}
