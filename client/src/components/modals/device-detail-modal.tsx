@@ -331,16 +331,6 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                       </div>
                     )}
                   </div>
-                  {device?.latitude && device?.longitude && (
-                    <div className="mt-3">
-                      <p className="text-sm text-neutral-600">
-                        {device.location || "Location not specified"}
-                      </p>
-                      <p className="text-xs text-neutral-500 mt-1">
-                        Coordinates: {device.latitude.toFixed(4)}, {device.longitude.toFixed(4)}
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
               
