@@ -104,6 +104,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteDevice(id: number): Promise<void> {
+     const device = await this.getDeviceById(id);
+      if (!device) return;
+
+      // Delete related data first
+      await db.delete(windAlertThresholds).where(eq(windAlertThresholds.deviceId, device.deviceId));
+      await db.delete(windData).where(eq(windData.deviceId, device.deviceId));
     await db.delete(devices).where(eq(devices.id, id));
   }
 
