@@ -169,8 +169,9 @@ export function setupUdpListener(httpServer: Server) {
       // Calculate alert state based on thresholds
       // Check if wind speed exceeds either amber or red threshold
       // Try new threshold names first, fall back to legacy names if needed
-      const redThreshold = thresholds.redThreshold ?? 30;
-      const amberThreshold = thresholds.amberThreshold ?? 20;
+      // Use the threshold values from the database, with defaults if not set
+      const redThreshold = thresholds.redThreshold || 30;
+      const amberThreshold = thresholds.amberThreshold || 20;
       
       // Calculate specific alert states
       const amberAlert = data.windSpeed >= amberThreshold;
