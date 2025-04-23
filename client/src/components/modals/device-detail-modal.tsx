@@ -110,6 +110,8 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
     enabled: !!deviceId && open,
     refetchInterval: 30000, // Refresh every 30 seconds
   });
+  
+  // We've moved the optimization logic to the GoogleMap component
 
   // Update thresholds mutation
   const updateThresholdsMutation = useMutation({
@@ -459,10 +461,8 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                     {device?.latitude && device?.longitude ? (
                       <>
                         <div style={{ height: "100%", borderRadius: "0.25rem", overflow: "hidden" }}>
-                          {/* Use memoized device data to prevent unnecessary re-renders */}
-                          {useMemo(() => {
-                            // Only rebuild this component if device or windStats data changes
-                            const deviceData = [{
+                          <GoogleMap 
+                            devices={[{
                               id: device.id,
                               deviceId: device.deviceId,
                               deviceName: device.deviceName,
@@ -474,15 +474,8 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                               avgWindSpeed: (windStats as any).avgWindSpeed || 0,
                               maxWindSpeed: (windStats as any).maxWindSpeed || 0,
                               alertState: (windStats as any).alertState || false
-                            } as unknown as DeviceWithLatestData];
-                            
-                            return (
-                              <GoogleMap devices={deviceData} />
-                            );
-                          }, [device?.id, device?.deviceId, device?.deviceName, device?.location, 
-                              device?.latitude, device?.longitude, device?.active, device?.lastSeen, 
-                              (windStats as any).avgWindSpeed, (windStats as any).maxWindSpeed, 
-                              (windStats as any).alertState])}
+                            } as unknown as DeviceWithLatestData]} 
+                          />
                         </div>
                       </>
                     ) : (

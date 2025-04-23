@@ -218,5 +218,37 @@ function GoogleMapComponent({ devices, onDeviceClick }: GoogleMapProps) {
   );
 }
 
-// Export memoized component to prevent unnecessary re-renders
-export const GoogleMap = memo(GoogleMapComponent);
+// Custom equality function for React.memo to prevent unnecessary re-renders
+function areDevicesEqual(prevProps: GoogleMapProps, nextProps: GoogleMapProps) {
+  // If there's a different number of devices, they're not equal
+  if (prevProps.devices.length !== nextProps.devices.length) {
+    return false;
+  }
+
+  // Compare each device's critical properties
+  for (let i = 0; i < prevProps.devices.length; i++) {
+    const prevDevice = prevProps.devices[i];
+    const nextDevice = nextProps.devices[i];
+
+    // Compare only properties that would affect the map display
+    if (
+      prevDevice.latitude !== nextDevice.latitude ||
+      prevDevice.longitude !== nextDevice.longitude ||
+      prevDevice.deviceId !== nextDevice.deviceId ||
+      prevDevice.deviceName !== nextDevice.deviceName
+    ) {
+      return false;
+    }
+  }
+
+  // Compare the click handler function reference
+  if (prevProps.onDeviceClick !== nextProps.onDeviceClick) {
+    return false;
+  }
+
+  // If we got here, the props are considered equal
+  return true;
+}
+
+// Export memoized component with custom equality function to prevent unnecessary re-renders
+export const GoogleMap = memo(GoogleMapComponent, areDevicesEqual);
