@@ -64,22 +64,24 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
   // Update thresholds when data is loaded
   useEffect(() => {
     if (thresholds && typeof thresholds === 'object') {
-      // Check for new threshold names first
+      // Handle amber threshold (prioritize new field names)
       if ('amberThreshold' in thresholds && typeof thresholds.amberThreshold === 'number') {
         setAmberThreshold(thresholds.amberThreshold);
       } 
       // Fallback for backwards compatibility with old schema
       else if ('avgWindSpeedThreshold' in thresholds && typeof thresholds.avgWindSpeedThreshold === 'number') {
         setAmberThreshold(thresholds.avgWindSpeedThreshold);
+        console.log("Using legacy avgWindSpeedThreshold field", thresholds.avgWindSpeedThreshold);
       }
       
-      // Check for new threshold names first
+      // Handle red threshold (prioritize new field names)
       if ('redThreshold' in thresholds && typeof thresholds.redThreshold === 'number') {
         setRedThreshold(thresholds.redThreshold);
       }
       // Fallback for backwards compatibility with old schema
       else if ('maxWindSpeedThreshold' in thresholds && typeof thresholds.maxWindSpeedThreshold === 'number') {
         setRedThreshold(thresholds.maxWindSpeedThreshold);
+        console.log("Using legacy maxWindSpeedThreshold field", thresholds.maxWindSpeedThreshold);
       }
     }
   }, [thresholds]);
@@ -181,7 +183,7 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
   return (
     <>
       <Dialog open={open && !!deviceId} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col p-0">
+        <DialogContent className="max-w-7xl w-[90vw] max-h-[90vh] flex flex-col p-0">
           <div className="flex items-center justify-between border-b border-neutral-300 p-4">
             <div className="flex items-center gap-2">
               <DialogTitle className="text-2xl">{device?.deviceName}</DialogTitle>
@@ -209,6 +211,64 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
 
           <div className="overflow-y-auto flex-1 p-4">
             <div className="space-y-6">
+              {/* Wind Chart - Prominent section */}
+              <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-medium">Wind Speed Trend</h3>
+                  <div className="flex space-x-2">
+                    <Button 
+                      variant={timeRange === "1h" ? "default" : "outline"} 
+                      size="sm"
+                      onClick={() => setTimeRange("1h")}
+                    >
+                      1H
+                    </Button>
+                    <Button 
+                      variant={timeRange === "24h" ? "default" : "outline"} 
+                      size="sm"
+                      onClick={() => setTimeRange("24h")}
+                    >
+                      24H
+                    </Button>
+                    <Button 
+                      variant={timeRange === "7d" ? "default" : "outline"} 
+                      size="sm"
+                      onClick={() => setTimeRange("7d")}
+                    >
+                      7D
+                    </Button>
+                  </div>
+                </div>
+                <div className="h-80">
+                  {windData && windData.length > 0 ? (
+                    <WindChart 
+                      data={windData} 
+                      timeRange={timeRange} 
+                      amberThreshold={amberThreshold}
+                      redThreshold={redThreshold}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full bg-neutral-50 rounded-md">
+                      <p className="text-neutral-500">No wind data available for this period</p>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-4 flex items-center justify-center space-x-6 text-sm">
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full bg-[hsl(var(--safe))] mr-2"></div>
+                    <span>Normal</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full bg-[hsl(var(--warning))] mr-2"></div>
+                    <span>Amber Alert (≥ {amberThreshold} km/h)</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full bg-destructive mr-2"></div>
+                    <span>Red Alert (≥ {redThreshold} km/h)</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Wind Speed Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
@@ -277,48 +337,53 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                   </div>
                 </div>
               </div>
-
-              {/* Wind Chart and Map Split */}
+              
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Wind Speed Chart */}
+                {/* Alert Thresholds */}
                 <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-medium">Wind Speed Trend</h3>
-                    <div className="flex space-x-2">
-                      <Button 
-                        variant={timeRange === "1h" ? "default" : "outline"} 
-                        size="sm"
-                        onClick={() => setTimeRange("1h")}
-                      >
-                        1H
-                      </Button>
-                      <Button 
-                        variant={timeRange === "24h" ? "default" : "outline"} 
-                        size="sm"
-                        onClick={() => setTimeRange("24h")}
-                      >
-                        24H
-                      </Button>
-                      <Button 
-                        variant={timeRange === "7d" ? "default" : "outline"} 
-                        size="sm"
-                        onClick={() => setTimeRange("7d")}
-                      >
-                        7D
-                      </Button>
+                  <h3 className="font-medium mb-4">Wind Alert Thresholds</h3>
+                  <div className="grid grid-cols-1 gap-6">
+                    <div>
+                      <div className="flex justify-between mb-2">
+                        <p className="text-sm font-medium">Amber Alert Threshold</p>
+                        <p className="font-mono text-[hsl(var(--warning))]">{amberThreshold} km/h</p>
+                      </div>
+                      <Slider 
+                        value={[amberThreshold]} 
+                        min={5} 
+                        max={40} 
+                        step={1} 
+                        onValueChange={(values) => setAmberThreshold(values[0])} 
+                      />
+                      <p className="text-xs text-neutral-500 mt-2">
+                        Amber alert when wind speed exceeds this value
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between mb-2">
+                        <p className="text-sm font-medium">Red Alert Threshold</p>
+                        <p className="font-mono text-destructive">{redThreshold} km/h</p>
+                      </div>
+                      <Slider 
+                        value={[redThreshold]} 
+                        min={10} 
+                        max={50} 
+                        step={1} 
+                        onValueChange={(values) => setRedThreshold(values[0])} 
+                      />
+                      <p className="text-xs text-neutral-500 mt-2">
+                        Red alert when wind speed exceeds this value
+                      </p>
                     </div>
                   </div>
-                  <div className="h-64">
-                    {windData && windData.length > 0 ? (
-                      <WindChart data={windData} timeRange={timeRange} />
-                    ) : (
-                      <div className="flex items-center justify-center h-full bg-neutral-50 rounded-md">
-                        <p className="text-neutral-500">No wind data available for this period</p>
-                      </div>
-                    )}
+                  <div className="mt-4 flex justify-end">
+                    <Button onClick={() => updateThresholdsMutation.mutate()}>
+                      {updateThresholdsMutation.isPending ? "Saving..." : "Save Thresholds"}
+                    </Button>
                   </div>
                 </div>
-
+                
                 {/* Location Map */}
                 <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
                   <h3 className="font-medium mb-4">Device Location</h3>
@@ -349,51 +414,6 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                       </div>
                     )}
                   </div>
-                </div>
-              </div>
-
-              {/* Alert Thresholds */}
-              <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
-                <h3 className="font-medium mb-4">Wind Alert Thresholds</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <p className="text-sm font-medium">Amber Alert Threshold</p>
-                      <p className="font-mono text-[hsl(var(--warning))]">{amberThreshold} km/h</p>
-                    </div>
-                    <Slider 
-                      value={[amberThreshold]} 
-                      min={5} 
-                      max={40} 
-                      step={1} 
-                      onValueChange={(values) => setAmberThreshold(values[0])} 
-                    />
-                    <p className="text-xs text-neutral-500 mt-2">
-                      Amber alert when wind speed exceeds this value
-                    </p>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <p className="text-sm font-medium">Red Alert Threshold</p>
-                      <p className="font-mono text-destructive">{redThreshold} km/h</p>
-                    </div>
-                    <Slider 
-                      value={[redThreshold]} 
-                      min={10} 
-                      max={50} 
-                      step={1} 
-                      onValueChange={(values) => setRedThreshold(values[0])} 
-                    />
-                    <p className="text-xs text-neutral-500 mt-2">
-                      Red alert when wind speed exceeds this value
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-4 flex justify-end">
-                  <Button onClick={() => updateThresholdsMutation.mutate()}>
-                    {updateThresholdsMutation.isPending ? "Saving..." : "Save Thresholds"}
-                  </Button>
                 </div>
               </div>
             </div>

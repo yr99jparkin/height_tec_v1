@@ -307,10 +307,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const schema = z.object({
         amberThreshold: z.number().min(0),
-        redThreshold: z.number().min(0)
+        redThreshold: z.number().min(0),
+        // Include old field names for backward compatibility 
+        avgWindSpeedThreshold: z.number().min(0).optional(),
+        maxWindSpeedThreshold: z.number().min(0).optional()
       });
       
-      const data = schema.parse(req.body) as UpdateThresholdsRequest;
+      const rawData = schema.parse(req.body);
+      
+      // Convert old field names to new ones if needed
+      const data: UpdateThresholdsRequest = {
+        amberThreshold: rawData.amberThreshold || rawData.avgWindSpeedThreshold || 20,
+        redThreshold: rawData.redThreshold || rawData.maxWindSpeedThreshold || 30
+      };
       
       // Ensure red threshold is greater than or equal to amber threshold
       if (data.redThreshold < data.amberThreshold) {
