@@ -25,6 +25,7 @@ export interface DeviceWithLatestData {
   id: number;
   deviceId: string;
   deviceName: string;
+  project?: string;
   location?: string;
   latitude?: number;
   longitude?: number;
@@ -59,6 +60,7 @@ export interface PasswordChangeRequest {
 export interface AddDeviceRequest {
   deviceId: string;
   deviceName: string;
+  project?: string;
 }
 
 export interface UpdateThresholdsRequest {
