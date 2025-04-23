@@ -51,8 +51,9 @@ export default function DevicesPage() {
       <Header />
       
       <main className="flex-1 flex">
-        <Sidebar />
-        
+        {/* Sidebar component removed - uncomment when adding more functionality
+        <Sidebar /> 
+        */}
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
           {/* Left Panel (Device List) */}
           <div className="lg:w-1/2 overflow-y-auto p-4 lg:p-6">

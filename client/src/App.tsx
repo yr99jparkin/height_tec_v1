@@ -8,6 +8,8 @@ import AuthPage from "@/pages/auth-page";
 import DevicesPage from "@/pages/devices-page";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
+// Sidebar components commented out for future use
+// import { SidebarProvider } from "@/components/ui/sidebar";
 
 function Router() {
   return (
