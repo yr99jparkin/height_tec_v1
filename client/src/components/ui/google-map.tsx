@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, memo } from 'react';
 import { DeviceWithLatestData } from '@shared/types';
 import { useGoogleMaps } from '@/hooks/use-google-maps';
 
@@ -7,7 +7,8 @@ interface GoogleMapProps {
   onDeviceClick?: (deviceId: string) => void;
 }
 
-export function GoogleMap({ devices, onDeviceClick }: GoogleMapProps) {
+// Component implementation
+function GoogleMapComponent({ devices, onDeviceClick }: GoogleMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -216,3 +217,6 @@ export function GoogleMap({ devices, onDeviceClick }: GoogleMapProps) {
     </div>
   );
 }
+
+// Export memoized component to prevent unnecessary re-renders
+export const GoogleMap = memo(GoogleMapComponent);
