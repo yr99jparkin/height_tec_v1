@@ -202,16 +202,17 @@ export class DatabaseStorage implements IStorage {
         )
       );
 
-    // Get max wind speed from last 10 seconds
+    // Get average wind speed from last 30 seconds
+    const thirtySecondsAgo = new Date(Date.now() - 30 * 1000);
     const [currentStats] = await db
       .select({
-        currentWindSpeed: max(windData.windSpeed).as("currentWindSpeed"),
+        currentWindSpeed: avg(windData.windSpeed).as("currentWindSpeed"),
       })
       .from(windData)
       .where(
         and(
           eq(windData.deviceId, deviceId),
-          gte(windData.timestamp, tenSecondsAgo)
+          gte(windData.timestamp, thirtySecondsAgo)
         )
       );
 
