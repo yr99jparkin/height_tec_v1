@@ -176,25 +176,13 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
   // Helper function to determine alert status with amber and red thresholds
   const getAlertClass = (value: number, threshold: 'amber' | 'red') => {
     if (threshold === 'red') {
-      if (value >= redThreshold) return "text-destructive";
-      if (value >= amberThreshold) return "text-[hsl(var(--warning))]";
+      if (value > redThreshold) return "text-destructive";
+      if (value > amberThreshold) return "text-[hsl(var(--warning))]";
       return "text-[hsl(var(--safe))]";
     } else { // amber threshold
-      if (value >= amberThreshold) return "text-[hsl(var(--warning))]";
+      if (value > amberThreshold) return "text-[hsl(var(--warning))]";
       return "text-[hsl(var(--safe))]";
     }
-  };
-  
-  // Get alert status based on actual alert states
-  const getAlertStatus = () => {
-    if (windStats && 'redAlert' in windStats && windStats.redAlert) {
-      return "Red Alert";
-    } else if (windStats && 'amberAlert' in windStats && windStats.amberAlert) {
-      return "Amber Alert";
-    } else if (windStats && 'alertState' in windStats && windStats.alertState) {
-      return "Alert Active";
-    }
-    return "Normal";
   };
 
   return (
@@ -204,15 +192,6 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
           <div className="flex items-center justify-between border-b border-neutral-300 p-4">
             <div className="flex items-center gap-2">
               <DialogTitle className="text-2xl">{device?.deviceName}</DialogTitle>
-              {windStats && (
-                <div className={`px-3 py-1 text-sm font-medium rounded-full ${
-                  windStats.redAlert ? "bg-red-100 text-destructive" : 
-                  windStats.amberAlert ? "bg-amber-100 text-amber-700" :
-                  "bg-green-100 text-green-700"
-                }`}>
-                  {getAlertStatus()}
-                </div>
-              )}
               <Button
                 variant="ghost" 
                 size="icon"

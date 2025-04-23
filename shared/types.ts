@@ -11,9 +11,7 @@ export interface WindDataWithAlert {
   windSpeed: number;
   latitude?: number;
   longitude?: number;
-  alertState: boolean; // For backward compatibility
-  amberAlert: boolean;
-  redAlert: boolean;
+  alertState: boolean;
 }
 
 export interface WindSpeedWithTimestamp {
@@ -32,18 +30,14 @@ export interface DeviceWithLatestData {
   lastSeen?: string;
   avgWindSpeed: number;
   maxWindSpeed: number;
-  alertState: boolean; // For backward compatibility
-  amberAlert: boolean;
-  redAlert: boolean;
+  alertState: boolean;
 }
 
 export interface WindStatsResponse {
   avgWindSpeed: number;
   maxWindSpeed: number;
   currentWindSpeed: number;
-  alertState: boolean; // For backward compatibility
-  amberAlert: boolean;
-  redAlert: boolean;
+  alertState: boolean;
   timestamp: string;
 }
 

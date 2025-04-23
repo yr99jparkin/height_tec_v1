@@ -81,9 +81,7 @@ export const windData = pgTable("wind_data", {
   windSpeed: doublePrecision("wind_speed").notNull(),
   latitude: doublePrecision("latitude"),
   longitude: doublePrecision("longitude"),
-  alertState: boolean("alert_state").default(false).notNull(), // Keep for backwards compatibility
-  amberAlert: boolean("amber_alert").default(false).notNull(),
-  redAlert: boolean("red_alert").default(false).notNull(),
+  alertState: boolean("alert_state").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -131,8 +129,6 @@ export const insertWindDataSchema = createInsertSchema(windData).pick({
   latitude: true,
   longitude: true,
   alertState: true,
-  amberAlert: true,
-  redAlert: true,
 });
 
 // Export types

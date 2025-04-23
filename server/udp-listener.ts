@@ -24,11 +24,11 @@ async function getLocationFromCoordinates(latitude: number, longitude: number): 
     
     if (response.data.status === 'OK' && response.data.results && response.data.results.length > 0) {
       // Log full response for debugging
-      log(`Geocoding response for ${latitude},${longitude}: ${JSON.stringify(response.data.results[0].address_components.map((c: any) => ({ name: c.long_name, types: c.types })))}`, "udp");
+      log(`Geocoding response for ${latitude},${longitude}: ${JSON.stringify(response.data.results[0].address_components.map(c => ({ name: c.long_name, types: c.types })))}`, "udp");
       
       // First check for Australian results
-      const isAustralian = response.data.results.some((result: any) => 
-        result.address_components.some((component: any) => 
+      const isAustralian = response.data.results.some(result => 
+        result.address_components.some(component => 
           component.types.includes('country') && component.short_name === 'AU'
         )
       );
@@ -172,22 +172,17 @@ export function setupUdpListener(httpServer: Server) {
       const redThreshold = thresholds.redThreshold ?? thresholds.maxWindSpeedThreshold ?? 30;
       const amberThreshold = thresholds.amberThreshold ?? thresholds.avgWindSpeedThreshold ?? 20;
       
-      // Calculate specific alert states
-      const amberAlert = data.windSpeed >= amberThreshold;
-      const redAlert = data.windSpeed >= redThreshold;
-      // Keep the original alertState for backward compatibility
-      const alertState = amberAlert;
+      // Alert state is true if the wind speed exceeds the amber threshold
+      const alertState = data.windSpeed >= amberThreshold;
 
-      // Prepare data with alert states
+      // Prepare data with alert state
       const windDataWithAlert: WindDataWithAlert = {
         deviceId: data.deviceId,
         timestamp: data.timestamp,
         windSpeed: data.windSpeed,
         latitude,
         longitude,
-        alertState,
-        amberAlert,
-        redAlert
+        alertState
       };
 
       // Insert wind data into database
@@ -197,9 +192,7 @@ export function setupUdpListener(httpServer: Server) {
         windSpeed: windDataWithAlert.windSpeed,
         latitude: windDataWithAlert.latitude,
         longitude: windDataWithAlert.longitude,
-        alertState: windDataWithAlert.alertState,
-        amberAlert: windDataWithAlert.amberAlert,
-        redAlert: windDataWithAlert.redAlert
+        alertState: windDataWithAlert.alertState
       });
 
       log(`Processed wind data for device ${data.deviceId}`, "udp");
