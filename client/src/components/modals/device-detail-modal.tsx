@@ -355,6 +355,57 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                 </div>
               </div>
               
+              {/* Export Data */}
+              <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
+                <h3 className="font-medium mb-4">Export Wind Data</h3>
+                <div className="flex items-center space-x-4">
+                  <Select value={exportRange} onValueChange={setExportRange}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select time range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="15m">Last 15 minutes</SelectItem>
+                      <SelectItem value="1h">Last hour</SelectItem>
+                      <SelectItem value="24h">Last 24 hours</SelectItem>
+                      <SelectItem value="7d">Last 7 days</SelectItem>
+                      <SelectItem value="30d">Last 30 days</SelectItem>
+                      <SelectItem value="custom">Custom range</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Button onClick={handleExportData}>
+                    Export to CSV
+                  </Button>
+                </div>
+                
+                {exportRange === "custom" && (
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1">
+                        Start Date
+                      </label>
+                      <input
+                        type="date"
+                        value={customStartDate}
+                        onChange={(e) => setCustomStartDate(e.target.value)}
+                        className="px-3 py-2 border border-neutral-300 rounded-md w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1">
+                        End Date
+                      </label>
+                      <input
+                        type="date"
+                        value={customEndDate}
+                        onChange={(e) => setCustomEndDate(e.target.value)}
+                        className="px-3 py-2 border border-neutral-300 rounded-md w-full"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Alert Thresholds */}
                 <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
