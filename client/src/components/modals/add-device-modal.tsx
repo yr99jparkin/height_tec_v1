@@ -25,12 +25,20 @@ const addDeviceSchema = z.object({
   project: z.string().optional(),
   isNewProject: z.boolean().default(false),
   newProjectName: z.string().optional()
+}).refine(data => {
+  // When creating a new project, new project name is required
+  if (data.isNewProject && (!data.newProjectName || data.newProjectName.trim() === '')) {
+    return false;
+  }
+  return true;
+}, {
+  message: "New project name is required when creating a new project",
+  path: ["newProjectName"]
 });
 
 export function AddDeviceModal({ open, onOpenChange }: AddDeviceModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isNewProject, setIsNewProject] = useState(false);
   
   // Fetch existing projects for this user
   const { data: projects = [] } = useQuery<string[]>({
@@ -49,11 +57,8 @@ export function AddDeviceModal({ open, onOpenChange }: AddDeviceModalProps) {
     }
   });
 
-  // Watch for isNewProject changes to sync with the state
-  const formIsNewProject = form.watch("isNewProject");
-  useEffect(() => {
-    setIsNewProject(formIsNewProject);
-  }, [formIsNewProject]);
+  // Watch for isNewProject changes to access in render
+  const isNewProject = form.watch("isNewProject");
 
   const addDeviceMutation = useMutation({
     mutationFn: async (formData: z.infer<typeof addDeviceSchema>) => {
