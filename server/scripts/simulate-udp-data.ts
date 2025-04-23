@@ -9,8 +9,8 @@ const devices = [
     location: { lat: -33.8688, lng: 151.2093 } // Sydney
   },
   {
-    deviceId: "HT-ANEM-003",
-    location: { lat: -37.8136, lng: 144.9631 } // Melbourne
+    deviceId: "HT-ANEM-004",
+    location: { lat: -28.5414, lng: 153.5478 } // Bruns
   }
 ];
 
