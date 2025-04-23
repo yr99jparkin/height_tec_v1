@@ -169,20 +169,27 @@ export function setupUdpListener(httpServer: Server) {
       // Calculate alert state based on thresholds
       // Check if wind speed exceeds either amber or red threshold
       // Try new threshold names first, fall back to legacy names if needed
-      const redThreshold = thresholds.redThreshold ?? thresholds.maxWindSpeedThreshold ?? 30;
-      const amberThreshold = thresholds.amberThreshold ?? thresholds.avgWindSpeedThreshold ?? 20;
+      const redThreshold = thresholds.redThreshold ?? 30;
+      const amberThreshold = thresholds.amberThreshold ?? 20;
       
-      // Alert state is true if the wind speed exceeds the amber threshold
-      const alertState = data.windSpeed >= amberThreshold;
+      // Calculate specific alert states
+      const amberAlert = data.windSpeed >= amberThreshold;
+      const redAlert = data.windSpeed >= redThreshold;
+      
+      // Overall alert state is true if either amber or red alert is triggered
+      // (this maintains backward compatibility)
+      const alertState = amberAlert;
 
-      // Prepare data with alert state
+      // Prepare data with alert states
       const windDataWithAlert: WindDataWithAlert = {
         deviceId: data.deviceId,
         timestamp: data.timestamp,
         windSpeed: data.windSpeed,
         latitude,
         longitude,
-        alertState
+        alertState,
+        amberAlert,
+        redAlert
       };
 
       // Insert wind data into database
@@ -192,7 +199,9 @@ export function setupUdpListener(httpServer: Server) {
         windSpeed: windDataWithAlert.windSpeed,
         latitude: windDataWithAlert.latitude,
         longitude: windDataWithAlert.longitude,
-        alertState: windDataWithAlert.alertState
+        alertState: windDataWithAlert.alertState,
+        amberAlert: windDataWithAlert.amberAlert,
+        redAlert: windDataWithAlert.redAlert
       });
 
       log(`Processed wind data for device ${data.deviceId}`, "udp");

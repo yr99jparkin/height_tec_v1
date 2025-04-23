@@ -12,6 +12,8 @@ export interface WindDataWithAlert {
   latitude?: number;
   longitude?: number;
   alertState: boolean;
+  amberAlert: boolean;
+  redAlert: boolean;
 }
 
 export interface WindSpeedWithTimestamp {
