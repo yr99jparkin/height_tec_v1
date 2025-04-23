@@ -198,8 +198,8 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                 <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
                   <p className="text-sm uppercase font-medium text-neutral-500">Current Wind Speed</p>
                   <div className="flex items-baseline mt-2">
-                    <p className={getAlertClass((windStats as any).windSpeed || 0, maxThreshold) + " text-3xl font-mono font-medium"}>
-                      {(windStats as any).windSpeed?.toFixed(1) || "0.0"}
+                    <p className={getAlertClass((windStats as any).currentWindSpeed || 0, maxThreshold) + " text-3xl font-mono font-medium"}>
+                      {(windStats as any).currentWindSpeed?.toFixed(1) || "0.0"}
                     </p>
                     <p className={getAlertClass((windStats as any).windSpeed || 0, maxThreshold) + " ml-1"}>km/h</p>
                   </div>

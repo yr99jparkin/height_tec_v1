@@ -36,6 +36,7 @@ export interface DeviceWithLatestData {
 export interface WindStatsResponse {
   avgWindSpeed: number;
   maxWindSpeed: number;
+  currentWindSpeed: number;
   alertState: boolean;
   timestamp: string;
 }

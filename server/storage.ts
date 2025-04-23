@@ -187,6 +187,7 @@ export class DatabaseStorage implements IStorage {
 
   async getWindStatsForDevice(deviceId: string, minutes: number): Promise<WindStatsResponse> {
     const timeThreshold = new Date(Date.now() - minutes * 60 * 1000);
+    const tenSecondsAgo = new Date(Date.now() - 10 * 1000);
 
     const [stats] = await db
       .select({
@@ -198,6 +199,19 @@ export class DatabaseStorage implements IStorage {
         and(
           eq(windData.deviceId, deviceId),
           gte(windData.timestamp, timeThreshold)
+        )
+      );
+
+    // Get max wind speed from last 10 seconds
+    const [currentStats] = await db
+      .select({
+        currentWindSpeed: max(windData.windSpeed).as("currentWindSpeed"),
+      })
+      .from(windData)
+      .where(
+        and(
+          eq(windData.deviceId, deviceId),
+          gte(windData.timestamp, tenSecondsAgo)
         )
       );
 
@@ -216,6 +230,7 @@ export class DatabaseStorage implements IStorage {
     return {
       avgWindSpeed: stats?.avgWindSpeed || 0,
       maxWindSpeed: stats?.maxWindSpeed || 0,
+      currentWindSpeed: currentStats?.currentWindSpeed || 0,
       alertState: latestData?.alertState || false,
       timestamp: latestData?.timestamp?.toISOString() || new Date().toISOString()
     };
