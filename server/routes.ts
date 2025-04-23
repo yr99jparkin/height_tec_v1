@@ -67,6 +67,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let startTime: Date;
       
       switch (range) {
+        case "15m":
+          startTime = new Date(now.getTime() - 15 * 60 * 1000);
+          break;
         case "1h":
           startTime = new Date(now.getTime() - 60 * 60 * 1000);
           break;

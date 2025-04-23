@@ -143,6 +143,9 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
     let endDate: string = new Date().toISOString();
 
     switch (exportRange) {
+      case "15m":
+        startDate = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+        break;
       case "1h":
         startDate = new Date(Date.now() - 60 * 60 * 1000).toISOString();
         break;
@@ -216,6 +219,13 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-xl font-medium">Wind Speed Trend</h3>
                   <div className="flex space-x-2">
+                    <Button 
+                      variant={timeRange === "15m" ? "default" : "outline"} 
+                      size="sm"
+                      onClick={() => setTimeRange("15m")}
+                    >
+                      15M
+                    </Button>
                     <Button 
                       variant={timeRange === "1h" ? "default" : "outline"} 
                       size="sm"
