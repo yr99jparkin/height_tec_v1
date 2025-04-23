@@ -170,7 +170,10 @@ export default function AuthPage() {
       <div className="w-full md:w-1/2 flex items-center justify-center p-4 bg-white">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-primary font-heading italic">Height-tec</h1>
+            <h1 className="text-3xl font-bold text-primary font-heading italic flex items-center justify-center gap-2">
+              <img src="/logo.png" alt="Height-tec logo" className="w-10 h-10" />
+              Height-tec
+            </h1>
             <p className="text-neutral-500 mt-2">Wind Monitoring Platform</p>
           </div>
           
