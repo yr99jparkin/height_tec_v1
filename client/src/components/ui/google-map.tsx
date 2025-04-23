@@ -1,49 +1,22 @@
 import React, { useEffect, useRef } from 'react';
 import { DeviceWithLatestData } from '@shared/types';
+import { useGoogleMaps } from '@/hooks/use-google-maps';
 
 interface GoogleMapProps {
   devices: DeviceWithLatestData[];
   onDeviceClick?: (deviceId: string) => void;
 }
 
-declare global {
-  interface Window {
-    google: any;
-    initMap?: () => void;
-  }
-}
-
 export function GoogleMap({ devices, onDeviceClick }: GoogleMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
+  const { isLoaded, loadError } = useGoogleMaps();
 
   useEffect(() => {
-    // Load Google Maps JavaScript API script
-    const loadGoogleMapsScript = () => {
-      if (window.google && window.google.maps) {
-        initMap();
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&callback=initMap`;
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-
-      window.initMap = initMap;
-
-      return () => {
-        document.head.removeChild(script);
-        // Clean up the global callback function
-        if (window.initMap) {
-          // Use a type guard to check if initMap exists before nullifying it
-          window.initMap = null as unknown as undefined;
-        }
-      };
-    };
-
+    // Only initialize the map once the Google Maps API is loaded
+    if (!isLoaded || !window.google?.maps) return;
+    
     // Initialize the map
     const initMap = () => {
       if (!mapRef.current) return;
@@ -144,7 +117,8 @@ export function GoogleMap({ devices, onDeviceClick }: GoogleMapProps) {
       }
     };
 
-    loadGoogleMapsScript();
+    // Initialize map when Google Maps is loaded
+    initMap();
 
     // Clean up
     return () => {
@@ -154,11 +128,12 @@ export function GoogleMap({ devices, onDeviceClick }: GoogleMapProps) {
         });
       }
     };
-  }, [devices, onDeviceClick]);
+  }, [isLoaded, devices, onDeviceClick]);
 
   // Update markers when devices change
   useEffect(() => {
-    if (!mapInstanceRef.current || !window.google) return;
+    // Make sure Google Maps is loaded and map is initialized
+    if (!isLoaded || !mapInstanceRef.current || !window.google?.maps) return;
 
     // Clear existing markers
     if (markersRef.current) {
@@ -216,9 +191,28 @@ export function GoogleMap({ devices, onDeviceClick }: GoogleMapProps) {
     if (devicesWithCoords.length > 1) {
       mapInstanceRef.current.fitBounds(bounds);
     }
-  }, [devices, onDeviceClick]);
+  }, [isLoaded, devices, onDeviceClick]);
+
+  if (loadError) {
+    return (
+      <div className="flex items-center justify-center h-full bg-neutral-100 rounded-md">
+        <p className="text-neutral-600">Failed to load map. Please try again later.</p>
+      </div>
+    );
+  }
 
   return (
-    <div ref={mapRef} style={{ width: '100%', height: '100%', borderRadius: '0.5rem' }} />
+    <div className="h-full relative">
+      {!isLoaded && (
+        <div className="absolute inset-0 flex items-center justify-center bg-neutral-100 rounded-md z-10">
+          <p className="text-neutral-600">Loading map...</p>
+        </div>
+      )}
+      <div 
+        ref={mapRef} 
+        className="h-full w-full rounded-lg" 
+        style={{ opacity: isLoaded ? 1 : 0 }}
+      />
+    </div>
   );
 }
