@@ -53,19 +53,21 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
       time: format(dateObj, timeFormat),
       windSpeed: windSpeed,
       alertState: item.alertState,
+      amberAlert: item.amberAlert,
+      redAlert: item.redAlert,
       windSpeedColor
     };
   });
 
-  // Use custom dot to render colored dots based on thresholds
+  // Use custom dot to render colored dots based on alert states
   const CustomizedDot = (props: any) => {
-    const { cx, cy, value } = props;
+    const { cx, cy, payload } = props;
     
-    // Determine dot color based on value compared to thresholds
+    // Determine dot color based on alert states from the data
     let dotColor = "hsl(var(--safe))";
-    if (value >= redThreshold) {
+    if (payload.redAlert) {
       dotColor = "hsl(var(--destructive))";
-    } else if (value >= amberThreshold) {
+    } else if (payload.amberAlert) {
       dotColor = "hsl(var(--warning))";
     }
     
@@ -112,7 +114,21 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
           tick={{ fontSize: 12 }}
         />
         <Tooltip 
-          formatter={(value: number) => [`${value.toFixed(1)} km/h`, "Wind Speed"]}
+          formatter={(value: number, name: string, props: any) => {
+            // Return the wind speed value
+            if (name === "windSpeed") {
+              const { payload } = props;
+              // Add alert state info if present
+              let alertText = "";
+              if (payload.redAlert) {
+                alertText = " (Red Alert)";
+              } else if (payload.amberAlert) {
+                alertText = " (Amber Alert)";
+              }
+              return [`${value.toFixed(1)} km/h${alertText}`, "Wind Speed"];
+            }
+            return [value, name];
+          }}
           labelFormatter={(label, payload) => {
             if (payload && payload.length > 0 && payload[0].payload.date) {
               const date = payload[0].payload.date;
