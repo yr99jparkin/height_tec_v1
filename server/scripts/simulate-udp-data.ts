@@ -6,24 +6,47 @@ const client = dgram.createSocket("udp4");
 const devices = [
   {
     deviceId: "HT-ANEM-002",
-    location: { lat: -33.8688, lng: 151.2093 } // Sydney
+    location: { lat: -33.8688, lng: 151.2093 }, // Sydney
+    currentSpeed: 15 // Initial speed
   },
   {
     deviceId: "HT-ANEM-001",
-    location: { lat: 53.8013, lng: -1.5491 } // Leeds
+    location: { lat: 53.8013, lng: -1.5491 }, // Leeds
+    currentSpeed: 12 // Initial speed
   },
   {
     deviceId: "HT-ANEM-004",
-    location: { lat: -28.5414, lng: 153.5478 } // Bruns
+    location: { lat: -28.5414, lng: 153.5478 }, // Bruns
+    currentSpeed: 18 // Initial speed
   }
 ];
 
+// Generate next wind speed value with smoother transitions
+function getNextWindSpeed(currentSpeed: number): number {
+  // Small random change (-1 to 1)
+  const smallChange = (Math.random() * 2 - 1) * 0.5;
+  
+  // Occasional larger change (10% chance)
+  const largeChange = Math.random() < 0.1 ? (Math.random() * 10 - 5) : 0;
+  
+  // Combine changes and ensure within bounds
+  let newSpeed = currentSpeed + smallChange + largeChange;
+  
+  // Keep within reasonable bounds (0-35 km/h)
+  newSpeed = Math.max(0, Math.min(35, newSpeed));
+  
+  return newSpeed;
+}
+
 function sendWindData() {
   devices.forEach(device => {
+    // Update the device's wind speed
+    device.currentSpeed = getNextWindSpeed(device.currentSpeed);
+
     const data = {
       deviceId: device.deviceId,
       timestamp: new Date().toISOString(),
-      windSpeed: Math.random() * 35, // Random speed between 0-35 km/h
+      windSpeed: device.currentSpeed,
       gps: `${device.location.lat},${device.location.lng}`
     };
 
