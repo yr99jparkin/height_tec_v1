@@ -60,6 +60,6 @@ export interface AddDeviceRequest {
 }
 
 export interface UpdateThresholdsRequest {
-  avgWindSpeedThreshold: number;
-  maxWindSpeedThreshold: number;
+  amberThreshold: number;
+  redThreshold: number;
 }

@@ -306,16 +306,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const schema = z.object({
-        avgWindSpeedThreshold: z.number().min(0),
-        maxWindSpeedThreshold: z.number().min(0)
+        amberThreshold: z.number().min(0),
+        redThreshold: z.number().min(0)
       });
       
       const data = schema.parse(req.body) as UpdateThresholdsRequest;
       
-      // Ensure max threshold is greater than or equal to avg threshold
-      if (data.maxWindSpeedThreshold < data.avgWindSpeedThreshold) {
+      // Ensure red threshold is greater than or equal to amber threshold
+      if (data.redThreshold < data.amberThreshold) {
         return res.status(400).json({ 
-          message: "Maximum threshold must be greater than or equal to average threshold" 
+          message: "Red threshold must be greater than or equal to amber threshold" 
         });
       }
       

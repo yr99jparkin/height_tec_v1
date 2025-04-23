@@ -24,8 +24,8 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [timeRange, setTimeRange] = useState<string>("24h");
-  const [avgThreshold, setAvgThreshold] = useState<number>(20);
-  const [maxThreshold, setMaxThreshold] = useState<number>(30);
+  const [amberThreshold, setAmberThreshold] = useState<number>(20);
+  const [redThreshold, setRedThreshold] = useState<number>(30);
   const [removeModalOpen, setRemoveModalOpen] = useState(false);
   const [exportRange, setExportRange] = useState<string>("24h");
   const [customStartDate, setCustomStartDate] = useState<string>(
@@ -64,11 +64,22 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
   // Update thresholds when data is loaded
   useEffect(() => {
     if (thresholds && typeof thresholds === 'object') {
-      if ('avgWindSpeedThreshold' in thresholds && typeof thresholds.avgWindSpeedThreshold === 'number') {
-        setAvgThreshold(thresholds.avgWindSpeedThreshold);
+      // Check for new threshold names first
+      if ('amberThreshold' in thresholds && typeof thresholds.amberThreshold === 'number') {
+        setAmberThreshold(thresholds.amberThreshold);
+      } 
+      // Fallback for backwards compatibility with old schema
+      else if ('avgWindSpeedThreshold' in thresholds && typeof thresholds.avgWindSpeedThreshold === 'number') {
+        setAmberThreshold(thresholds.avgWindSpeedThreshold);
       }
-      if ('maxWindSpeedThreshold' in thresholds && typeof thresholds.maxWindSpeedThreshold === 'number') {
-        setMaxThreshold(thresholds.maxWindSpeedThreshold);
+      
+      // Check for new threshold names first
+      if ('redThreshold' in thresholds && typeof thresholds.redThreshold === 'number') {
+        setRedThreshold(thresholds.redThreshold);
+      }
+      // Fallback for backwards compatibility with old schema
+      else if ('maxWindSpeedThreshold' in thresholds && typeof thresholds.maxWindSpeedThreshold === 'number') {
+        setRedThreshold(thresholds.maxWindSpeedThreshold);
       }
     }
   }, [thresholds]);
@@ -103,8 +114,8 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
     mutationFn: async () => {
       if (!deviceId) return;
       await apiRequest("PATCH", `/api/thresholds/${deviceId}`, {
-        avgWindSpeedThreshold: avgThreshold,
-        maxWindSpeedThreshold: maxThreshold,
+        amberThreshold: amberThreshold,
+        redThreshold: redThreshold,
       });
     },
     onSuccess: () => {
@@ -155,11 +166,16 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
     window.open(downloadUrl, '_blank');
   };
 
-  // Helper function to determine alert status
-  const getAlertClass = (value: number, threshold: number) => {
-    if (value > threshold) return "text-destructive";
-    if (value > threshold * 0.75) return "text-[hsl(var(--warning))]";
-    return "text-[hsl(var(--safe))]";
+  // Helper function to determine alert status with amber and red thresholds
+  const getAlertClass = (value: number, threshold: 'amber' | 'red') => {
+    if (threshold === 'red') {
+      if (value > redThreshold) return "text-destructive";
+      if (value > amberThreshold) return "text-[hsl(var(--warning))]";
+      return "text-[hsl(var(--safe))]";
+    } else { // amber threshold
+      if (value > amberThreshold) return "text-[hsl(var(--warning))]";
+      return "text-[hsl(var(--safe))]";
+    }
   };
 
   return (
@@ -198,21 +214,20 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                 <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
                   <p className="text-sm uppercase font-medium text-neutral-500">Current Wind Speed</p>
                   <div className="flex items-baseline mt-2">
-                    <p className={getAlertClass((windStats as any).currentWindSpeed || 0, maxThreshold) + " text-3xl font-mono font-medium"}>
+                    <p className={getAlertClass((windStats as any).currentWindSpeed || 0, 'red') + " text-3xl font-mono font-medium"}>
                       {(windStats as any).currentWindSpeed?.toFixed(1) || "0.0"}
                     </p>
-                    <p className={getAlertClass((windStats as any).windSpeed || 0, maxThreshold) + " ml-1"}>km/h</p>
+                    <p className={getAlertClass((windStats as any).currentWindSpeed || 0, 'red') + " ml-1"}>km/h</p>
                   </div>
                   <div className="mt-3">
                     <div className="h-1 bg-neutral-200 rounded-full">
                       <div 
-                        className={`h-1 ${getAlertClass((windStats as any).windSpeed || 0, maxThreshold).replace('text-', 'bg-')} rounded-full`} 
-                        style={{ width: `${Math.min(100, (((windStats as any).windSpeed || 0) / 40) * 100)}%` }}
+                        className={`h-1 ${getAlertClass((windStats as any).currentWindSpeed || 0, 'red').replace('text-', 'bg-')} rounded-full`} 
+                        style={{ width: `${Math.min(100, (((windStats as any).currentWindSpeed || 0) / 40) * 100)}%` }}
                       ></div>
                     </div>
                     <div className="flex justify-between text-xs mt-1">
                       <span>0</span>
-                      <span>Threshold: {maxThreshold} km/h</span>
                       <span>40</span>
                     </div>
                   </div>
@@ -221,21 +236,20 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                 <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
                   <p className="text-sm uppercase font-medium text-neutral-500">Avg. Wind Speed (10m)</p>
                   <div className="flex items-baseline mt-2">
-                    <p className={getAlertClass(Number((windStats as any).avgWindSpeed) || 0, avgThreshold) + " text-3xl font-mono font-medium"}>
+                    <p className={getAlertClass(Number((windStats as any).avgWindSpeed) || 0, 'red') + " text-3xl font-mono font-medium"}>
                       {(Number((windStats as any).avgWindSpeed) || 0).toFixed(1)}
                     </p>
-                    <p className={getAlertClass((windStats as any).avgWindSpeed || 0, avgThreshold) + " ml-1"}>km/h</p>
+                    <p className={getAlertClass((windStats as any).avgWindSpeed || 0, 'red') + " ml-1"}>km/h</p>
                   </div>
                   <div className="mt-3">
                     <div className="h-1 bg-neutral-200 rounded-full">
                       <div 
-                        className={`h-1 ${getAlertClass((windStats as any).avgWindSpeed || 0, avgThreshold).replace('text-', 'bg-')} rounded-full`} 
+                        className={`h-1 ${getAlertClass((windStats as any).avgWindSpeed || 0, 'red').replace('text-', 'bg-')} rounded-full`} 
                         style={{ width: `${Math.min(100, (((windStats as any).avgWindSpeed || 0) / 40) * 100)}%` }}
                       ></div>
                     </div>
                     <div className="flex justify-between text-xs mt-1">
                       <span>0</span>
-                      <span>Threshold: {avgThreshold} km/h</span>
                       <span>40</span>
                     </div>
                   </div>
@@ -244,21 +258,20 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                 <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
                   <p className="text-sm uppercase font-medium text-neutral-500">Max Wind Speed (10m)</p>
                   <div className="flex items-baseline mt-2">
-                    <p className={getAlertClass((windStats as any).maxWindSpeed || 0, maxThreshold) + " text-3xl font-mono font-medium"}>
+                    <p className={getAlertClass((windStats as any).maxWindSpeed || 0, 'red') + " text-3xl font-mono font-medium"}>
                       {(windStats as any).maxWindSpeed?.toFixed(1) || "0.0"}
                     </p>
-                    <p className={getAlertClass((windStats as any).maxWindSpeed || 0, maxThreshold) + " ml-1"}>km/h</p>
+                    <p className={getAlertClass((windStats as any).maxWindSpeed || 0, 'red') + " ml-1"}>km/h</p>
                   </div>
                   <div className="mt-3">
                     <div className="h-1 bg-neutral-200 rounded-full">
                       <div 
-                        className={`h-1 ${getAlertClass((windStats as any).maxWindSpeed || 0, maxThreshold).replace('text-', 'bg-')} rounded-full`} 
+                        className={`h-1 ${getAlertClass((windStats as any).maxWindSpeed || 0, 'red').replace('text-', 'bg-')} rounded-full`} 
                         style={{ width: `${Math.min(100, (((windStats as any).maxWindSpeed || 0) / 40) * 100)}%` }}
                       ></div>
                     </div>
                     <div className="flex justify-between text-xs mt-1">
                       <span>0</span>
-                      <span>Threshold: {maxThreshold} km/h</span>
                       <span>40</span>
                     </div>
                   </div>
@@ -345,35 +358,35 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <div className="flex justify-between mb-2">
-                      <p className="text-sm font-medium">Average Wind Speed Threshold</p>
-                      <p className="font-mono">{avgThreshold} km/h</p>
+                      <p className="text-sm font-medium">Amber Alert Threshold</p>
+                      <p className="font-mono text-[hsl(var(--warning))]">{amberThreshold} km/h</p>
                     </div>
                     <Slider 
-                      value={[avgThreshold]} 
+                      value={[amberThreshold]} 
                       min={5} 
                       max={40} 
                       step={1} 
-                      onValueChange={(values) => setAvgThreshold(values[0])} 
+                      onValueChange={(values) => setAmberThreshold(values[0])} 
                     />
                     <p className="text-xs text-neutral-500 mt-2">
-                      Alerts will trigger when the 10-minute average exceeds this value
+                      Amber alert when wind speed exceeds this value
                     </p>
                   </div>
 
                   <div>
                     <div className="flex justify-between mb-2">
-                      <p className="text-sm font-medium">Maximum Wind Speed Threshold</p>
-                      <p className="font-mono">{maxThreshold} km/h</p>
+                      <p className="text-sm font-medium">Red Alert Threshold</p>
+                      <p className="font-mono text-destructive">{redThreshold} km/h</p>
                     </div>
                     <Slider 
-                      value={[maxThreshold]} 
+                      value={[redThreshold]} 
                       min={10} 
                       max={50} 
                       step={1} 
-                      onValueChange={(values) => setMaxThreshold(values[0])} 
+                      onValueChange={(values) => setRedThreshold(values[0])} 
                     />
                     <p className="text-xs text-neutral-500 mt-2">
-                      Alerts will trigger when any gust exceeds this value
+                      Red alert when wind speed exceeds this value
                     </p>
                   </div>
                 </div>
