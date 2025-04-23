@@ -271,6 +271,7 @@ export class DatabaseStorage implements IStorage {
         d.id,
         d.device_id as "deviceId",
         d.device_name as "deviceName",
+        d.project,
         d.location,
         d.latitude,
         d.longitude,
