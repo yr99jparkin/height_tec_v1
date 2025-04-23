@@ -164,14 +164,6 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
           name="Wind Speed"
           isAnimationActive={false}
         />
-
-        <Legend
-          payload={[
-            { value: 'Normal', type: 'square', color: 'hsl(var(--safe))' },
-            { value: `Amber Alert (≥ ${amberThreshold} km/h)`, type: 'square', color: 'hsl(var(--warning))' },
-            { value: `Red Alert (≥ ${redThreshold} km/h)`, type: 'square', color: 'hsl(var(--destructive))' }
-          ]}
-        />
       </ComposedChart>
     </ResponsiveContainer>
   );
