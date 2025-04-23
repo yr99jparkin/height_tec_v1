@@ -1,8 +1,6 @@
-import { useEffect, useRef } from "react";
 import { WindData } from "@shared/schema";
 import { format, parseISO } from "date-fns";
 import {
-  LineChart,
   Line,
   XAxis,
   YAxis,
@@ -11,7 +9,6 @@ import {
   Legend,
   ResponsiveContainer,
   ReferenceLine,
-  Area,
   ComposedChart
 } from "recharts";
 
@@ -62,36 +59,34 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
 
   // Use custom dot to render colored dots based on thresholds
   const CustomizedDot = (props: any) => {
-    const { cx, cy, value, windSpeedColor } = props;
+    const { cx, cy, value } = props;
+    
+    // Determine dot color based on value compared to thresholds
+    let dotColor = "hsl(var(--safe))";
+    if (value >= redThreshold) {
+      dotColor = "hsl(var(--destructive))";
+    } else if (value >= amberThreshold) {
+      dotColor = "hsl(var(--warning))";
+    }
+    
     return (
       <circle 
         cx={cx} 
         cy={cy} 
-        r={3} 
-        fill={windSpeedColor || "#0070f3"} 
+        r={4} 
+        fill={dotColor} 
+        stroke="#fff"
+        strokeWidth={1}
       />
     );
   };
 
-  // For a different approach with shaded areas that align with thresholds
-  const chartDataWithAreas = chartData.map(point => {
-    const windSpeed = point.windSpeed;
-    
-    return {
-      ...point,
-      // Create a zero baseline so we can fill from 0 to each point's value
-      baseline: 0,
-      // To help the coloring system, we add separate data points for each threshold zone
-      windSpeedNormal: windSpeed <= amberThreshold ? windSpeed : undefined,
-      windSpeedAmber: windSpeed > amberThreshold && windSpeed <= redThreshold ? windSpeed : undefined,
-      windSpeedRed: windSpeed > redThreshold ? windSpeed : undefined,
-    };
-  });
+  // No need for additional data processing
 
   return (
     <ResponsiveContainer width="100%" height="100%">
       <ComposedChart
-        data={chartDataWithAreas}
+        data={chartData}
         margin={{
           top: 5,
           right: 30,
@@ -156,34 +151,7 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
           }} 
         />
 
-        {/* Colored areas for different threshold zones */}
-        <Area
-          type="monotone"
-          dataKey="windSpeedNormal"
-          stroke="none"
-          fill="rgba(34, 197, 94, 0.2)"
-          isAnimationActive={false}
-          fillOpacity={0.6}
-          activeDot={false}
-        />
-        <Area
-          type="monotone"
-          dataKey="windSpeedAmber"
-          stroke="none"
-          fill="rgba(245, 158, 11, 0.2)"
-          isAnimationActive={false}
-          fillOpacity={0.6}
-          activeDot={false}
-        />
-        <Area
-          type="monotone"
-          dataKey="windSpeedRed"
-          stroke="none"
-          fill="rgba(239, 68, 68, 0.2)"
-          isAnimationActive={false}
-          fillOpacity={0.6}
-          activeDot={false}
-        />
+        {/* No shaded areas as per user request */}
         
         {/* Single continuous line */}
         <Line
