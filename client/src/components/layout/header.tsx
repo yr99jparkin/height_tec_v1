@@ -28,7 +28,7 @@ export function Header() {
       <div className="px-4 py-3 flex justify-between items-center">
         <div className="flex items-center">
           <h1 className="font-heading text-2xl font-bold text-primary italic flex items-center gap-2">
-            <img src="/logo.png" alt="Height-tec logo" className="w-16 h-16" />
+            <img src="/logo2.png" alt="Height-tec logo" className="w-16 h-16" />
             Height-tec
           </h1>
         </div>
