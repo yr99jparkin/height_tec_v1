@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { AddDeviceRequest } from "@shared/types";
@@ -11,6 +11,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PlusCircle } from "lucide-react";
 
 interface AddDeviceModalProps {
   open: boolean;
@@ -19,23 +21,50 @@ interface AddDeviceModalProps {
 
 const addDeviceSchema = z.object({
   deviceId: z.string().min(1, "Device ID is required"),
-  deviceName: z.string().min(1, "Device name is required")
+  deviceName: z.string().min(1, "Device name is required"),
+  project: z.string().optional(),
+  isNewProject: z.boolean().default(false),
+  newProjectName: z.string().optional()
 });
 
 export function AddDeviceModal({ open, onOpenChange }: AddDeviceModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isNewProject, setIsNewProject] = useState(false);
+  
+  // Fetch existing projects for this user
+  const { data: projects = [] } = useQuery<string[]>({
+    queryKey: ["/api/projects"],
+    enabled: open, // Only fetch when modal is open
+  });
   
   const form = useForm<z.infer<typeof addDeviceSchema>>({
     resolver: zodResolver(addDeviceSchema),
     defaultValues: {
       deviceId: "",
-      deviceName: ""
+      deviceName: "",
+      project: "",
+      isNewProject: false,
+      newProjectName: ""
     }
   });
 
+  // Watch for isNewProject changes to sync with the state
+  const formIsNewProject = form.watch("isNewProject");
+  useEffect(() => {
+    setIsNewProject(formIsNewProject);
+  }, [formIsNewProject]);
+
   const addDeviceMutation = useMutation({
-    mutationFn: async (data: AddDeviceRequest) => {
+    mutationFn: async (formData: z.infer<typeof addDeviceSchema>) => {
+      const data: AddDeviceRequest = {
+        deviceId: formData.deviceId,
+        deviceName: formData.deviceName,
+        project: formData.isNewProject && formData.newProjectName 
+          ? formData.newProjectName 
+          : formData.project
+      };
+      
       const response = await apiRequest("POST", "/api/devices", data);
       return response.json();
     },
@@ -45,6 +74,7 @@ export function AddDeviceModal({ open, onOpenChange }: AddDeviceModalProps) {
         description: "The device has been added to your account",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/devices"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       form.reset();
       onOpenChange(false);
     },
@@ -109,6 +139,81 @@ export function AddDeviceModal({ open, onOpenChange }: AddDeviceModalProps) {
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="isNewProject"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center space-x-2 mt-3">
+                    <FormControl>
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 text-primary"
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                      />
+                    </FormControl>
+                    <FormLabel className="text-sm font-normal cursor-pointer">
+                      Create a new project
+                    </FormLabel>
+                  </div>
+                </FormItem>
+              )}
+            />
+
+            {!isNewProject ? (
+              <FormField
+                control={form.control}
+                name="project"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Device Project</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select an existing project (optional)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {projects.map((project) => (
+                          <SelectItem key={project} value={project}>
+                            {project}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Group devices by project for easier management.
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : (
+              <FormField
+                control={form.control}
+                name="newProjectName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New Project Name</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter a name for the new project" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Create a new project to group your devices.
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             
             <DialogFooter className="mt-6">
               <Button 

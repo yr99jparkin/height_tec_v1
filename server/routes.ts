@@ -171,7 +171,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const schema = z.object({
         deviceId: z.string().min(1),
-        deviceName: z.string().min(1)
+        deviceName: z.string().min(1),
+        project: z.string().optional()
       });
       
       const data = schema.parse(req.body) as AddDeviceRequest;
@@ -198,6 +199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deviceId: data.deviceId,
         deviceName: data.deviceName,
         userId: req.user.id,
+        project: data.project,
         active: true
       });
       
@@ -342,6 +344,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid input", errors: error.errors });
       }
       res.status(500).json({ message: "Error updating thresholds" });
+    }
+  });
+
+  // Get all unique projects for the current user
+  app.get("/api/projects", isAuthenticated, async (req, res) => {
+    try {
+      const userDevices = await storage.getDevicesByUserId(req.user.id);
+      
+      // Extract unique project names from devices
+      const projects = [...new Set(
+        userDevices
+          .filter(device => device.project) // Filter out null/undefined projects
+          .map(device => device.project)
+      )];
+      
+      res.json(projects);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching projects" });
     }
   });
 

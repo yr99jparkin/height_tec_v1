@@ -2,7 +2,7 @@ import { DeviceWithLatestData } from "@shared/types";
 import { Card } from "./card";
 import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
-import { MapPin, Clock } from "lucide-react";
+import { MapPin, Clock, Folder } from "lucide-react";
 
 interface DeviceCardProps {
   device: DeviceWithLatestData;
@@ -66,9 +66,17 @@ export function DeviceCard({ device, onDeviceClick }: DeviceCardProps) {
             </p>
           </div>
         </div>
-        <div className="mt-4 flex items-center text-sm text-neutral-500">
-          <Clock size={14} className="mr-1" />
-          <span>{getLastUpdatedText()}</span>
+        <div className="mt-4 flex items-center justify-between text-sm text-neutral-500">
+          <div className="flex items-center">
+            <Clock size={14} className="mr-1" />
+            <span>{getLastUpdatedText()}</span>
+          </div>
+          {device.project && (
+            <div className="flex items-center">
+              <Folder size={14} className="mr-1" />
+              <span className="text-neutral-600 font-medium">{device.project}</span>
+            </div>
+          )}
         </div>
       </div>
     </Card>

@@ -38,7 +38,8 @@ export default function DevicesPage() {
     (device) =>
       device.deviceName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       device.deviceId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (device.location && device.location.toLowerCase().includes(searchQuery.toLowerCase()))
+      (device.location && device.location.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (device.project && device.project.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const handleDeviceClick = (deviceId: string) => {
