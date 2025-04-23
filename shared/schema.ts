@@ -60,8 +60,8 @@ export const deviceStockRelations = relations(deviceStock, ({ one }) => ({
 export const windAlertThresholds = pgTable("wind_alert_thresholds", {
   id: serial("id").primaryKey(),
   deviceId: text("device_id").notNull().unique().references(() => devices.deviceId),
-  avgWindSpeedThreshold: doublePrecision("avg_wind_speed_threshold").notNull().default(20.0),
-  maxWindSpeedThreshold: doublePrecision("max_wind_speed_threshold").notNull().default(30.0),
+  amberThreshold: doublePrecision("amber_threshold").notNull().default(20.0),
+  redThreshold: doublePrecision("red_threshold").notNull().default(30.0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -118,8 +118,8 @@ export const insertDeviceStockSchema = createInsertSchema(deviceStock).pick({
 
 export const insertWindAlertThresholdsSchema = createInsertSchema(windAlertThresholds).pick({
   deviceId: true,
-  avgWindSpeedThreshold: true,
-  maxWindSpeedThreshold: true,
+  amberThreshold: true,
+  redThreshold: true,
 });
 
 export const insertWindDataSchema = createInsertSchema(windData).pick({
