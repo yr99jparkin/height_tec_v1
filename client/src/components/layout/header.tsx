@@ -27,7 +27,7 @@ export function Header() {
     <header className="bg-white border-b border-neutral-300 shadow-sm">
       <div className="px-4 py-3 flex justify-between items-center">
         <div className="flex items-center">
-          <h1 className="font-heading text-2xl font-bold text-primary">Height Tec</h1>
+          <h1 className="font-heading text-2xl font-bold text-primary">Height-tec</h1>
         </div>
         <div className="flex items-center">
           <DropdownMenu open={userMenuOpen} onOpenChange={setUserMenuOpen}>

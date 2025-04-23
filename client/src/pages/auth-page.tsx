@@ -100,7 +100,7 @@ export default function AuthPage() {
       <div className="min-h-screen flex items-center justify-center p-4 bg-neutral-100">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold text-primary">Height Tec</CardTitle>
+            <CardTitle className="text-3xl font-bold text-primary">Height-tec</CardTitle>
             <CardDescription>Wind Monitoring Platform</CardDescription>
           </CardHeader>
           <CardContent>
@@ -170,7 +170,7 @@ export default function AuthPage() {
       <div className="w-full md:w-1/2 flex items-center justify-center p-4 bg-white">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-primary font-heading">Height Tec</h1>
+            <h1 className="text-3xl font-bold text-primary font-heading">Height-tec</h1>
             <p className="text-neutral-500 mt-2">Wind Monitoring Platform</p>
           </div>
           
