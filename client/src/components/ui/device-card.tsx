@@ -10,14 +10,29 @@ interface DeviceCardProps {
 }
 
 export function DeviceCard({ device, onDeviceClick }: DeviceCardProps) {
-  // Determine alert status based on wind speeds
+  // Determine alert status based on alert states and wind speeds
   const getAlertState = () => {
-    if (device.alertState || device.maxWindSpeed > 30) {
+    // First check the actual alert states from the DB
+    if (device.redAlert) {
+      return "danger";
+    }
+    if (device.amberAlert) {
+      return "warning";
+    }
+    
+    // Fallback to the legacy alert state
+    if (device.alertState) {
+      return "warning";
+    }
+    
+    // Otherwise use wind speeds as a last resort
+    if (device.maxWindSpeed > 30) {
       return "danger";
     }
     if (device.avgWindSpeed > 18 || device.maxWindSpeed > 23) {
       return "warning";
     }
+    
     return "safe";
   };
   
