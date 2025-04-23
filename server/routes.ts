@@ -198,8 +198,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create default thresholds
       await storage.createThresholds({
         deviceId: data.deviceId,
-        avgWindSpeedThreshold: 20.0,
-        maxWindSpeedThreshold: 30.0
+        amberThreshold: 20.0,
+        redThreshold: 30.0
       });
       
       // Update device stock status

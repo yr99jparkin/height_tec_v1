@@ -274,16 +274,16 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                 <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
                   <p className="text-sm uppercase font-medium text-neutral-500">Current Wind Speed</p>
                   <div className="flex items-baseline mt-2">
-                    <p className={getAlertClass((windStats as any).currentWindSpeed || 0, 'red') + " text-3xl font-mono font-medium"}>
-                      {(windStats as any).currentWindSpeed?.toFixed(1) || "0.0"}
+                    <p className={getAlertClass(Number((windStats as any).currentWindSpeed) || 0, 'red') + " text-3xl font-mono font-medium"}>
+                      {(Number((windStats as any).currentWindSpeed) || 0).toFixed(1)}
                     </p>
-                    <p className={getAlertClass((windStats as any).currentWindSpeed || 0, 'red') + " ml-1"}>km/h</p>
+                    <p className={getAlertClass(Number((windStats as any).currentWindSpeed) || 0, 'red') + " ml-1"}>km/h</p>
                   </div>
                   <div className="mt-3">
                     <div className="h-1 bg-neutral-200 rounded-full">
                       <div 
-                        className={`h-1 ${getAlertClass((windStats as any).currentWindSpeed || 0, 'red').replace('text-', 'bg-')} rounded-full`} 
-                        style={{ width: `${Math.min(100, (((windStats as any).currentWindSpeed || 0) / 40) * 100)}%` }}
+                        className={`h-1 ${getAlertClass(Number((windStats as any).currentWindSpeed) || 0, 'red').replace('text-', 'bg-')} rounded-full`} 
+                        style={{ width: `${Math.min(100, ((Number((windStats as any).currentWindSpeed) || 0) / 40) * 100)}%` }}
                       ></div>
                     </div>
                     <div className="flex justify-between text-xs mt-1">
@@ -299,13 +299,13 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                     <p className={getAlertClass(Number((windStats as any).avgWindSpeed) || 0, 'red') + " text-3xl font-mono font-medium"}>
                       {(Number((windStats as any).avgWindSpeed) || 0).toFixed(1)}
                     </p>
-                    <p className={getAlertClass((windStats as any).avgWindSpeed || 0, 'red') + " ml-1"}>km/h</p>
+                    <p className={getAlertClass(Number((windStats as any).avgWindSpeed) || 0, 'red') + " ml-1"}>km/h</p>
                   </div>
                   <div className="mt-3">
                     <div className="h-1 bg-neutral-200 rounded-full">
                       <div 
-                        className={`h-1 ${getAlertClass((windStats as any).avgWindSpeed || 0, 'red').replace('text-', 'bg-')} rounded-full`} 
-                        style={{ width: `${Math.min(100, (((windStats as any).avgWindSpeed || 0) / 40) * 100)}%` }}
+                        className={`h-1 ${getAlertClass(Number((windStats as any).avgWindSpeed) || 0, 'red').replace('text-', 'bg-')} rounded-full`} 
+                        style={{ width: `${Math.min(100, ((Number((windStats as any).avgWindSpeed) || 0) / 40) * 100)}%` }}
                       ></div>
                     </div>
                     <div className="flex justify-between text-xs mt-1">
@@ -318,16 +318,16 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                 <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
                   <p className="text-sm uppercase font-medium text-neutral-500">Max Wind Speed (10m)</p>
                   <div className="flex items-baseline mt-2">
-                    <p className={getAlertClass((windStats as any).maxWindSpeed || 0, 'red') + " text-3xl font-mono font-medium"}>
-                      {(windStats as any).maxWindSpeed?.toFixed(1) || "0.0"}
+                    <p className={getAlertClass(Number((windStats as any).maxWindSpeed) || 0, 'red') + " text-3xl font-mono font-medium"}>
+                      {(Number((windStats as any).maxWindSpeed) || 0).toFixed(1)}
                     </p>
-                    <p className={getAlertClass((windStats as any).maxWindSpeed || 0, 'red') + " ml-1"}>km/h</p>
+                    <p className={getAlertClass(Number((windStats as any).maxWindSpeed) || 0, 'red') + " ml-1"}>km/h</p>
                   </div>
                   <div className="mt-3">
                     <div className="h-1 bg-neutral-200 rounded-full">
                       <div 
-                        className={`h-1 ${getAlertClass((windStats as any).maxWindSpeed || 0, 'red').replace('text-', 'bg-')} rounded-full`} 
-                        style={{ width: `${Math.min(100, (((windStats as any).maxWindSpeed || 0) / 40) * 100)}%` }}
+                        className={`h-1 ${getAlertClass(Number((windStats as any).maxWindSpeed) || 0, 'red').replace('text-', 'bg-')} rounded-full`} 
+                        style={{ width: `${Math.min(100, ((Number((windStats as any).maxWindSpeed) || 0) / 40) * 100)}%` }}
                       ></div>
                     </div>
                     <div className="flex justify-between text-xs mt-1">
