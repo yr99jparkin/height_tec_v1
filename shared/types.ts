@@ -41,7 +41,7 @@ export interface WindStatsResponse {
   timestamp: string;
 }
 
-export type TimeRangeOption = "1h" | "3h" | "24h" | "7d" | "30d" | "custom";
+export type TimeRangeOption = "15m" | "1h" | "3h" | "24h" | "7d" | "30d" | "custom";
 
 export interface ExportDataParams {
   deviceId: string;
