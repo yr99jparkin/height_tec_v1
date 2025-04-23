@@ -34,11 +34,26 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
       windSpeedColor = "hsl(var(--warning))";
     }
     
+    // Get date object for the item
+    const dateObj = typeof item.timestamp === 'string' ? parseISO(item.timestamp) : item.timestamp;
+    
+    // Format time display based on range
+    let timeFormat = "HH:mm"; // Default for 1h
+    if (timeRange === "3h") {
+      timeFormat = "HH:mm";
+    } else if (timeRange === "24h") {
+      timeFormat = "HH:mm";
+    } else if (timeRange === "7d") {
+      timeFormat = "dd/MM";
+    } else if (timeRange === "30d") {
+      timeFormat = "dd/MM";
+    }
+    
     return {
-      time: format(
-        typeof item.timestamp === 'string' ? parseISO(item.timestamp) : item.timestamp, 
-        timeRange === "1h" ? "HH:mm" : timeRange === "24h" ? "HH:mm" : "dd/MM"
-      ),
+      // Store original date for tooltips
+      date: dateObj,
+      // Format for display
+      time: format(dateObj, timeFormat),
       windSpeed: windSpeed,
       alertState: item.alertState,
       windSpeedColor
@@ -58,23 +73,18 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
     );
   };
 
-  // Prepare data for chart with colored areas
+  // For a different approach with shaded areas that align with thresholds
   const chartDataWithAreas = chartData.map(point => {
     const windSpeed = point.windSpeed;
     
-    // Create separate values for different threshold zones for area fill
     return {
       ...point,
-      // For red area: Only fill when speed is above red threshold
-      redArea: windSpeed >= redThreshold ? windSpeed - redThreshold : 0,
-      
-      // For amber area: Only fill between amber and red thresholds
-      amberArea: windSpeed >= amberThreshold 
-        ? (windSpeed >= redThreshold ? redThreshold - amberThreshold : windSpeed - amberThreshold) 
-        : 0,
-      
-      // For normal area: Always fill up to the amber threshold or actual value if lower
-      normalArea: windSpeed < amberThreshold ? windSpeed : amberThreshold,
+      // Create a zero baseline so we can fill from 0 to each point's value
+      baseline: 0,
+      // To help the coloring system, we add separate data points for each threshold zone
+      windSpeedNormal: windSpeed <= amberThreshold ? windSpeed : undefined,
+      windSpeedAmber: windSpeed > amberThreshold && windSpeed <= redThreshold ? windSpeed : undefined,
+      windSpeedRed: windSpeed > redThreshold ? windSpeed : undefined,
     };
   });
 
@@ -108,7 +118,16 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
         />
         <Tooltip 
           formatter={(value: number) => [`${value.toFixed(1)} km/h`, "Wind Speed"]}
-          labelFormatter={(label) => `Time: ${label}`}
+          labelFormatter={(label, payload) => {
+            if (payload && payload.length > 0 && payload[0].payload.date) {
+              const date = payload[0].payload.date;
+              if (timeRange === "7d" || timeRange === "30d") {
+                return `${format(date, "dd MMM yyyy")} ${format(date, "HH:mm")}`;
+              }
+              return `${format(date, "dd MMM yyyy")} ${label}`;
+            }
+            return `Time: ${label}`;
+          }}
         />
         
         {/* Threshold reference lines */}
@@ -140,18 +159,16 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
         {/* Colored areas for different threshold zones */}
         <Area
           type="monotone"
-          dataKey="redArea"
-          stackId="1"
+          dataKey="windSpeedNormal"
           stroke="none"
-          fill="rgba(239, 68, 68, 0.2)"
+          fill="rgba(34, 197, 94, 0.2)"
           isAnimationActive={false}
           fillOpacity={0.6}
           activeDot={false}
         />
         <Area
           type="monotone"
-          dataKey="amberArea"
-          stackId="1"
+          dataKey="windSpeedAmber"
           stroke="none"
           fill="rgba(245, 158, 11, 0.2)"
           isAnimationActive={false}
@@ -160,10 +177,9 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
         />
         <Area
           type="monotone"
-          dataKey="normalArea"
-          stackId="1"
+          dataKey="windSpeedRed"
           stroke="none"
-          fill="rgba(34, 197, 94, 0.2)"
+          fill="rgba(239, 68, 68, 0.2)"
           isAnimationActive={false}
           fillOpacity={0.6}
           activeDot={false}

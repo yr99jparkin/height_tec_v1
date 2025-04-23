@@ -70,6 +70,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         case "1h":
           startTime = new Date(now.getTime() - 60 * 60 * 1000);
           break;
+        case "3h":
+          startTime = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+          break;
         case "24h":
           startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
           break;

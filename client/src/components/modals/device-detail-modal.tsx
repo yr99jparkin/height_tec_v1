@@ -224,6 +224,13 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                       1H
                     </Button>
                     <Button 
+                      variant={timeRange === "3h" ? "default" : "outline"} 
+                      size="sm"
+                      onClick={() => setTimeRange("3h")}
+                    >
+                      3H
+                    </Button>
+                    <Button 
                       variant={timeRange === "24h" ? "default" : "outline"} 
                       size="sm"
                       onClick={() => setTimeRange("24h")}
