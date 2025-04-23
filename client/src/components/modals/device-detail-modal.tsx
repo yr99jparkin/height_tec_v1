@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -459,8 +459,10 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                     {device?.latitude && device?.longitude ? (
                       <>
                         <div style={{ height: "100%", borderRadius: "0.25rem", overflow: "hidden" }}>
-                          <GoogleMap 
-                            devices={[{
+                          {/* Use memoized device data to prevent unnecessary re-renders */}
+                          {useMemo(() => {
+                            // Only rebuild this component if device or windStats data changes
+                            const deviceData = [{
                               id: device.id,
                               deviceId: device.deviceId,
                               deviceName: device.deviceName,
@@ -472,8 +474,15 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                               avgWindSpeed: (windStats as any).avgWindSpeed || 0,
                               maxWindSpeed: (windStats as any).maxWindSpeed || 0,
                               alertState: (windStats as any).alertState || false
-                            } as unknown as DeviceWithLatestData]} 
-                          />
+                            } as unknown as DeviceWithLatestData];
+                            
+                            return (
+                              <GoogleMap devices={deviceData} />
+                            );
+                          }, [device?.id, device?.deviceId, device?.deviceName, device?.location, 
+                              device?.latitude, device?.longitude, device?.active, device?.lastSeen, 
+                              (windStats as any).avgWindSpeed, (windStats as any).maxWindSpeed, 
+                              (windStats as any).alertState])}
                         </div>
                       </>
                     ) : (
