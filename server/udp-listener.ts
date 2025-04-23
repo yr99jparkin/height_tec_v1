@@ -18,19 +18,6 @@ async function getLocationFromCoordinates(latitude: number, longitude: number): 
       return null;
     }
 
-    // Special handling for known coordinates (for now until we improve the lookup)
-    // Melbourne coordinates
-    if (latitude >= -38.0 && latitude <= -37.7 && 
-        longitude >= 144.8 && longitude <= 145.1) {
-      return "Melbourne";
-    }
-    
-    // Sydney coordinates
-    if (latitude >= -34.0 && latitude <= -33.7 && 
-        longitude >= 151.0 && longitude <= 151.4) {
-      return "Sydney";
-    }
-
     // Add region biasing for Australia to improve results
     const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&region=au&key=${apiKey}`;
     const response = await axios.get(url);
