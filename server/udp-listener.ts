@@ -166,10 +166,14 @@ export function setupUdpListener(httpServer: Server) {
         return;
       }
 
-      // Calculate if alert state based on thresholds
-      // Here we're just checking the current reading against max threshold
-      // In a real system, you might want to check average over past X minutes
-      const alertState = data.windSpeed > thresholds.maxWindSpeedThreshold;
+      // Calculate alert state based on thresholds
+      // Check if wind speed exceeds either amber or red threshold
+      // Try new threshold names first, fall back to legacy names if needed
+      const redThreshold = thresholds.redThreshold ?? thresholds.maxWindSpeedThreshold ?? 30;
+      const amberThreshold = thresholds.amberThreshold ?? thresholds.avgWindSpeedThreshold ?? 20;
+      
+      // Alert state is true if the wind speed exceeds the amber threshold
+      const alertState = data.windSpeed >= amberThreshold;
 
       // Prepare data with alert state
       const windDataWithAlert: WindDataWithAlert = {
