@@ -10,7 +10,9 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  ReferenceLine
+  ReferenceLine,
+  Area,
+  ComposedChart
 } from "recharts";
 
 interface WindChartProps {
@@ -56,10 +58,30 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
     );
   };
 
+  // Prepare data for chart with colored areas
+  const chartDataWithAreas = chartData.map(point => {
+    const windSpeed = point.windSpeed;
+    
+    // Create separate values for different threshold zones for area fill
+    return {
+      ...point,
+      // For red area: Only fill when speed is above red threshold
+      redArea: windSpeed >= redThreshold ? windSpeed - redThreshold : 0,
+      
+      // For amber area: Only fill between amber and red thresholds
+      amberArea: windSpeed >= amberThreshold 
+        ? (windSpeed >= redThreshold ? redThreshold - amberThreshold : windSpeed - amberThreshold) 
+        : 0,
+      
+      // For normal area: Always fill up to the amber threshold or actual value if lower
+      normalArea: windSpeed < amberThreshold ? windSpeed : amberThreshold,
+    };
+  });
+
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <LineChart
-        data={chartData}
+      <ComposedChart
+        data={chartDataWithAreas}
         margin={{
           top: 5,
           right: 30,
@@ -114,55 +136,59 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
             fontSize: 11  
           }} 
         />
+
+        {/* Colored areas for different threshold zones */}
+        <Area
+          type="monotone"
+          dataKey="redArea"
+          stackId="1"
+          stroke="none"
+          fill="rgba(239, 68, 68, 0.2)"
+          isAnimationActive={false}
+          fillOpacity={0.6}
+          activeDot={false}
+        />
+        <Area
+          type="monotone"
+          dataKey="amberArea"
+          stackId="1"
+          stroke="none"
+          fill="rgba(245, 158, 11, 0.2)"
+          isAnimationActive={false}
+          fillOpacity={0.6}
+          activeDot={false}
+        />
+        <Area
+          type="monotone"
+          dataKey="normalArea"
+          stackId="1"
+          stroke="none"
+          fill="rgba(34, 197, 94, 0.2)"
+          isAnimationActive={false}
+          fillOpacity={0.6}
+          activeDot={false}
+        />
         
+        {/* Single continuous line */}
         <Line
           type="monotone"
           dataKey="windSpeed"
+          stroke="#0070f3"
           strokeWidth={2}
           dot={<CustomizedDot />}
           activeDot={{ r: 6 }}
           name="Wind Speed"
-          stroke="none"
           isAnimationActive={false}
         />
-        
-        {/* Create segments with different colors based on thresholds */}
-        {['safe', 'amber', 'red'].map((segment) => {
-          let dataKey = "windSpeed";
-          let color, dataPoints;
-          
-          if (segment === 'red') {
-            color = "hsl(var(--destructive))";
-            dataPoints = chartData.map(point => point.windSpeed >= redThreshold ? point.windSpeed : null);
-          } else if (segment === 'amber') {
-            color = "hsl(var(--warning))";
-            dataPoints = chartData.map(point => point.windSpeed >= amberThreshold && point.windSpeed < redThreshold ? point.windSpeed : null);
-          } else {
-            color = "hsl(var(--safe))";
-            dataPoints = chartData.map(point => point.windSpeed < amberThreshold ? point.windSpeed : null);
-          }
-          
-          const segmentData = chartData.map((point, index) => ({
-            ...point,
-            [`windSpeed_${segment}`]: dataPoints[index]
-          }));
-          
-          return (
-            <Line
-              key={segment}
-              type="monotone"
-              data={segmentData}
-              dataKey={`windSpeed_${segment}`}
-              stroke={color}
-              strokeWidth={2}
-              dot={false}
-              activeDot={false}
-              connectNulls
-              isAnimationActive={false}
-            />
-          );
-        })}
-      </LineChart>
+
+        <Legend
+          payload={[
+            { value: 'Normal', type: 'square', color: 'hsl(var(--safe))' },
+            { value: `Amber Alert (≥ ${amberThreshold} km/h)`, type: 'square', color: 'hsl(var(--warning))' },
+            { value: `Red Alert (≥ ${redThreshold} km/h)`, type: 'square', color: 'hsl(var(--destructive))' }
+          ]}
+        />
+      </ComposedChart>
     </ResponsiveContainer>
   );
 }
