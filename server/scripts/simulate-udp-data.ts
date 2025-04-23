@@ -26,14 +26,14 @@ function getNextWindSpeed(currentSpeed: number): number {
   // Small random change (-1 to 1)
   const smallChange = (Math.random() * 2 - 1) * 0.5;
   
-  // Occasional larger change (10% chance)
-  const largeChange = Math.random() < 0.1 ? (Math.random() * 10 - 5) : 0;
+  // Occasional larger change (30% chance)
+  const largeChange = Math.random() < 0.3 ? (Math.random() * 10 - 5) : 0;
   
   // Combine changes and ensure within bounds
   let newSpeed = currentSpeed + smallChange + largeChange;
   
-  // Keep within reasonable bounds (0-35 km/h)
-  newSpeed = Math.max(0, Math.min(35, newSpeed));
+  // Keep within reasonable bounds (0-65 km/h)
+  newSpeed = Math.max(0, Math.min(65, newSpeed));
   
   return newSpeed;
 }
