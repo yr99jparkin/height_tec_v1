@@ -145,6 +145,28 @@ export function AddDeviceModal({ open, onOpenChange }: AddDeviceModalProps) {
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="isNewProject"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center space-x-2 mt-3">
+                    <FormControl>
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 text-primary"
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                      />
+                    </FormControl>
+                    <FormLabel className="text-sm font-normal cursor-pointer">
+                      Create a new project
+                    </FormLabel>
+                  </div>
+                </FormItem>
+              )}
+            />
+
             {!isNewProject ? (
               <FormField
                 control={form.control}
@@ -176,31 +198,7 @@ export function AddDeviceModal({ open, onOpenChange }: AddDeviceModalProps) {
                   </FormItem>
                 )}
               />
-            ) : null}
-
-            <FormField
-              control={form.control}
-              name="isNewProject"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center space-x-2 mt-3">
-                    <FormControl>
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 text-primary"
-                        checked={field.value}
-                        onChange={(e) => field.onChange(e.target.checked)}
-                      />
-                    </FormControl>
-                    <FormLabel className="text-sm font-normal cursor-pointer">
-                      Create a new project
-                    </FormLabel>
-                  </div>
-                </FormItem>
-              )}
-            />
-
-            {isNewProject ? (
+            ) : (
               <FormField
                 control={form.control}
                 name="newProjectName"
