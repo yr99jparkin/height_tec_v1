@@ -1,9 +1,9 @@
 /**
  * Test script to simulate device downtime by sending red alert data via UDP
- * Usage: node test-downtime.js [device-id] [start|stop]
+ * Usage: node test-downtime.cjs [device-id] [start|stop]
  */
 
-import dgram from 'dgram';
+const dgram = require('dgram');
 const client = dgram.createSocket('udp4');
 
 // Configuration
