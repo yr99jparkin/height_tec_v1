@@ -67,3 +67,37 @@ export interface UpdateThresholdsRequest {
   amberThreshold: number;
   redThreshold: number;
 }
+
+// ======= New Downtime Types =======
+
+export interface DowntimeStats {
+  total: number;        // Total downtime in seconds
+  hours: number;        // Downtime in hours (floating point)
+  formatted: string;    // Formatted string (e.g., "2d 4h 35m 12s")
+}
+
+export interface DeviceDowntimeStats extends DowntimeStats {
+  deviceId: string;
+  deviceName: string;
+}
+
+export interface ProjectDowntimeStats extends DowntimeStats {
+  project: string;
+  deviceCount: number;
+}
+
+export interface DowntimeResponse {
+  devices: DeviceDowntimeStats[];
+  projects: ProjectDowntimeStats[];
+  timeframe: {
+    start: string;
+    end: string;
+  };
+}
+
+export interface DowntimeParams {
+  startDate: string;
+  endDate: string;
+  deviceId?: string;
+  project?: string;
+}
