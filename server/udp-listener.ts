@@ -193,6 +193,11 @@ export function setupUdpListener(httpServer: Server) {
         redAlert
       };
 
+      // Check previous red alert state to detect transitions
+      const previousData = await storage.getLatestWindDataByDeviceId(data.deviceId);
+      const previousRedAlert = previousData?.redAlert || false;
+      const redAlertChanged = previousRedAlert !== redAlert;
+      
       // Insert wind data into database
       await storage.insertWindData({
         deviceId: windDataWithAlert.deviceId,
@@ -204,6 +209,18 @@ export function setupUdpListener(httpServer: Server) {
         amberAlert: windDataWithAlert.amberAlert,
         redAlert: windDataWithAlert.redAlert
       });
+      
+      // Process downtime tracking if red alert state has changed
+      if (redAlertChanged) {
+        const timestamp = new Date(windDataWithAlert.timestamp);
+        await storage.processDeviceRedAlertChange(data.deviceId, redAlert, timestamp);
+        
+        if (redAlert) {
+          log(`Device ${data.deviceId} entered downtime state (red alert) at ${timestamp.toISOString()}`, "udp");
+        } else {
+          log(`Device ${data.deviceId} exited downtime state (red alert) at ${timestamp.toISOString()}`, "udp");
+        }
+      }
 
       log(`Processed wind data for device ${data.deviceId}`, "udp");
     } catch (error) {

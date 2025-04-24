@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { setupUdpListener } from "./udp-listener";
 import { eq } from "drizzle-orm";
-import { AddDeviceRequest, ExportDataParams, UpdateThresholdsRequest } from "@shared/types";
+import { AddDeviceRequest, ExportDataParams, UpdateThresholdsRequest, DowntimeParams } from "@shared/types";
 import { z } from "zod";
 import { format } from "date-fns";
 import path from "path";
@@ -411,6 +411,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.send(csv);
     } catch (error) {
       res.status(500).json({ message: "Error exporting data" });
+    }
+  });
+
+  // Get downtime statistics
+  app.get("/api/downtime", isAuthenticated, async (req, res) => {
+    try {
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
+      const deviceId = req.query.deviceId as string | undefined;
+      const project = req.query.project as string | undefined;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({ message: "Missing required date parameters" });
+      }
+      
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return res.status(400).json({ message: "Invalid date format" });
+      }
+      
+      // Get downtime statistics
+      const downtimeStats = await storage.getDowntimeStats(
+        req.user.id,
+        start,
+        end,
+        deviceId,
+        project
+      );
+      
+      res.json(downtimeStats);
+    } catch (error) {
+      console.error("Error getting downtime statistics:", error);
+      res.status(500).json({ message: "Failed to get downtime statistics" });
+    }
+  });
+  
+  // Get downtime periods for a specific device
+  app.get("/api/devices/:deviceId/downtime-periods", isAuthenticated, async (req, res) => {
+    try {
+      const { deviceId } = req.params;
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({ message: "Missing required date parameters" });
+      }
+      
+      // Verify the device belongs to the authenticated user
+      const device = await storage.getDeviceByDeviceId(deviceId);
+      if (!device || device.userId !== req.user.id) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+      
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return res.status(400).json({ message: "Invalid date format" });
+      }
+      
+      // Get detailed downtime periods
+      const downtimePeriods = await storage.getDeviceDowntimePeriods(deviceId, start, end);
+      
+      res.json(downtimePeriods);
+    } catch (error) {
+      console.error("Error getting downtime periods:", error);
+      res.status(500).json({ message: "Failed to get downtime periods" });
     }
   });
 
