@@ -55,15 +55,31 @@ export function DeviceCard({ device, onDeviceClick }: DeviceCardProps) {
         <div className="mt-4 grid grid-cols-2 gap-4">
           <div>
             <p className="text-xs uppercase font-medium text-neutral-500">Avg. Wind Speed (10m)</p>
-            <p className={`wind-status-${alertState} text-xl font-mono font-medium mt-1`}>
-              {device.avgWindSpeed.toFixed(1)} <span className="text-sm">km/h</span>
-            </p>
+            <div className="flex items-center">
+              <p className={`wind-status-${alertState} text-xl font-mono font-medium mt-1`}>
+                {device.avgWindSpeed.toFixed(1)} <span className="text-sm">km/h</span>
+              </p>
+              {device.amberAlert && !device.redAlert && (
+                <div className="w-3 h-3 rounded-full bg-[hsl(var(--warning))] ml-2 mt-1"></div>
+              )}
+              {device.redAlert && (
+                <div className="w-3 h-3 rounded-full bg-destructive ml-2 mt-1"></div>
+              )}
+            </div>
           </div>
           <div>
             <p className="text-xs uppercase font-medium text-neutral-500">Max Wind Speed (10m)</p>
-            <p className={`wind-status-${alertState} text-xl font-mono font-medium mt-1`}>
-              {device.maxWindSpeed.toFixed(1)} <span className="text-sm">km/h</span>
-            </p>
+            <div className="flex items-center">
+              <p className={`wind-status-${alertState} text-xl font-mono font-medium mt-1`}>
+                {device.maxWindSpeed.toFixed(1)} <span className="text-sm">km/h</span>
+              </p>
+              {device.amberAlert && !device.redAlert && (
+                <div className="w-3 h-3 rounded-full bg-[hsl(var(--warning))] ml-2 mt-1"></div>
+              )}
+              {device.redAlert && (
+                <div className="w-3 h-3 rounded-full bg-destructive ml-2 mt-1"></div>
+              )}
+            </div>
           </div>
         </div>
         <div className="mt-4 flex items-center justify-between text-sm text-neutral-500">
