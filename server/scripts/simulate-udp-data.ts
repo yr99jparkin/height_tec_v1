@@ -5,17 +5,17 @@ const client = dgram.createSocket("udp4");
 
 const devices = [
   {
-    deviceId: "HT-ANEM-002",
+    deviceId: "HT-ANEM-001",
     location: { lat: -33.8688, lng: 151.2093 }, // Sydney
     currentSpeed: 15 // Initial speed
   },
   {
-    deviceId: "HT-ANEM-001",
+    deviceId: "HT-ANEM-002",
     location: { lat: 53.8013, lng: -1.5491 }, // Leeds
     currentSpeed: 12 // Initial speed
   },
   {
-    deviceId: "HT-ANEM-004",
+    deviceId: "HT-ANEM-003",
     location: { lat: -28.5414, lng: 153.5478 }, // Bruns
     currentSpeed: 18 // Initial speed
   }
