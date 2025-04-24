@@ -1,12 +1,10 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { db } from "./db";
 import { setupAuth } from "./auth";
 import { setupUdpListener } from "./udp-listener";
 import { eq } from "drizzle-orm";
-import { AddDeviceRequest, ExportDataParams, UpdateThresholdsRequest, DowntimeParams } from "@shared/types";
-import { deviceDowntime } from "@shared/schema";
+import { AddDeviceRequest, ExportDataParams, UpdateThresholdsRequest } from "@shared/types";
 import { z } from "zod";
 import { format } from "date-fns";
 import path from "path";
@@ -279,12 +277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(204).send();
     } catch (error) {
-      console.error("Error removing device:", error);
-      // Return more detailed error information
-      res.status(500).json({ 
-        message: "Error removing device", 
-        error: error instanceof Error ? error.message : String(error)
-      });
+      res.status(500).json({ message: "Error removing device" });
     }
   });
 
@@ -418,117 +411,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.send(csv);
     } catch (error) {
       res.status(500).json({ message: "Error exporting data" });
-    }
-  });
-
-  // Get downtime statistics
-  app.get("/api/downtime", isAuthenticated, async (req, res) => {
-    try {
-      const startDate = req.query.startDate as string;
-      const endDate = req.query.endDate as string;
-      const deviceId = req.query.deviceId as string | undefined;
-      const project = req.query.project as string | undefined;
-      
-      if (!startDate || !endDate) {
-        return res.status(400).json({ message: "Missing required date parameters" });
-      }
-      
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      
-      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-        return res.status(400).json({ message: "Invalid date format" });
-      }
-      
-      // Get downtime statistics using the authenticated user's ID
-      const downtimeStats = await storage.getDowntimeStats(
-        req.user.id,
-        start,
-        end,
-        deviceId,
-        project
-      );
-      
-      res.json(downtimeStats);
-    } catch (error) {
-      console.error("Error getting downtime statistics:", error);
-      res.status(500).json({ message: "Failed to get downtime statistics" });
-    }
-  });
-  
-  // Get downtime periods for a specific device
-  // Test endpoint to create a long downtime period for testing formatting (admin only)
-  app.post("/api/test/create-downtime", isAuthenticated, async (req, res) => {
-    try {
-      const { deviceId, hours } = req.body;
-      
-      if (!deviceId || !hours) {
-        return res.status(400).json({ message: "Missing required parameters" });
-      }
-      
-      // Create a test downtime entry with specified duration
-      const now = new Date();
-      const startTime = new Date(now.getTime() - (hours * 60 * 60 * 1000));
-      const device = await storage.getDeviceByDeviceId(deviceId);
-      
-      if (!device) {
-        return res.status(404).json({ message: "Device not found" });
-      }
-      
-      // Check if device belongs to user
-      if (device.userId !== req.user.id) {
-        return res.status(403).json({ message: "Access denied: device belongs to another user" });
-      }
-      
-      const durationSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
-      
-      const [downtimeRecord] = await db.insert(deviceDowntime).values({
-        deviceId,
-        startTime,
-        endTime: now,
-        durationSeconds,
-        project: device.project,
-        createdAt: new Date()
-      }).returning();
-      
-      // Return the created record
-      res.json(downtimeRecord);
-    } catch (error) {
-      console.error("Error creating test downtime:", error);
-      res.status(500).json({ message: "Failed to create test downtime" });
-    }
-  });
-  
-  app.get("/api/devices/:deviceId/downtime-periods", isAuthenticated, async (req, res) => {
-    try {
-      const { deviceId } = req.params;
-      const startDate = req.query.startDate as string;
-      const endDate = req.query.endDate as string;
-      
-      if (!startDate || !endDate) {
-        return res.status(400).json({ message: "Missing required date parameters" });
-      }
-      
-      // Check if device exists and belongs to user
-      const device = await storage.getDeviceByDeviceId(deviceId);
-      if (!device || device.userId !== req.user.id) {
-        return res.status(404).json({ message: "Device not found" });
-      }
-      
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      
-      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-        return res.status(400).json({ message: "Invalid date format" });
-      }
-      
-      // Get detailed downtime periods
-      const downtimePeriods = await storage.getDeviceDowntimePeriods(deviceId, start, end);
-      
-      res.json(downtimePeriods);
-    } catch (error) {
-      console.error("Error getting downtime periods:", error);
-      res.status(500).json({ message: "Failed to get downtime periods" });
     }
   });
 

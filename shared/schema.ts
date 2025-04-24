@@ -95,24 +95,6 @@ export const windDataRelations = relations(windData, ({ one }) => ({
   }),
 }));
 
-// Device Downtime table to track periods when a device is in red alert state
-export const deviceDowntime = pgTable("device_downtime", {
-  id: serial("id").primaryKey(),
-  deviceId: text("device_id").notNull().references(() => devices.deviceId),
-  startTime: timestamp("start_time").notNull(),
-  endTime: timestamp("end_time"),
-  durationSeconds: integer("duration_seconds"),  // Duration in seconds, calculated when endTime is set
-  project: text("project"),  // Denormalized from devices table to make project-based queries faster
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export const deviceDowntimeRelations = relations(deviceDowntime, ({ one }) => ({
-  device: one(devices, {
-    fields: [deviceDowntime.deviceId],
-    references: [devices.deviceId],
-  }),
-}));
-
 // Insert schemas using drizzle-zod
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -155,14 +137,6 @@ export const insertWindDataSchema = createInsertSchema(windData).pick({
   redAlert: true,
 });
 
-export const insertDeviceDowntimeSchema = createInsertSchema(deviceDowntime).pick({
-  deviceId: true,
-  startTime: true,
-  endTime: true,
-  durationSeconds: true,
-  project: true,
-});
-
 // Export types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -178,6 +152,3 @@ export type InsertWindAlertThreshold = z.infer<typeof insertWindAlertThresholdsS
 
 export type WindData = typeof windData.$inferSelect;
 export type InsertWindData = z.infer<typeof insertWindDataSchema>;
-
-export type DeviceDowntime = typeof deviceDowntime.$inferSelect;
-export type InsertDeviceDowntime = z.infer<typeof insertDeviceDowntimeSchema>;

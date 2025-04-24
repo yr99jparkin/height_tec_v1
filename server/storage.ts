@@ -1,10 +1,9 @@
-import { users, devices, deviceStock, windAlertThresholds, windData, deviceDowntime } from "@shared/schema";
+import { users, devices, deviceStock, windAlertThresholds, windData } from "@shared/schema";
 import type { User, InsertUser, Device, InsertDevice, DeviceStock, InsertDeviceStock, 
-  WindAlertThreshold, InsertWindAlertThreshold, WindData, InsertWindData,
-  DeviceDowntime, InsertDeviceDowntime } from "@shared/schema";
+  WindAlertThreshold, InsertWindAlertThreshold, WindData, InsertWindData } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, or, desc, lte, gte, sql, max, avg, inArray, isNull, sum, count } from "drizzle-orm";
-import { WindStatsResponse, DeviceWithLatestData, DeviceDowntimeStats, ProjectDowntimeStats, DowntimeResponse } from "@shared/types";
+import { eq, and, desc, lte, gte, sql, max, avg, inArray } from "drizzle-orm";
+import { WindStatsResponse, DeviceWithLatestData } from "@shared/types";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 
@@ -41,47 +40,17 @@ export interface IStorage {
   getWindStatsForDevice(deviceId: string, minutes: number): Promise<WindStatsResponse>;
   getDevicesWithLatestData(userDeviceIds: string[]): Promise<DeviceWithLatestData[]>;
 
-  // Device downtime operations
-  getActiveDowntimeByDeviceId(deviceId: string): Promise<DeviceDowntime | undefined>;
-  startDeviceDowntime(deviceId: string, timestamp: Date): Promise<DeviceDowntime>;
-  endDeviceDowntime(downtimeId: number, timestamp: Date): Promise<DeviceDowntime>;
-  getDeviceDowntimePeriods(deviceId: string, startDate: Date, endDate: Date): Promise<DeviceDowntime[]>;
-  getDowntimeStats(userId: number, startDate: Date, endDate: Date, deviceId?: string, project?: string): Promise<DowntimeResponse>;
-  processDeviceRedAlertChange(deviceId: string, isRedAlert: boolean, timestamp: Date): Promise<void>;
-
-  sessionStore: any; // Using 'any' for session store type
+  sessionStore: session.SessionStore;
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: any; // Using 'any' to fix the SessionStore type issue
+  sessionStore: session.SessionStore;
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({ 
       pool,
       createTableIfMissing: true 
     });
-  }
-  
-  // Helper function to format downtime duration
-  private formatDowntimeDuration(seconds: number): string {
-    if (seconds <= 0) return "0s";
-    
-    const days = Math.floor(seconds / (24 * 60 * 60));
-    seconds -= days * 24 * 60 * 60;
-    
-    const hours = Math.floor(seconds / (60 * 60));
-    seconds -= hours * 60 * 60;
-    
-    const minutes = Math.floor(seconds / 60);
-    seconds -= minutes * 60;
-    
-    const parts = [];
-    if (days > 0) parts.push(`${days}d`);
-    if (hours > 0) parts.push(`${hours}h`);
-    if (minutes > 0) parts.push(`${minutes}m`);
-    if (seconds > 0) parts.push(`${Math.floor(seconds)}s`);
-    
-    return parts.join(" ");
   }
 
   // User operations
@@ -138,31 +107,10 @@ export class DatabaseStorage implements IStorage {
     const device = await this.getDeviceById(id);
     if (!device) return;
 
-    try {
-      // Start a transaction for safer deletion
-      await db.transaction(async (tx) => {
-        // Delete related data first due to foreign key constraints
-        console.log(`Deleting wind alert thresholds for device ${device.deviceId}`);
-        await tx.delete(windAlertThresholds).where(eq(windAlertThresholds.deviceId, device.deviceId));
-        
-        console.log(`Deleting wind data for device ${device.deviceId}`);
-        await tx.delete(windData).where(eq(windData.deviceId, device.deviceId));
-        
-        console.log(`Deleting device downtime records for device ${device.deviceId}`);
-        await tx.delete(deviceDowntime).where(eq(deviceDowntime.deviceId, device.deviceId));
-        
-        // Check for device stock records and delete them
-        console.log(`Deleting device stock records for device ${device.deviceId}`);
-        await tx.delete(deviceStock).where(eq(deviceStock.deviceId, device.deviceId));
-        
-        // Finally delete the device itself
-        console.log(`Deleting device ${device.deviceId}`);
-        await tx.delete(devices).where(eq(devices.id, id));
-      });
-    } catch (error) {
-      console.error(`Error in deleteDevice transaction for device ${device.deviceId}:`, error);
-      throw error; // Re-throw to be handled by the route
-    }
+    // Delete related data first due to foreign key constraints
+    await db.delete(windAlertThresholds).where(eq(windAlertThresholds.deviceId, device.deviceId));
+    await db.delete(windData).where(eq(windData.deviceId, device.deviceId));
+    await db.delete(devices).where(eq(devices.id, id));
   }
 
   // Device stock operations
@@ -281,9 +229,9 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
 
     return {
-      avgWindSpeed: stats?.avgWindSpeed !== null ? Number(stats.avgWindSpeed) : 0,
-      maxWindSpeed: stats?.maxWindSpeed !== null ? Number(stats.maxWindSpeed) : 0,
-      currentWindSpeed: currentStats?.currentWindSpeed !== null ? Number(currentStats.currentWindSpeed) : 0,
+      avgWindSpeed: stats?.avgWindSpeed || 0,
+      maxWindSpeed: stats?.maxWindSpeed || 0,
+      currentWindSpeed: currentStats?.currentWindSpeed || 0,
       alertState: latestData?.alertState || false,
       timestamp: latestData?.timestamp?.toISOString() || new Date().toISOString()
     };
@@ -338,279 +286,7 @@ export class DatabaseStorage implements IStorage {
       WHERE d.device_id IN (${sql.join(userDeviceIds, sql`, `)})
     `);
 
-    // Convert the raw data to the proper type
-    return result.rows.map((row: any) => ({
-      id: Number(row.id),
-      deviceId: row.deviceId,
-      deviceName: row.deviceName,
-      project: row.project,
-      location: row.location,
-      latitude: row.latitude ? Number(row.latitude) : undefined,
-      longitude: row.longitude ? Number(row.longitude) : undefined,
-      active: Boolean(row.active),
-      lastSeen: row.lastSeen,
-      avgWindSpeed: Number(row.avgWindSpeed || 0),
-      maxWindSpeed: Number(row.maxWindSpeed || 0),
-      alertState: Boolean(row.alertState)
-    })) as DeviceWithLatestData[];
-  }
-
-  // ======== Device Downtime Operations ========
-
-  async getActiveDowntimeByDeviceId(deviceId: string): Promise<DeviceDowntime | undefined> {
-    // Get the active downtime record for a device (where endTime is null)
-    const [activeDowntime] = await db.select().from(deviceDowntime)
-      .where(
-        and(
-          eq(deviceDowntime.deviceId, deviceId),
-          isNull(deviceDowntime.endTime)
-        )
-      );
-    return activeDowntime;
-  }
-
-  async startDeviceDowntime(deviceId: string, timestamp: Date): Promise<DeviceDowntime> {
-    // Check if there's already an active downtime period for this device
-    const existingDowntime = await this.getActiveDowntimeByDeviceId(deviceId);
-    if (existingDowntime) {
-      return existingDowntime; // Already in downtime
-    }
-
-    // Get the device to get the project for denormalization
-    const device = await this.getDeviceByDeviceId(deviceId);
-    if (!device) {
-      throw new Error(`Device not found: ${deviceId}`);
-    }
-
-    // Create a new downtime period
-    const [newDowntime] = await db.insert(deviceDowntime).values({
-      deviceId,
-      startTime: timestamp,
-      project: device.project || null,
-    }).returning();
-
-    return newDowntime;
-  }
-
-  async endDeviceDowntime(downtimeId: number, timestamp: Date): Promise<DeviceDowntime> {
-    // Get the downtime record
-    const [downtimeRecord] = await db.select().from(deviceDowntime)
-      .where(eq(deviceDowntime.id, downtimeId));
-
-    if (!downtimeRecord) {
-      throw new Error(`Downtime record not found: ${downtimeId}`);
-    }
-
-    if (downtimeRecord.endTime) {
-      return downtimeRecord; // Already ended
-    }
-
-    // Calculate duration in seconds
-    const startTime = downtimeRecord.startTime;
-    const durationSeconds = Math.floor((timestamp.getTime() - startTime.getTime()) / 1000);
-
-    // Update the downtime record
-    const [updatedDowntime] = await db.update(deviceDowntime)
-      .set({
-        endTime: timestamp,
-        durationSeconds: durationSeconds,
-      })
-      .where(eq(deviceDowntime.id, downtimeId))
-      .returning();
-
-    return updatedDowntime;
-  }
-
-  async getDeviceDowntimePeriods(deviceId: string, startDate: Date, endDate: Date): Promise<DeviceDowntime[]> {
-    return await db.select().from(deviceDowntime)
-      .where(
-        and(
-          eq(deviceDowntime.deviceId, deviceId),
-          or(
-            // Periods that start within our date range
-            and(
-              gte(deviceDowntime.startTime, startDate),
-              lte(deviceDowntime.startTime, endDate)
-            ),
-            // Periods that end within our date range
-            and(
-              gte(deviceDowntime.endTime, startDate),
-              lte(deviceDowntime.endTime, endDate)
-            ),
-            // Periods that span our entire date range
-            and(
-              lte(deviceDowntime.startTime, startDate),
-              or(
-                gte(deviceDowntime.endTime, endDate),
-                isNull(deviceDowntime.endTime)
-              )
-            )
-          )
-        )
-      )
-      .orderBy(deviceDowntime.startTime);
-  }
-
-  async getDowntimeStats(userId: number, startDate: Date, endDate: Date, deviceId?: string, project?: string): Promise<DowntimeResponse> {
-    // Get all devices for this user
-    const userDevices = await this.getDevicesByUserId(userId);
-    
-    if (userDevices.length === 0) {
-      return {
-        devices: [],
-        projects: [],
-        timeframe: {
-          start: startDate.toISOString(),
-          end: endDate.toISOString()
-        }
-      };
-    }
-
-    let deviceIds = userDevices.map(d => d.deviceId);
-    
-    // Filter by device ID if specified
-    if (deviceId) {
-      deviceIds = deviceIds.filter(id => id === deviceId);
-    }
-    
-    // Filter by project if specified
-    if (project) {
-      deviceIds = userDevices
-        .filter(d => d.project === project)
-        .map(d => d.deviceId);
-    }
-
-    if (deviceIds.length === 0) {
-      return {
-        devices: [],
-        projects: [],
-        timeframe: {
-          start: startDate.toISOString(),
-          end: endDate.toISOString()
-        }
-      };
-    }
-
-    // Get device downtime data using a simpler query to avoid operator ambiguity
-    const devicesQuery = await db.execute(sql`
-      WITH device_downtimes AS (
-        SELECT 
-          dd.device_id,
-          d.device_name,
-          COALESCE(SUM(
-            CASE
-              WHEN dd.duration_seconds IS NOT NULL THEN dd.duration_seconds
-              WHEN dd.end_time IS NULL THEN 
-                EXTRACT(EPOCH FROM (NOW() - dd.start_time))
-              ELSE 0
-            END
-          ), 0) AS total_downtime_seconds
-        FROM device_downtime dd
-        JOIN devices d ON dd.device_id = d.device_id
-        WHERE 
-          dd.device_id IN (${sql.join(deviceIds, sql`, `)})
-          AND (
-            (dd.start_time BETWEEN ${startDate} AND ${endDate})
-            OR (dd.end_time BETWEEN ${startDate} AND ${endDate})
-            OR (dd.start_time <= ${startDate} AND (dd.end_time >= ${endDate} OR dd.end_time IS NULL))
-          )
-        GROUP BY dd.device_id, d.device_name
-      )
-      SELECT * FROM device_downtimes
-      ORDER BY total_downtime_seconds DESC
-    `);
-
-    // Get project statistics with a simplified query
-    const projectsQuery = await db.execute(sql`
-      WITH project_devices AS (
-        SELECT 
-          d.project,
-          COUNT(DISTINCT d.device_id) AS device_count
-        FROM devices d
-        WHERE d.device_id IN (${sql.join(deviceIds, sql`, `)})
-          AND d.project IS NOT NULL
-        GROUP BY d.project
-      ),
-      project_downtimes AS (
-        SELECT 
-          dd.project,
-          COALESCE(SUM(
-            CASE
-              WHEN dd.duration_seconds IS NOT NULL THEN dd.duration_seconds
-              WHEN dd.end_time IS NULL THEN 
-                EXTRACT(EPOCH FROM (NOW() - dd.start_time))
-              ELSE 0
-            END
-          ), 0) AS total_downtime_seconds
-        FROM device_downtime dd
-        WHERE 
-          dd.device_id IN (${sql.join(deviceIds, sql`, `)})
-          AND dd.project IS NOT NULL
-          AND (
-            (dd.start_time BETWEEN ${startDate} AND ${endDate})
-            OR (dd.end_time BETWEEN ${startDate} AND ${endDate})
-            OR (dd.start_time <= ${startDate} AND (dd.end_time >= ${endDate} OR dd.end_time IS NULL))
-          )
-        GROUP BY dd.project
-      )
-      SELECT 
-        pd.project,
-        pd.device_count,
-        COALESCE(pdt.total_downtime_seconds, 0) AS total_downtime_seconds
-      FROM project_devices pd
-      LEFT JOIN project_downtimes pdt ON pd.project = pdt.project
-      ORDER BY total_downtime_seconds DESC
-    `);
-
-    // Format the devices response
-    const devices = devicesQuery.rows.map((row: any) => {
-      const totalSeconds = parseInt(row.total_downtime_seconds, 10);
-      return {
-        deviceId: row.device_id,
-        deviceName: row.device_name,
-        total: totalSeconds,
-        hours: parseFloat((totalSeconds / 3600).toFixed(2)),
-        formatted: this.formatDowntimeDuration(totalSeconds)
-      };
-    });
-
-    // Format the projects response
-    const projects = projectsQuery.rows.map((row: any) => {
-      const totalSeconds = parseInt(row.total_downtime_seconds, 10);
-      return {
-        project: row.project,
-        deviceCount: parseInt(row.device_count, 10),
-        total: totalSeconds,
-        hours: parseFloat((totalSeconds / 3600).toFixed(2)),
-        formatted: this.formatDowntimeDuration(totalSeconds)
-      };
-    });
-
-    return {
-      devices,
-      projects,
-      timeframe: {
-        start: startDate.toISOString(),
-        end: endDate.toISOString()
-      }
-    };
-  }
-
-  async processDeviceRedAlertChange(deviceId: string, isRedAlert: boolean, timestamp: Date): Promise<void> {
-    // Check if there's an active downtime record
-    const activeDowntime = await this.getActiveDowntimeByDeviceId(deviceId);
-
-    if (isRedAlert) {
-      // Device has entered red alert state - start downtime if not already active
-      if (!activeDowntime) {
-        await this.startDeviceDowntime(deviceId, timestamp);
-      }
-    } else {
-      // Device has exited red alert state - end downtime if active
-      if (activeDowntime) {
-        await this.endDeviceDowntime(activeDowntime.id, timestamp);
-      }
-    }
+    return result.rows as DeviceWithLatestData[];
   }
 }
 
