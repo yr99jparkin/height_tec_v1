@@ -1,10 +1,12 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
 import { setupAuth } from "./auth";
 import { setupUdpListener } from "./udp-listener";
 import { eq } from "drizzle-orm";
 import { AddDeviceRequest, ExportDataParams, UpdateThresholdsRequest, DowntimeParams } from "@shared/types";
+import { deviceDowntime } from "@shared/schema";
 import { z } from "zod";
 import { format } from "date-fns";
 import path from "path";
@@ -450,6 +452,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get downtime periods for a specific device
+  // Test endpoint to create a long downtime period for testing formatting
+  app.post("/api/test/create-downtime", async (req, res) => {
+    try {
+      const { deviceId, hours } = req.body;
+      
+      if (!deviceId || !hours) {
+        return res.status(400).json({ message: "Missing required parameters" });
+      }
+      
+      // Create a test downtime entry with specified duration
+      const now = new Date();
+      const startTime = new Date(now.getTime() - (hours * 60 * 60 * 1000));
+      const device = await storage.getDeviceByDeviceId(deviceId);
+      
+      if (!device) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+      
+      const durationSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+      
+      const [downtimeRecord] = await db.insert(deviceDowntime).values({
+        deviceId,
+        startTime,
+        endTime: now,
+        durationSeconds,
+        project: device.project,
+        createdAt: new Date()
+      }).returning();
+      
+      // Return the created record
+      res.json(downtimeRecord);
+    } catch (error) {
+      console.error("Error creating test downtime:", error);
+      res.status(500).json({ message: "Failed to create test downtime" });
+    }
+  });
+  
   app.get("/api/devices/:deviceId/downtime-periods", async (req, res) => {
     try {
       const { deviceId } = req.params;
