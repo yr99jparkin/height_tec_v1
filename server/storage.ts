@@ -470,51 +470,36 @@ export class DatabaseStorage implements IStorage {
       };
     }
 
-    // Custom SQL query to get aggregated downtime for each device
+    // Get device downtime data using a simpler query to avoid operator ambiguity
     const devicesQuery = await db.execute(sql`
       WITH device_downtimes AS (
         SELECT 
           dd.device_id,
           d.device_name,
-          COALESCE(
-            SUM(
-              CASE
-                -- If the period is fully within our range
-                WHEN dd.start_time >= ${startDate} AND (dd.end_time <= ${endDate} OR dd.end_time IS NULL) THEN
-                  COALESCE(
-                    EXTRACT(EPOCH FROM (COALESCE(dd.end_time, NOW()) - dd.start_time)),
-                    0
-                  )
-                -- If the period starts before our range
-                WHEN dd.start_time < ${startDate} AND (dd.end_time > ${startDate} OR dd.end_time IS NULL) THEN
-                  COALESCE(
-                    EXTRACT(EPOCH FROM (COALESCE(dd.end_time, NOW()) - ${startDate})),
-                    0
-                  )
-                -- If the period ends after our range
-                WHEN dd.start_time >= ${startDate} AND dd.start_time <= ${endDate} AND dd.end_time > ${endDate} THEN
-                  COALESCE(
-                    EXTRACT(EPOCH FROM (${endDate} - dd.start_time)),
-                    0
-                  )
-                -- If the period completely encompasses our range
-                WHEN dd.start_time < ${startDate} AND dd.end_time > ${endDate} THEN
-                  EXTRACT(EPOCH FROM (${endDate} - ${startDate}))
-                ELSE 0
-              END
-            ),
-            0
-          ) AS total_downtime_seconds
+          COALESCE(SUM(
+            CASE
+              WHEN dd.duration_seconds IS NOT NULL THEN dd.duration_seconds
+              WHEN dd.end_time IS NULL THEN 
+                EXTRACT(EPOCH FROM (NOW() - dd.start_time))
+              ELSE 0
+            END
+          ), 0) AS total_downtime_seconds
         FROM device_downtime dd
         JOIN devices d ON dd.device_id = d.device_id
-        WHERE dd.device_id IN (${sql.join(deviceIds, sql`, `)})
+        WHERE 
+          dd.device_id IN (${sql.join(deviceIds, sql`, `)})
+          AND (
+            (dd.start_time BETWEEN ${startDate} AND ${endDate})
+            OR (dd.end_time BETWEEN ${startDate} AND ${endDate})
+            OR (dd.start_time <= ${startDate} AND (dd.end_time >= ${endDate} OR dd.end_time IS NULL))
+          )
         GROUP BY dd.device_id, d.device_name
       )
       SELECT * FROM device_downtimes
       ORDER BY total_downtime_seconds DESC
     `);
 
-    // Get project statistics
+    // Get project statistics with a simplified query
     const projectsQuery = await db.execute(sql`
       WITH project_devices AS (
         SELECT 
@@ -528,38 +513,23 @@ export class DatabaseStorage implements IStorage {
       project_downtimes AS (
         SELECT 
           dd.project,
-          COALESCE(
-            SUM(
-              CASE
-                -- If the period is fully within our range
-                WHEN dd.start_time >= ${startDate} AND (dd.end_time <= ${endDate} OR dd.end_time IS NULL) THEN
-                  COALESCE(
-                    EXTRACT(EPOCH FROM (COALESCE(dd.end_time, NOW()) - dd.start_time)),
-                    0
-                  )
-                -- If the period starts before our range
-                WHEN dd.start_time < ${startDate} AND (dd.end_time > ${startDate} OR dd.end_time IS NULL) THEN
-                  COALESCE(
-                    EXTRACT(EPOCH FROM (COALESCE(dd.end_time, NOW()) - ${startDate})),
-                    0
-                  )
-                -- If the period ends after our range
-                WHEN dd.start_time >= ${startDate} AND dd.start_time <= ${endDate} AND dd.end_time > ${endDate} THEN
-                  COALESCE(
-                    EXTRACT(EPOCH FROM (${endDate} - dd.start_time)),
-                    0
-                  )
-                -- If the period completely encompasses our range
-                WHEN dd.start_time < ${startDate} AND dd.end_time > ${endDate} THEN
-                  EXTRACT(EPOCH FROM (${endDate} - ${startDate}))
-                ELSE 0
-              END
-            ),
-            0
-          ) AS total_downtime_seconds
+          COALESCE(SUM(
+            CASE
+              WHEN dd.duration_seconds IS NOT NULL THEN dd.duration_seconds
+              WHEN dd.end_time IS NULL THEN 
+                EXTRACT(EPOCH FROM (NOW() - dd.start_time))
+              ELSE 0
+            END
+          ), 0) AS total_downtime_seconds
         FROM device_downtime dd
-        WHERE dd.device_id IN (${sql.join(deviceIds, sql`, `)})
+        WHERE 
+          dd.device_id IN (${sql.join(deviceIds, sql`, `)})
           AND dd.project IS NOT NULL
+          AND (
+            (dd.start_time BETWEEN ${startDate} AND ${endDate})
+            OR (dd.end_time BETWEEN ${startDate} AND ${endDate})
+            OR (dd.start_time <= ${startDate} AND (dd.end_time >= ${endDate} OR dd.end_time IS NULL))
+          )
         GROUP BY dd.project
       )
       SELECT 
