@@ -25,14 +25,6 @@ export default function DevicesPage() {
   const { data: devices = [], isLoading } = useQuery<DeviceWithLatestData[]>({
     queryKey: ["/api/devices"],
     refetchInterval: 30000, // Refresh every 30 seconds
-    onSuccess: (data) => {
-      console.log("Devices data with alert states:", data.map(d => ({
-        deviceId: d.deviceId,
-        alertState: d.alertState,
-        amberAlert: d.amberAlert,
-        redAlert: d.redAlert
-      })));
-    }
   });
 
   // Check if user exists and direct to auth page if not

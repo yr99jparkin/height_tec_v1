@@ -279,9 +279,7 @@ export class DatabaseStorage implements IStorage {
         d.last_seen as "lastSeen",
         COALESCE(aws.avg_wind_speed, 0) as "avgWindSpeed",
         COALESCE(aws.max_wind_speed, 0) as "maxWindSpeed",
-        COALESCE(lwd.alert_state, false) as "alertState",
-        COALESCE(lwd.amber_alert, false) as "amberAlert",
-        COALESCE(lwd.red_alert, false) as "redAlert"
+        COALESCE(lwd.alert_state, false) as "alertState"
       FROM devices d
       LEFT JOIN latest_wind_data lwd ON d.device_id = lwd.device_id
       LEFT JOIN avg_wind_speeds aws ON d.device_id = aws.device_id

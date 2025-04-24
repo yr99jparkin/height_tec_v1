@@ -10,18 +10,6 @@ interface DeviceCardProps {
 }
 
 export function DeviceCard({ device, onDeviceClick }: DeviceCardProps) {
-  // We need to manually set these properties for demo since they might not be coming from API
-  // Using device wind speed values to set simulated alert states
-  // This is a temporary workaround until proper data comes from the server
-  const amberThreshold = 20; // Default amber threshold
-  const redThreshold = 30;   // Default red threshold
-  
-  // Use real values from API if available, otherwise calculate based on thresholds
-  const amberAlert = device.amberAlert !== undefined ? device.amberAlert : 
-                    (device.avgWindSpeed >= amberThreshold || device.maxWindSpeed >= amberThreshold);
-  const redAlert = device.redAlert !== undefined ? device.redAlert : 
-                  (device.avgWindSpeed >= redThreshold || device.maxWindSpeed >= redThreshold);
-
   // Determine alert status based on wind speeds
   const getAlertState = () => {
     if (device.alertState || device.maxWindSpeed > 30) {
@@ -67,31 +55,15 @@ export function DeviceCard({ device, onDeviceClick }: DeviceCardProps) {
         <div className="mt-4 grid grid-cols-2 gap-4">
           <div>
             <p className="text-xs uppercase font-medium text-neutral-500">Avg. Wind Speed (10m)</p>
-            <div className="flex items-center">
-              <p className={`wind-status-${alertState} text-xl font-mono font-medium mt-1 flex items-center`}>
-                {device.avgWindSpeed.toFixed(1)} <span className="text-sm mr-2">km/h</span>
-                {amberAlert && !redAlert && (
-                  <span className="inline-block w-4 h-4 rounded-full bg-[hsl(var(--warning))] shadow-md"></span>
-                )}
-                {redAlert && (
-                  <span className="inline-block w-4 h-4 rounded-full bg-destructive shadow-md"></span>
-                )}
-              </p>
-            </div>
+            <p className={`wind-status-${alertState} text-xl font-mono font-medium mt-1`}>
+              {device.avgWindSpeed.toFixed(1)} <span className="text-sm">km/h</span>
+            </p>
           </div>
           <div>
             <p className="text-xs uppercase font-medium text-neutral-500">Max Wind Speed (10m)</p>
-            <div className="flex items-center">
-              <p className={`wind-status-${alertState} text-xl font-mono font-medium mt-1 flex items-center`}>
-                {device.maxWindSpeed.toFixed(1)} <span className="text-sm mr-2">km/h</span>
-                {amberAlert && !redAlert && (
-                  <span className="inline-block w-4 h-4 rounded-full bg-[hsl(var(--warning))] shadow-md"></span>
-                )}
-                {redAlert && (
-                  <span className="inline-block w-4 h-4 rounded-full bg-destructive shadow-md"></span>
-                )}
-              </p>
-            </div>
+            <p className={`wind-status-${alertState} text-xl font-mono font-medium mt-1`}>
+              {device.maxWindSpeed.toFixed(1)} <span className="text-sm">km/h</span>
+            </p>
           </div>
         </div>
         <div className="mt-4 flex items-center justify-between text-sm text-neutral-500">
