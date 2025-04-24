@@ -392,7 +392,7 @@ export class DatabaseStorage implements IStorage {
     const [updatedDowntime] = await db.update(deviceDowntime)
       .set({
         endTime: timestamp,
-        duration: durationSeconds,
+        durationSeconds: durationSeconds,
       })
       .where(eq(deviceDowntime.id, downtimeId))
       .returning();

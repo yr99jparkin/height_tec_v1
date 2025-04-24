@@ -101,7 +101,7 @@ export const deviceDowntime = pgTable("device_downtime", {
   deviceId: text("device_id").notNull().references(() => devices.deviceId),
   startTime: timestamp("start_time").notNull(),
   endTime: timestamp("end_time"),
-  duration: integer("duration_seconds"),  // Duration in seconds, calculated when endTime is set
+  durationSeconds: integer("duration_seconds"),  // Duration in seconds, calculated when endTime is set
   project: text("project"),  // Denormalized from devices table to make project-based queries faster
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -159,7 +159,7 @@ export const insertDeviceDowntimeSchema = createInsertSchema(deviceDowntime).pic
   deviceId: true,
   startTime: true,
   endTime: true,
-  duration: true,
+  durationSeconds: true,
   project: true,
 });
 
