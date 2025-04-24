@@ -3,6 +3,7 @@ import { Card } from "./card";
 import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { MapPin, Clock, Folder } from "lucide-react";
+import { getProjectColor } from "@/lib/project-colors";
 
 interface DeviceCardProps {
   device: DeviceWithLatestData;
@@ -72,9 +73,9 @@ export function DeviceCard({ device, onDeviceClick }: DeviceCardProps) {
             <span>{getLastUpdatedText()}</span>
           </div>
           {device.project && (
-            <div className="flex items-center">
+            <div className={`flex items-center px-2 py-1 rounded-full ${getProjectColor(device.project)}`}>
               <Folder size={14} className="mr-1" />
-              <span className="text-neutral-600 font-medium">{device.project}</span>
+              <span className="font-medium text-xs">{device.project}</span>
             </div>
           )}
         </div>
