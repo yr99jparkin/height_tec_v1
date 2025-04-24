@@ -208,7 +208,11 @@ export function AddDeviceModal({ open, onOpenChange }: AddDeviceModalProps) {
                     <FormControl>
                       <Input 
                         placeholder="Enter a name for the new project" 
-                        {...field} 
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
                       />
                     </FormControl>
                     <p className="text-xs text-neutral-500 mt-1">
