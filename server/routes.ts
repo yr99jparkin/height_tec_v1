@@ -279,6 +279,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(204).send();
     } catch (error) {
+      console.error("Error removing device:", error);
       res.status(500).json({ message: "Error removing device" });
     }
   });

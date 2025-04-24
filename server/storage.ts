@@ -141,6 +141,7 @@ export class DatabaseStorage implements IStorage {
     // Delete related data first due to foreign key constraints
     await db.delete(windAlertThresholds).where(eq(windAlertThresholds.deviceId, device.deviceId));
     await db.delete(windData).where(eq(windData.deviceId, device.deviceId));
+    await db.delete(deviceDowntime).where(eq(deviceDowntime.deviceId, device.deviceId));
     await db.delete(devices).where(eq(devices.id, id));
   }
 
