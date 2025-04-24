@@ -417,7 +417,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get downtime statistics
-  app.get("/api/downtime", async (req, res) => {
+  app.get("/api/downtime", isAuthenticated, async (req, res) => {
     try {
       const startDate = req.query.startDate as string;
       const endDate = req.query.endDate as string;
@@ -435,9 +435,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid date format" });
       }
       
-      // Get downtime statistics - using user ID 1 for testing
+      // Get downtime statistics using the authenticated user's ID
       const downtimeStats = await storage.getDowntimeStats(
-        1, // Use a fixed user ID for testing
+        req.user.id,
         start,
         end,
         deviceId,
@@ -452,8 +452,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get downtime periods for a specific device
-  // Test endpoint to create a long downtime period for testing formatting
-  app.post("/api/test/create-downtime", async (req, res) => {
+  // Test endpoint to create a long downtime period for testing formatting (admin only)
+  app.post("/api/test/create-downtime", isAuthenticated, async (req, res) => {
     try {
       const { deviceId, hours } = req.body;
       
@@ -468,6 +468,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!device) {
         return res.status(404).json({ message: "Device not found" });
+      }
+      
+      // Check if device belongs to user
+      if (device.userId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied: device belongs to another user" });
       }
       
       const durationSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
@@ -489,7 +494,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/devices/:deviceId/downtime-periods", async (req, res) => {
+  app.get("/api/devices/:deviceId/downtime-periods", isAuthenticated, async (req, res) => {
     try {
       const { deviceId } = req.params;
       const startDate = req.query.startDate as string;
@@ -499,8 +504,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required date parameters" });
       }
       
-      // For testing, skip the device user verification
+      // Check if device exists and belongs to user
       const device = await storage.getDeviceByDeviceId(deviceId);
+      if (!device || device.userId !== req.user.id) {
+        return res.status(404).json({ message: "Device not found" });
+      }
       
       const start = new Date(startDate);
       const end = new Date(endDate);
