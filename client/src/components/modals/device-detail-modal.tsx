@@ -313,7 +313,7 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                 </div>
 
                 <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
-                  <p className="text-sm uppercase font-medium text-neutral-500">Avg. Wind Speed (10m)</p>
+                  <p className="text-sm uppercase font-medium text-neutral-500">Avg. Wind Speed (10mins)</p>
                   <div className="flex items-baseline mt-2">
                     <p className={getAlertClass(Number((windStats as any).avgWindSpeed) || 0, 'red') + " text-3xl font-mono font-medium"}>
                       {(Number((windStats as any).avgWindSpeed) || 0).toFixed(1)}
@@ -335,7 +335,7 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                 </div>
 
                 <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
-                  <p className="text-sm uppercase font-medium text-neutral-500">Max Wind Speed (10m)</p>
+                  <p className="text-sm uppercase font-medium text-neutral-500">Max Wind Speed (10mins)</p>
                   <div className="flex items-baseline mt-2">
                     <p className={getAlertClass(Number((windStats as any).maxWindSpeed) || 0, 'red') + " text-3xl font-mono font-medium"}>
                       {(Number((windStats as any).maxWindSpeed) || 0).toFixed(1)}

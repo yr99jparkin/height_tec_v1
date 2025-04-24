@@ -54,13 +54,13 @@ export function DeviceCard({ device, onDeviceClick }: DeviceCardProps) {
         </div>
         <div className="mt-4 grid grid-cols-2 gap-4">
           <div>
-            <p className="text-xs uppercase font-medium text-neutral-500">Avg. Wind Speed (10m)</p>
+            <p className="text-xs uppercase font-medium text-neutral-500">Avg. Wind Speed (10mins)</p>
             <p className={`wind-status-${alertState} text-xl font-mono font-medium mt-1`}>
               {device.avgWindSpeed.toFixed(1)} <span className="text-sm">km/h</span>
             </p>
           </div>
           <div>
-            <p className="text-xs uppercase font-medium text-neutral-500">Max Wind Speed (10m)</p>
+            <p className="text-xs uppercase font-medium text-neutral-500">Max Wind Speed (10mins)</p>
             <p className={`wind-status-${alertState} text-xl font-mono font-medium mt-1`}>
               {device.maxWindSpeed.toFixed(1)} <span className="text-sm">km/h</span>
             </p>
