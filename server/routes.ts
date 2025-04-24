@@ -396,9 +396,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Generate CSV content
-      const headers = "Device ID,Timestamp,Wind Speed (km/h),Latitude,Longitude,Alert State\n";
+      const headers = "Device ID,Timestamp,Wind Speed (km/h),Latitude,Longitude,Alert State,Amber Alert,Red Alert\n";
       const rows = windData.map(data => {
-        return `${data.deviceId},${data.timestamp},${data.windSpeed},${data.latitude || ''},${data.longitude || ''},${data.alertState}`;
+        return `${data.deviceId},${data.timestamp},${data.windSpeed},${data.latitude || ''},${data.longitude || ''},${data.alertState},${data.amberAlert},${data.redAlert}`;
       }).join("\n");
       
       const csv = headers + rows;
