@@ -138,11 +138,31 @@ export class DatabaseStorage implements IStorage {
     const device = await this.getDeviceById(id);
     if (!device) return;
 
-    // Delete related data first due to foreign key constraints
-    await db.delete(windAlertThresholds).where(eq(windAlertThresholds.deviceId, device.deviceId));
-    await db.delete(windData).where(eq(windData.deviceId, device.deviceId));
-    await db.delete(deviceDowntime).where(eq(deviceDowntime.deviceId, device.deviceId));
-    await db.delete(devices).where(eq(devices.id, id));
+    try {
+      // Start a transaction for safer deletion
+      await db.transaction(async (tx) => {
+        // Delete related data first due to foreign key constraints
+        console.log(`Deleting wind alert thresholds for device ${device.deviceId}`);
+        await tx.delete(windAlertThresholds).where(eq(windAlertThresholds.deviceId, device.deviceId));
+        
+        console.log(`Deleting wind data for device ${device.deviceId}`);
+        await tx.delete(windData).where(eq(windData.deviceId, device.deviceId));
+        
+        console.log(`Deleting device downtime records for device ${device.deviceId}`);
+        await tx.delete(deviceDowntime).where(eq(deviceDowntime.deviceId, device.deviceId));
+        
+        // Check for device stock records and delete them
+        console.log(`Deleting device stock records for device ${device.deviceId}`);
+        await tx.delete(deviceStock).where(eq(deviceStock.deviceId, device.deviceId));
+        
+        // Finally delete the device itself
+        console.log(`Deleting device ${device.deviceId}`);
+        await tx.delete(devices).where(eq(devices.id, id));
+      });
+    } catch (error) {
+      console.error(`Error in deleteDevice transaction for device ${device.deviceId}:`, error);
+      throw error; // Re-throw to be handled by the route
+    }
   }
 
   // Device stock operations
