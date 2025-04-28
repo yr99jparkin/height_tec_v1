@@ -51,7 +51,7 @@ export default function AuthPage() {
       if (user.passwordRequiresChange) {
         setShowPasswordChange(true);
       } else {
-        setLocation("/");
+        setLocation("/app");
       }
     }
   }, [user, setLocation]);
@@ -90,7 +90,7 @@ export default function AuthPage() {
     };
     changePasswordMutation.mutate(passwordData, {
       onSuccess: () => {
-        setLocation("/");
+        setLocation("/app");
       }
     });
   };
