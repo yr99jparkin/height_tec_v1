@@ -48,11 +48,10 @@ export default function AuthPage() {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      // Check for password change requirement if property exists
-      if (user.hasOwnProperty('passwordRequiresChange') && (user as any).passwordRequiresChange) {
+      if (user.passwordRequiresChange) {
         setShowPasswordChange(true);
       } else {
-        setLocation("/app");
+        setLocation("/");
       }
     }
   }, [user, setLocation]);
@@ -91,7 +90,7 @@ export default function AuthPage() {
     };
     changePasswordMutation.mutate(passwordData, {
       onSuccess: () => {
-        setLocation("/app");
+        setLocation("/");
       }
     });
   };
