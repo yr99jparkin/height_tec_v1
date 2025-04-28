@@ -48,7 +48,8 @@ export default function AuthPage() {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      if (user.passwordRequiresChange) {
+      // Check for password change requirement if property exists
+      if (user.hasOwnProperty('passwordRequiresChange') && (user as any).passwordRequiresChange) {
         setShowPasswordChange(true);
       } else {
         setLocation("/app");

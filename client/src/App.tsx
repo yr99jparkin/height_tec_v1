@@ -9,10 +9,10 @@ import DevicesPage from "@/pages/devices-page";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
 import { GoogleMapsProvider } from "@/hooks/use-google-maps";
-// Marketing pages
-import HomePage from "@/pages/marketing/home-page";
-import FeaturesPage from "@/pages/marketing/features-page";
-import PricingPage from "@/pages/marketing/pricing-page";
+// Marketing pages - relative imports until TypeScript can resolve them
+import HomePage from "./pages/marketing/home-page";
+import FeaturesPage from "./pages/marketing/features-page";
+import PricingPage from "./pages/marketing/pricing-page";
 // Sidebar components commented out for future use
 // import { SidebarProvider } from "@/components/ui/sidebar";
 
