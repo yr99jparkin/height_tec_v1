@@ -329,23 +329,62 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
             <div className="flex items-center gap-3">
               {editingProject ? (
                 <div className="flex items-center">
-                  <Input
-                    ref={projectNameInputRef}
+                  <Select
                     value={projectName}
-                    onChange={(e) => setProjectName(e.target.value)}
-                    onBlur={saveProject}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') saveProject();
-                      if (e.key === 'Escape') setEditingProject(false);
+                    onValueChange={(value) => {
+                      setProjectName(value);
+                      setEditingProject(false);
+                      saveProject();
                     }}
-                    placeholder="Project"
-                    className="h-8 w-40 text-sm"
-                    disabled={isUpdatingDevice}
-                  />
+                  >
+                    <SelectTrigger className="h-8 w-40 text-sm">
+                      <SelectValue placeholder="Select project" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projects.map((project) => (
+                        <SelectItem key={project} value={project}>
+                          {project}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="__new__">+ Add new project</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {projectName === "__new__" && (
+                    <div className="ml-2">
+                      <Input
+                        ref={projectNameInputRef}
+                        value={newProjectName}
+                        onChange={(e) => setNewProjectName(e.target.value)}
+                        onBlur={() => {
+                          if (newProjectName.trim()) {
+                            setProjectName(newProjectName.trim());
+                            saveProject();
+                          }
+                          setNewProjectName("");
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && newProjectName.trim()) {
+                            setProjectName(newProjectName.trim());
+                            saveProject();
+                            setNewProjectName("");
+                          }
+                          if (e.key === 'Escape') {
+                            setEditingProject(false);
+                            setNewProjectName("");
+                          }
+                        }}
+                        placeholder="New project name"
+                        className="h-8 w-40 text-sm"
+                        disabled={isUpdatingDevice}
+                        autoFocus
+                      />
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div 
-                  className="inline-flex h-7 items-center rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 cursor-pointer"
+                  className={`inline-flex h-7 items-center rounded-full border px-2.5 py-1 text-xs font-semibold cursor-pointer ${device?.project ? getProjectColorClasses(device.project) : "border-blue-100 bg-blue-50 text-blue-600"}`}
                   onClick={startEditingProject}
                 >
                   <FolderClosed className="h-3.5 w-3.5 mr-1" />
