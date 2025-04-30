@@ -345,7 +345,7 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                 </div>
               ) : (
                 <div 
-                  className="inline-flex h-7 items-center rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 cursor-pointer"
+                  className="inline-flex h-7 items-center rounded-full border border-neutral-200 bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-600 cursor-pointer"
                   onClick={startEditingProject}
                 >
                   <FolderClosed className="h-3.5 w-3.5 mr-1" />
