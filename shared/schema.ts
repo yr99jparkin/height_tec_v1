@@ -32,15 +32,6 @@ export const devices = pgTable("devices", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const devicesRelations = relations(devices, ({ one, many }) => ({
-  user: one(users, {
-    fields: [devices.userId],
-    references: [users.id],
-  }),
-  windData: many(windData),
-  windAlertThresholds: one(windAlertThresholds),
-}));
-
 // Device Stock table
 export const deviceStock = pgTable("device_stock", {
   id: serial("id").primaryKey(),
@@ -53,6 +44,22 @@ export const deviceStock = pgTable("device_stock", {
 export const deviceStockRelations = relations(deviceStock, ({ one }) => ({
   device: one(devices, {
     fields: [deviceStock.deviceId],
+    references: [devices.deviceId],
+  }),
+}));
+
+// Notification Contacts table
+export const notificationContacts = pgTable("notification_contacts", {
+  id: serial("id").primaryKey(),
+  deviceId: text("device_id").notNull().references(() => devices.deviceId),
+  email: text("email").notNull(),
+  phoneNumber: text("phone_number").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const notificationContactsRelations = relations(notificationContacts, ({ one }) => ({
+  device: one(devices, {
+    fields: [notificationContacts.deviceId],
     references: [devices.deviceId],
   }),
 }));
@@ -93,6 +100,17 @@ export const windDataRelations = relations(windData, ({ one }) => ({
     fields: [windData.deviceId],
     references: [devices.deviceId],
   }),
+}));
+
+// Add device relations after all tables are defined
+export const devicesRelations = relations(devices, ({ one, many }) => ({
+  user: one(users, {
+    fields: [devices.userId],
+    references: [users.id],
+  }),
+  windData: many(windData),
+  windAlertThresholds: one(windAlertThresholds),
+  notificationContacts: many(notificationContacts),
 }));
 
 // Insert schemas using drizzle-zod
@@ -137,6 +155,12 @@ export const insertWindDataSchema = createInsertSchema(windData).pick({
   redAlert: true,
 });
 
+export const insertNotificationContactSchema = createInsertSchema(notificationContacts).pick({
+  deviceId: true,
+  email: true,
+  phoneNumber: true,
+});
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -152,3 +176,6 @@ export type InsertWindAlertThreshold = z.infer<typeof insertWindAlertThresholdsS
 
 export type WindData = typeof windData.$inferSelect;
 export type InsertWindData = z.infer<typeof insertWindDataSchema>;
+
+export type NotificationContact = typeof notificationContacts.$inferSelect;
+export type InsertNotificationContact = z.infer<typeof insertNotificationContactSchema>;
