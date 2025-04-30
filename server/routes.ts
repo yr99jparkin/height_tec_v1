@@ -491,25 +491,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Export wind data to CSV
-  // Get all unique project names
-  app.get("/api/projects", isAuthenticated, async (req, res) => {
-    try {
-      const devices = await storage.getDevicesByUserId(req.user.id);
-      const projectNames = new Set<string>();
-      
-      // Collect all unique project names (excluding null/undefined/empty)
-      devices.forEach(device => {
-        if (device.project) {
-          projectNames.add(device.project);
-        }
-      });
-      
-      res.json(Array.from(projectNames));
-    } catch (error) {
-      res.status(500).json({ message: "Error fetching project names" });
-    }
-  });
-
   app.get("/api/export/:deviceId", isAuthenticated, async (req, res) => {
     try {
       const deviceId = req.params.deviceId;
