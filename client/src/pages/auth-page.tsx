@@ -226,7 +226,7 @@ export default function AuthPage() {
       </div>
       
       {/* Right side - Hero content */}
-      <div className="w-full md:w-1/2 bg-primary p-8 flex items-center justify-center text-white">
+      <div className="w-full md:w-1/2 bg-black p-8 flex items-center justify-center text-white">
         <div className="max-w-md mx-auto">
           <h2 className="text-3xl font-bold mb-6 font-heading">Real-time Wind Monitoring for Construction Safety</h2>
           <p className="mb-6">
