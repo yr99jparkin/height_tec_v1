@@ -100,7 +100,9 @@ export default function AuthPage() {
       <div className="min-h-screen flex items-center justify-center p-4 bg-neutral-100">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold text-primary">Height-tec</CardTitle>
+            <CardTitle className="text-3xl font-bold text-primary flex items-center justify-center gap-2">
+              <img src="/new-logo.png" alt="Height-tec logo" className="h-12" />
+            </CardTitle>
             <CardDescription>Wind Monitoring Platform</CardDescription>
           </CardHeader>
           <CardContent>
@@ -171,9 +173,8 @@ export default function AuthPage() {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="flex flex-col items-center">
-              <h1 className="text-3xl font-bold text-primary font-heading italic flex items-center justify-center gap-2">
-                <img src="/logo2.png" alt="Height-tec logo" className="w-20 h-20" />
-                Height-tec
+              <h1 className="text-3xl font-bold text-primary font-heading flex items-center justify-center gap-2">
+                <img src="/new-logo.png" alt="Height-tec logo" className="h-16" />
               </h1>
               <p className="text-neutral-500 mt-2">Wind Monitoring Platform</p>
             </div>
