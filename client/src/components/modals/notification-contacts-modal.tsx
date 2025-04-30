@@ -1,13 +1,34 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { NotificationContact } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Pencil, Phone, Plus, Trash, X } from "lucide-react";
+import { 
+  Mail, 
+  Pencil, 
+  Phone, 
+  Plus, 
+  Trash, 
+  Copy,  
+  ChevronDown
+} from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+interface DeviceWithContacts {
+  deviceId: string;
+  deviceName: string;
+  contacts: NotificationContact[];
+}
 
 interface NotificationContactsModalProps {
   open: boolean;
@@ -31,6 +52,24 @@ export function NotificationContactsModal({
   const [editContactId, setEditContactId] = useState<number | null>(null);
   const [editEmail, setEditEmail] = useState("");
   const [editPhoneNumber, setEditPhoneNumber] = useState("");
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
+  
+  // Fetch all user devices with their contacts
+  const { data: devicesWithContacts = [] } = useQuery<DeviceWithContacts[]>({
+    queryKey: ["/api/user/devices-with-contacts"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/user/devices-with-contacts");
+      if (!response.ok) throw new Error("Failed to fetch devices with contacts");
+      return await response.json();
+    },
+    enabled: open
+  });
+  
+  // Filter out the current device from the devices list
+  const otherDevices = devicesWithContacts.filter(device => device.deviceId !== deviceId);
+  
+  // Get contacts for the selected device
+  const selectedDevice = otherDevices.find(device => device.deviceId === selectedDeviceId);
 
   // Start editing a contact
   const startEditing = (contact: NotificationContact) => {
@@ -178,6 +217,56 @@ export function NotificationContactsModal({
       setIsSubmitting(false);
     }
   };
+  
+  // Copy contact from another device
+  const copyContactFromDevice = async (contact: NotificationContact) => {
+    if (!deviceId) return;
+    
+    try {
+      setIsSubmitting(true);
+      
+      // Check if maximum of 5 contacts already reached
+      if (contacts.length >= 5) {
+        toast({
+          title: "Error",
+          description: "Maximum of 5 notification contacts allowed per device",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const response = await apiRequest("POST", `/api/devices/${deviceId}/contacts`, {
+        email: contact.email,
+        phoneNumber: contact.phoneNumber
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to copy contact");
+      }
+      
+      const newContact = await response.json();
+      
+      // Update local state
+      setContacts([...contacts, newContact]);
+      
+      toast({
+        title: "Contact copied",
+        description: "Notification contact has been copied successfully"
+      });
+      
+      // Invalidate the query to refresh data
+      queryClient.invalidateQueries({ queryKey: [`/api/devices/${deviceId}/contacts`] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to copy notification contact",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -283,6 +372,74 @@ export function NotificationContactsModal({
               </div>
             )}
           </div>
+          
+          {/* Copy Contacts from Other Devices */}
+          {contacts.length < 5 && otherDevices.length > 0 && (
+            <div className="border-t border-neutral-200 pt-4 mt-4">
+              <h3 className="text-sm font-medium mb-3">Copy Contacts from Other Devices</h3>
+              
+              <div className="space-y-3">
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="deviceSelect">Select Device</Label>
+                  <Select 
+                    value={selectedDeviceId} 
+                    onValueChange={(value) => setSelectedDeviceId(value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a device" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {otherDevices.map(device => (
+                        <SelectItem key={device.deviceId} value={device.deviceId}>
+                          {device.deviceName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {selectedDevice && selectedDevice.contacts.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-sm text-neutral-600">Available contacts:</p>
+                    {selectedDevice.contacts.map(contact => (
+                      <div 
+                        key={contact.id} 
+                        className="flex justify-between items-center border border-neutral-200 rounded p-2"
+                      >
+                        <div className="flex flex-col">
+                          <div className="flex items-center space-x-2">
+                            <Mail className="h-3 w-3 text-neutral-500" />
+                            <span className="text-xs">{contact.email}</span>
+                          </div>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <Phone className="h-3 w-3 text-neutral-500" />
+                            <span className="text-xs">{contact.phoneNumber}</span>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => copyContactFromDevice(contact)}
+                          disabled={isSubmitting || contacts.some(c => 
+                            c.email === contact.email && c.phoneNumber === contact.phoneNumber
+                          )}
+                          className="h-8"
+                        >
+                          <Copy className="h-3 w-3 mr-1" />
+                          Copy
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : selectedDevice ? (
+                  <p className="text-sm text-neutral-500 italic">No contacts found for this device</p>
+                ) : (
+                  <p className="text-sm text-neutral-500 italic">Select a device to view available contacts</p>
+                )}
+              </div>
+            </div>
+          )}
           
           {/* Add New Contact */}
           {contacts.length < 5 && (

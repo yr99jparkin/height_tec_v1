@@ -359,6 +359,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get all user devices with their contacts
+  app.get("/api/user/devices-with-contacts", isAuthenticated, async (req, res) => {
+    try {
+      const userDevices = await storage.getDevicesByUserId(req.user.id);
+      
+      if (userDevices.length === 0) {
+        return res.json([]);
+      }
+      
+      const devicesWithContacts = await Promise.all(
+        userDevices.map(async device => {
+          const contacts = await storage.getNotificationContactsByDeviceId(device.deviceId);
+          return {
+            deviceId: device.deviceId,
+            deviceName: device.deviceName,
+            contacts
+          };
+        })
+      );
+      
+      res.json(devicesWithContacts);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching devices with contacts" });
+    }
+  });
+  
   // Add notification contact to a device
   app.post("/api/devices/:deviceId/contacts", isAuthenticated, async (req, res) => {
     try {
