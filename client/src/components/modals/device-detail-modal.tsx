@@ -317,7 +317,7 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                 </DialogTitle>
               )}
               
-              <div className="flex items-center gap-1 ml-2">
+              <div className="flex items-center justify-center gap-1 ml-2 flex-1">
                 {editingProject ? (
                   <div className="flex items-center gap-2">
                     <Input
