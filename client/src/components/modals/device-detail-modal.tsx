@@ -64,24 +64,11 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
   // Update thresholds when data is loaded
   useEffect(() => {
     if (thresholds && typeof thresholds === 'object') {
-      // Handle amber threshold (prioritize new field names)
       if ('amberThreshold' in thresholds && typeof thresholds.amberThreshold === 'number') {
         setAmberThreshold(thresholds.amberThreshold);
-      } 
-      // Fallback for backwards compatibility with old schema
-      else if ('avgWindSpeedThreshold' in thresholds && typeof thresholds.avgWindSpeedThreshold === 'number') {
-        setAmberThreshold(thresholds.avgWindSpeedThreshold);
-        console.log("Using legacy avgWindSpeedThreshold field", thresholds.avgWindSpeedThreshold);
       }
-      
-      // Handle red threshold (prioritize new field names)
       if ('redThreshold' in thresholds && typeof thresholds.redThreshold === 'number') {
         setRedThreshold(thresholds.redThreshold);
-      }
-      // Fallback for backwards compatibility with old schema
-      else if ('maxWindSpeedThreshold' in thresholds && typeof thresholds.maxWindSpeedThreshold === 'number') {
-        setRedThreshold(thresholds.maxWindSpeedThreshold);
-        console.log("Using legacy maxWindSpeedThreshold field", thresholds.maxWindSpeedThreshold);
       }
     }
   }, [thresholds]);
