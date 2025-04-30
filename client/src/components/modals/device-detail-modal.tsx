@@ -102,11 +102,15 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
       if (!response.ok) throw new Error("Failed to fetch notification contacts");
       return await response.json();
     },
-    enabled: !!deviceId && open,
-    onSuccess: (data) => {
-      setNotificationContacts(data);
-    }
+    enabled: !!deviceId && open
   });
+  
+  // Update local state when contacts data changes
+  useEffect(() => {
+    if (contacts) {
+      setNotificationContacts(contacts);
+    }
+  }, [contacts]);
   
   // Update device name/project mutation
   const updateDeviceMutation = useMutation({
@@ -287,12 +291,65 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
         <DialogContent className="max-w-7xl w-[90vw] max-h-[90vh] flex flex-col p-0">
           <div className="flex items-center justify-between border-b border-neutral-300 p-4">
             <div className="flex items-center gap-2">
-              <DialogTitle className="text-2xl">{device?.deviceName}</DialogTitle>
+              {editingDeviceName ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    ref={deviceNameInputRef}
+                    value={deviceName}
+                    onChange={(e) => setDeviceName(e.target.value)}
+                    onBlur={saveDeviceName}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') saveDeviceName();
+                      if (e.key === 'Escape') setEditingDeviceName(false);
+                    }}
+                    placeholder="Device Name"
+                    className="text-2xl h-10 font-bold"
+                    disabled={isUpdatingDevice}
+                  />
+                </div>
+              ) : (
+                <DialogTitle 
+                  className="text-2xl cursor-pointer hover:text-primary flex items-center gap-1"
+                  onDoubleClick={startEditingDeviceName}
+                >
+                  {device?.deviceName}
+                  <Pencil className="h-4 w-4 opacity-50" />
+                </DialogTitle>
+              )}
+              
+              <div className="flex items-center gap-1 ml-2">
+                {editingProject ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      ref={projectNameInputRef}
+                      value={projectName}
+                      onChange={(e) => setProjectName(e.target.value)}
+                      onBlur={saveProject}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveProject();
+                        if (e.key === 'Escape') setEditingProject(false);
+                      }}
+                      placeholder="Project"
+                      className="h-8 text-sm"
+                      disabled={isUpdatingDevice}
+                    />
+                  </div>
+                ) : (
+                  <div 
+                    className="text-sm text-neutral-500 cursor-pointer hover:text-primary flex items-center gap-1"
+                    onClick={startEditingProject}
+                  >
+                    {device?.project ? `Project: ${device.project}` : "Add project"}
+                    <Edit className="h-3 w-3 opacity-50" />
+                  </div>
+                )}
+              </div>
+              
               <Button
                 variant="ghost" 
                 size="icon"
                 onClick={() => setRemoveModalOpen(true)}
-                className="h-8 w-8"
+                className="h-8 w-8 ml-2"
               >
                 <Trash2 className="h-5 w-5 text-destructive" />
               </Button>
@@ -543,7 +600,15 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                       </p>
                     </div>
                   </div>
-                  <div className="mt-4 flex justify-end">
+                  <div className="mt-4 flex justify-between">
+                    <Button 
+                      variant="outline"
+                      onClick={() => setNotificationsModalOpen(true)}
+                      className="flex items-center"
+                    >
+                      <Bell className="h-4 w-4 mr-2" />
+                      Notifications {notificationContacts.length > 0 && `(${notificationContacts.length})`}
+                    </Button>
                     <Button onClick={() => updateThresholdsMutation.mutate()}>
                       {updateThresholdsMutation.isPending ? "Saving..." : "Save Thresholds"}
                     </Button>
@@ -588,16 +653,25 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
       </Dialog>
 
       {device && (
-        <RemoveDeviceModal
-          open={removeModalOpen}
-          onOpenChange={setRemoveModalOpen}
-          deviceId={device.deviceId}
-          deviceName={device.deviceName}
-          onDeviceRemoved={() => {
-            onOpenChange(false);
-            queryClient.invalidateQueries({ queryKey: ["/api/devices"] });
-          }}
-        />
+        <>
+          <RemoveDeviceModal
+            open={removeModalOpen}
+            onOpenChange={setRemoveModalOpen}
+            deviceId={device.deviceId}
+            deviceName={device.deviceName}
+            onDeviceRemoved={() => {
+              onOpenChange(false);
+              queryClient.invalidateQueries({ queryKey: ["/api/devices"] });
+            }}
+          />
+          
+          <NotificationContactsModal
+            open={notificationsModalOpen}
+            onOpenChange={setNotificationsModalOpen}
+            deviceId={device.deviceId}
+            contacts={notificationContacts}
+          />
+        </>
       )}
     </>
   );
