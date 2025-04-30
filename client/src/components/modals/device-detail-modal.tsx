@@ -5,7 +5,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WindChart } from "@/components/ui/wind-chart";
 import { GoogleMap } from "@/components/ui/google-map";
-import { Bell, Edit, Edit2, Pencil, Trash2, X } from "lucide-react";
+import { Bell, Edit, Edit2, FolderClosed, Pencil, Trash2, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -310,57 +310,53 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
               ) : (
                 <DialogTitle 
                   className="text-2xl cursor-pointer hover:text-primary flex items-center gap-1"
-                  onDoubleClick={startEditingDeviceName}
+                  onClick={startEditingDeviceName}
                 >
                   {device?.deviceName}
                   <Pencil className="h-4 w-4 opacity-50" />
                 </DialogTitle>
               )}
               
-              <div className="flex items-center gap-1 ml-2">
-                {editingProject ? (
-                  <div className="flex items-center gap-2">
-                    <Input
-                      ref={projectNameInputRef}
-                      value={projectName}
-                      onChange={(e) => setProjectName(e.target.value)}
-                      onBlur={saveProject}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') saveProject();
-                        if (e.key === 'Escape') setEditingProject(false);
-                      }}
-                      placeholder="Project"
-                      className="h-8 text-sm"
-                      disabled={isUpdatingDevice}
-                    />
-                  </div>
-                ) : (
-                  <div 
-                    className="text-sm text-neutral-500 cursor-pointer hover:text-primary flex items-center gap-1"
-                    onClick={startEditingProject}
-                  >
-                    {device?.project ? `Project: ${device.project}` : "Add project"}
-                    <Edit className="h-3 w-3 opacity-50" />
-                  </div>
-                )}
-              </div>
-              
               <Button
                 variant="ghost" 
                 size="icon"
                 onClick={() => setRemoveModalOpen(true)}
-                className="h-8 w-8 ml-2"
+                className="h-8 w-8"
               >
                 <Trash2 className="h-5 w-5 text-destructive" />
               </Button>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              {editingProject ? (
+                <div className="flex items-center">
+                  <Input
+                    ref={projectNameInputRef}
+                    value={projectName}
+                    onChange={(e) => setProjectName(e.target.value)}
+                    onBlur={saveProject}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') saveProject();
+                      if (e.key === 'Escape') setEditingProject(false);
+                    }}
+                    placeholder="Project"
+                    className="h-8 w-40 text-sm"
+                    disabled={isUpdatingDevice}
+                  />
+                </div>
+              ) : (
+                <div 
+                  className="inline-flex h-7 items-center rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 cursor-pointer"
+                  onClick={startEditingProject}
+                >
+                  <FolderClosed className="h-3.5 w-3.5 mr-1" />
+                  {device?.project || "Add project"}
+                </div>
+              )}
               <p className="text-neutral-500">Device ID: {device?.deviceId}</p>
               <Button
                 variant="ghost" 
                 size="icon"
                 onClick={() => onOpenChange(false)}
-                className="ml-4"
               >
                 <X className="h-5 w-5" />
               </Button>
