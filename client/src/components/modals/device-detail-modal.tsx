@@ -16,6 +16,7 @@ import { NotificationContactsModal } from "./notification-contacts-modal";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getProjectColor } from "@/lib/project-colors";
 
 interface DeviceDetailModalProps {
   open: boolean;
@@ -35,6 +36,7 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
   const [deviceName, setDeviceName] = useState("");
   const [editingProject, setEditingProject] = useState(false);
   const [projectName, setProjectName] = useState("");
+  const [newProjectName, setNewProjectName] = useState("");
   const [isUpdatingDevice, setIsUpdatingDevice] = useState(false);
   const [notificationContacts, setNotificationContacts] = useState<NotificationContact[]>([]);
   const [exportRange, setExportRange] = useState<string>("24h");
@@ -46,6 +48,12 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
   );
   const deviceNameInputRef = useRef<HTMLInputElement>(null);
   const projectNameInputRef = useRef<HTMLInputElement>(null);
+  
+  // Fetch existing projects for this user
+  const { data: projects = [] } = useQuery<string[]>({
+    queryKey: ["/api/projects"],
+    enabled: open, // Only fetch when modal is open
+  });
 
   // Get device data
   const { data: device } = useQuery<Device>({
@@ -332,16 +340,20 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                   <Select
                     value={projectName}
                     onValueChange={(value) => {
-                      setProjectName(value);
-                      setEditingProject(false);
-                      saveProject();
+                      if (value === "__new__") {
+                        setNewProjectName("");
+                      } else {
+                        setProjectName(value);
+                        setEditingProject(false);
+                        saveProject();
+                      }
                     }}
                   >
                     <SelectTrigger className="h-8 w-40 text-sm">
                       <SelectValue placeholder="Select project" />
                     </SelectTrigger>
                     <SelectContent>
-                      {projects.map((project) => (
+                      {projects.map((project: string) => (
                         <SelectItem key={project} value={project}>
                           {project}
                         </SelectItem>
@@ -384,7 +396,7 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                 </div>
               ) : (
                 <div 
-                  className={`inline-flex h-7 items-center rounded-full border px-2.5 py-1 text-xs font-semibold cursor-pointer ${device?.project ? getProjectColorClasses(device.project) : "border-blue-100 bg-blue-50 text-blue-600"}`}
+                  className={`inline-flex h-7 items-center rounded-full border px-2.5 py-1 text-xs font-semibold cursor-pointer ${device?.project ? getProjectColor(device.project) : "border-blue-100 bg-blue-50 text-blue-600"}`}
                   onClick={startEditingProject}
                 >
                   <FolderClosed className="h-3.5 w-3.5 mr-1" />
