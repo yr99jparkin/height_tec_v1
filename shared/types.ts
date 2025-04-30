@@ -67,3 +67,13 @@ export interface UpdateThresholdsRequest {
   amberThreshold: number;
   redThreshold: number;
 }
+
+export interface NotificationContactRequest {
+  email: string;
+  phoneNumber: string;
+}
+
+export interface UpdateDeviceRequest {
+  deviceName?: string;
+  project?: string;
+}

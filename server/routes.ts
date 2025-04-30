@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { setupUdpListener } from "./udp-listener";
 import { eq } from "drizzle-orm";
-import { AddDeviceRequest, ExportDataParams, UpdateThresholdsRequest } from "@shared/types";
+import { AddDeviceRequest, ExportDataParams, NotificationContactRequest, UpdateDeviceRequest, UpdateThresholdsRequest } from "@shared/types";
 import { z } from "zod";
 import { format } from "date-fns";
 import path from "path";
@@ -226,7 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update device name
+  // Update device (name and project)
   app.patch("/api/devices/:deviceId", isAuthenticated, async (req, res) => {
     try {
       const deviceId = req.params.deviceId;
@@ -237,17 +237,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const schema = z.object({
-        deviceName: z.string().min(1).optional()
+        deviceName: z.string().min(1).optional(),
+        project: z.string().optional()
       });
       
-      const data = schema.parse(req.body);
+      const data = schema.parse(req.body) as UpdateDeviceRequest;
       
-      if (!data.deviceName) {
+      if (!data.deviceName && !data.project) {
         return res.status(400).json({ message: "No changes to make" });
       }
       
       const updatedDevice = await storage.updateDevice(device.id, {
-        deviceName: data.deviceName
+        ...(data.deviceName && { deviceName: data.deviceName }),
+        ...(data.project && { project: data.project })
       });
       
       res.json(updatedDevice);
@@ -338,6 +340,136 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get notification contacts for a device
+  app.get("/api/devices/:deviceId/contacts", isAuthenticated, async (req, res) => {
+    try {
+      const deviceId = req.params.deviceId;
+      const device = await storage.getDeviceByDeviceId(deviceId);
+      
+      if (!device || device.userId !== req.user.id) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+      
+      const contacts = await storage.getNotificationContactsByDeviceId(deviceId);
+      res.json(contacts);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching notification contacts" });
+    }
+  });
+  
+  // Add notification contact to a device
+  app.post("/api/devices/:deviceId/contacts", isAuthenticated, async (req, res) => {
+    try {
+      const deviceId = req.params.deviceId;
+      const device = await storage.getDeviceByDeviceId(deviceId);
+      
+      if (!device || device.userId !== req.user.id) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+      
+      // Check if maximum of 5 contacts already reached
+      const existingContacts = await storage.getNotificationContactsByDeviceId(deviceId);
+      if (existingContacts.length >= 5) {
+        return res.status(400).json({ message: "Maximum of 5 notification contacts allowed per device" });
+      }
+      
+      const schema = z.object({
+        email: z.string().email(),
+        phoneNumber: z.string().min(5)
+      });
+      
+      const data = schema.parse(req.body) as NotificationContactRequest;
+      
+      const contact = await storage.createNotificationContact({
+        deviceId,
+        email: data.email,
+        phoneNumber: data.phoneNumber
+      });
+      
+      res.status(201).json(contact);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error adding notification contact" });
+    }
+  });
+  
+  // Update a notification contact
+  app.patch("/api/contacts/:contactId", isAuthenticated, async (req, res) => {
+    try {
+      const contactId = parseInt(req.params.contactId);
+      if (isNaN(contactId)) {
+        return res.status(400).json({ message: "Invalid contact ID" });
+      }
+      
+      // Get the contact and verify it belongs to user's device
+      const contacts = await db.select()
+        .from(notificationContacts)
+        .innerJoin(devices, eq(notificationContacts.deviceId, devices.deviceId))
+        .where(and(
+          eq(notificationContacts.id, contactId),
+          eq(devices.userId, req.user.id)
+        ));
+      
+      if (contacts.length === 0) {
+        return res.status(404).json({ message: "Notification contact not found" });
+      }
+      
+      const schema = z.object({
+        email: z.string().email().optional(),
+        phoneNumber: z.string().min(5).optional()
+      });
+      
+      const data = schema.parse(req.body);
+      
+      if (!data.email && !data.phoneNumber) {
+        return res.status(400).json({ message: "No changes to make" });
+      }
+      
+      const updatedContact = await storage.updateNotificationContact(contactId, {
+        ...(data.email && { email: data.email }),
+        ...(data.phoneNumber && { phoneNumber: data.phoneNumber })
+      });
+      
+      res.json(updatedContact);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error updating notification contact" });
+    }
+  });
+  
+  // Delete a notification contact
+  app.delete("/api/contacts/:contactId", isAuthenticated, async (req, res) => {
+    try {
+      const contactId = parseInt(req.params.contactId);
+      if (isNaN(contactId)) {
+        return res.status(400).json({ message: "Invalid contact ID" });
+      }
+      
+      // Get the contact and verify it belongs to user's device
+      const contacts = await db.select()
+        .from(notificationContacts)
+        .innerJoin(devices, eq(notificationContacts.deviceId, devices.deviceId))
+        .where(and(
+          eq(notificationContacts.id, contactId),
+          eq(devices.userId, req.user.id)
+        ));
+      
+      if (contacts.length === 0) {
+        return res.status(404).json({ message: "Notification contact not found" });
+      }
+      
+      await storage.deleteNotificationContact(contactId);
+      
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Error deleting notification contact" });
+    }
+  });
+  
   // Get all unique projects for the current user
   app.get("/api/projects", isAuthenticated, async (req, res) => {
     try {

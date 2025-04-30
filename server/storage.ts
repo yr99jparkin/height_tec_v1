@@ -1,6 +1,7 @@
-import { users, devices, deviceStock, windAlertThresholds, windData } from "@shared/schema";
+import { users, devices, deviceStock, windAlertThresholds, windData, notificationContacts } from "@shared/schema";
 import type { User, InsertUser, Device, InsertDevice, DeviceStock, InsertDeviceStock, 
-  WindAlertThreshold, InsertWindAlertThreshold, WindData, InsertWindData } from "@shared/schema";
+  WindAlertThreshold, InsertWindAlertThreshold, WindData, InsertWindData, 
+  NotificationContact, InsertNotificationContact } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, desc, lte, gte, sql, max, avg, inArray } from "drizzle-orm";
 import { WindStatsResponse, DeviceWithLatestData } from "@shared/types";
@@ -28,6 +29,12 @@ export interface IStorage {
   getDeviceStockByDeviceId(deviceId: string): Promise<DeviceStock | undefined>;
   updateDeviceStockStatus(deviceId: string, status: string, username?: string): Promise<void>;
 
+  // Notification contacts operations
+  getNotificationContactsByDeviceId(deviceId: string): Promise<NotificationContact[]>;
+  createNotificationContact(contact: InsertNotificationContact): Promise<NotificationContact>;
+  updateNotificationContact(id: number, contact: Partial<InsertNotificationContact>): Promise<NotificationContact>;
+  deleteNotificationContact(id: number): Promise<void>;
+  
   // Wind alert threshold operations
   getThresholdsByDeviceId(deviceId: string): Promise<WindAlertThreshold | undefined>;
   createThresholds(thresholds: InsertWindAlertThreshold): Promise<WindAlertThreshold>;
@@ -110,7 +117,34 @@ export class DatabaseStorage implements IStorage {
     // Delete related data first due to foreign key constraints
     await db.delete(windAlertThresholds).where(eq(windAlertThresholds.deviceId, device.deviceId));
     await db.delete(windData).where(eq(windData.deviceId, device.deviceId));
+    await db.delete(notificationContacts).where(eq(notificationContacts.deviceId, device.deviceId));
     await db.delete(devices).where(eq(devices.id, id));
+  }
+  
+  // Notification contact operations
+  async getNotificationContactsByDeviceId(deviceId: string): Promise<NotificationContact[]> {
+    return await db.select().from(notificationContacts)
+      .where(eq(notificationContacts.deviceId, deviceId));
+  }
+
+  async createNotificationContact(contact: InsertNotificationContact): Promise<NotificationContact> {
+    const [newContact] = await db.insert(notificationContacts)
+      .values(contact)
+      .returning();
+    return newContact;
+  }
+
+  async updateNotificationContact(id: number, contact: Partial<InsertNotificationContact>): Promise<NotificationContact> {
+    const [updatedContact] = await db.update(notificationContacts)
+      .set(contact)
+      .where(eq(notificationContacts.id, id))
+      .returning();
+    return updatedContact;
+  }
+
+  async deleteNotificationContact(id: number): Promise<void> {
+    await db.delete(notificationContacts)
+      .where(eq(notificationContacts.id, id));
   }
 
   // Device stock operations
