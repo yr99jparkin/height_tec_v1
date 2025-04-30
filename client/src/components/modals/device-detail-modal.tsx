@@ -1,18 +1,21 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WindChart } from "@/components/ui/wind-chart";
 import { GoogleMap } from "@/components/ui/google-map";
-import { Trash2, X } from "lucide-react";
+import { Bell, Edit, Edit2, Pencil, Trash2, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { WindData, Device } from "@shared/schema";
-import { DeviceWithLatestData } from "@shared/types";
+import { WindData, Device, NotificationContact } from "@shared/schema";
+import { DeviceWithLatestData, UpdateDeviceRequest } from "@shared/types";
 import { RemoveDeviceModal } from "./remove-device-modal";
+import { NotificationContactsModal } from "./notification-contacts-modal";
 import { format } from "date-fns";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface DeviceDetailModalProps {
   open: boolean;
@@ -27,6 +30,13 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
   const [amberThreshold, setAmberThreshold] = useState<number>(20);
   const [redThreshold, setRedThreshold] = useState<number>(30);
   const [removeModalOpen, setRemoveModalOpen] = useState(false);
+  const [notificationsModalOpen, setNotificationsModalOpen] = useState(false);
+  const [editingDeviceName, setEditingDeviceName] = useState(false);
+  const [deviceName, setDeviceName] = useState("");
+  const [editingProject, setEditingProject] = useState(false);
+  const [projectName, setProjectName] = useState("");
+  const [isUpdatingDevice, setIsUpdatingDevice] = useState(false);
+  const [notificationContacts, setNotificationContacts] = useState<NotificationContact[]>([]);
   const [exportRange, setExportRange] = useState<string>("24h");
   const [customStartDate, setCustomStartDate] = useState<string>(
     format(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), "yyyy-MM-dd")
@@ -34,6 +44,8 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
   const [customEndDate, setCustomEndDate] = useState<string>(
     format(new Date(), "yyyy-MM-dd")
   );
+  const deviceNameInputRef = useRef<HTMLInputElement>(null);
+  const projectNameInputRef = useRef<HTMLInputElement>(null);
 
   // Get device data
   const { data: device } = useQuery<Device>({
@@ -61,6 +73,14 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
     enabled: !!deviceId && open,
   });
 
+  // Update device state when data is loaded
+  useEffect(() => {
+    if (device) {
+      setDeviceName(device.deviceName);
+      setProjectName(device.project || "");
+    }
+  }, [device]);
+  
   // Update thresholds when data is loaded
   useEffect(() => {
     if (thresholds && typeof thresholds === 'object') {
@@ -72,6 +92,95 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
       }
     }
   }, [thresholds]);
+  
+  // Get notification contacts for device
+  const { data: contacts = [] } = useQuery<NotificationContact[]>({
+    queryKey: [`/api/devices/${deviceId}/contacts`],
+    queryFn: async () => {
+      if (!deviceId) throw new Error("No device ID provided");
+      const response = await apiRequest("GET", `/api/devices/${deviceId}/contacts`);
+      if (!response.ok) throw new Error("Failed to fetch notification contacts");
+      return await response.json();
+    },
+    enabled: !!deviceId && open,
+    onSuccess: (data) => {
+      setNotificationContacts(data);
+    }
+  });
+  
+  // Update device name/project mutation
+  const updateDeviceMutation = useMutation({
+    mutationFn: async (data: UpdateDeviceRequest) => {
+      if (!deviceId) return;
+      const response = await apiRequest("PATCH", `/api/devices/${deviceId}`, data);
+      if (!response.ok) throw new Error("Failed to update device");
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Device updated",
+        description: "Device information has been updated successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/devices", deviceId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/devices"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update device",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      setEditingDeviceName(false);
+      setEditingProject(false);
+      setIsUpdatingDevice(false);
+    }
+  });
+  
+  // Start editing device name
+  const startEditingDeviceName = () => {
+    setEditingDeviceName(true);
+    // Focus the input after render
+    setTimeout(() => {
+      if (deviceNameInputRef.current) {
+        deviceNameInputRef.current.focus();
+      }
+    }, 0);
+  };
+  
+  // Save device name
+  const saveDeviceName = () => {
+    if (!deviceId || !deviceName.trim() || deviceName === device?.deviceName) {
+      setEditingDeviceName(false);
+      return;
+    }
+    
+    setIsUpdatingDevice(true);
+    updateDeviceMutation.mutate({ deviceName });
+  };
+  
+  // Start editing project
+  const startEditingProject = () => {
+    setEditingProject(true);
+    // Focus the input after render
+    setTimeout(() => {
+      if (projectNameInputRef.current) {
+        projectNameInputRef.current.focus();
+      }
+    }, 0);
+  };
+  
+  // Save project
+  const saveProject = () => {
+    if (!deviceId || projectName === device?.project) {
+      setEditingProject(false);
+      return;
+    }
+    
+    setIsUpdatingDevice(true);
+    updateDeviceMutation.mutate({ project: projectName });
+  };
 
   // Get wind data history
   const { data: windData } = useQuery<WindData[]>({
