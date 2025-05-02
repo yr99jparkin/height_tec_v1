@@ -1,0 +1,18 @@
+I want to make the below changes to the data architecture wind_data table 
+
+This table will continue receiving all valid incoming readings from the UDP listener service. It will act as a short-term buffer, retaining only the last 180 minutes of data, and will support:The real-time UI (providing the latest reading per device)Aggregation into a new historical data tablewind_data_historical table (New)
+This new table will store 10-minute aggregated data for each device, including:Average wind speedMaximum wind speedStandard deviationAlert statuses triggeredCumulative downtime - you will need to build API endpoint for downtime reporting as this doesn't exist yetThe wind_data_historical table will serve all statistical endpoints now except for current wind speed, which will still be provided by the wind_data table.Data Flow Summary
+On receiving data via UDP, insert the reading into wind_data (as is currently done). Consider adding a DB index to optimize real-time UI queries for the "latest" wind speed per device.A new aggregation job will run every 10 minutes (e.g., at :10, :20, :30...) to:Query the last 10 minutes of data from wind_dataAggregate metrics by deviceInsert results into wind_data_historical
+Consider adding a "processed" flag to track which readings have been aggregatedFor aggregations, consider window functions if apprporiate in your queries for time-based analysis
+This job must:
+
+Track the last processed interval to avoid duplicate aggregationInclude retry or recovery logic in case of failures
+We also need to periodically delete rows in wind_data older than 180 minutes to maintain the short-term buffer.
+Things to watch out for: 
+Race conditions between the new aggregation job and UDP insertsEnsuring no data loss during the aggregation processThe new wind_data_historical table will need careful schema design to support efficient querying of historical trends
+The udp-listener.ts receives timestamps from devices but doesn't explicitly handle timezone information. If devices send data with different timezone offsets, this could cause aggregation windows to be misaligned.Timezone / timestamp issues - to mitigate:
+- Store all timestamps in UTC in the database
+- Define aggregation windows in UTC
+- Convert to local time only at display time
+- Include timezone information in device metadata
+- Add timezone handling to the aggregation job logic
