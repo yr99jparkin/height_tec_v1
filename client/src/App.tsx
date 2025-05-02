@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import DevicesPage from "@/pages/devices-page";
+import ReportsPage from "@/pages/reports-page";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
 import { GoogleMapsProvider } from "@/hooks/use-google-maps";
@@ -16,6 +17,7 @@ function Router() {
   return (
     <Switch>
       <ProtectedRoute path="/" component={DevicesPage} />
+      <ProtectedRoute path="/reports" component={ReportsPage} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>

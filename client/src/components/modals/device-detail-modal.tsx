@@ -329,28 +329,40 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
               <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-xl font-medium">Wind Speed Trend</h3>
-                  <div className="flex space-x-2">
+                  <div className="flex items-center space-x-2">
                     <Button 
-                      variant={timeRange === "15m" ? "default" : "outline"} 
+                      variant="secondary"
                       size="sm"
-                      onClick={() => setTimeRange("15m")}
+                      onClick={() => {
+                        onOpenChange(false); // Close the modal
+                        window.location.href = '/reports'; // Navigate to reports page
+                      }}
                     >
-                      15M
+                      Generate Report
                     </Button>
-                    <Button 
-                      variant={timeRange === "1h" ? "default" : "outline"} 
-                      size="sm"
-                      onClick={() => setTimeRange("1h")}
-                    >
-                      1H
-                    </Button>
-                    <Button 
-                      variant={timeRange === "3h" ? "default" : "outline"} 
-                      size="sm"
-                      onClick={() => setTimeRange("3h")}
-                    >
-                      3H
-                    </Button>
+                    <div className="flex space-x-2 ml-2">
+                      <Button 
+                        variant={timeRange === "15m" ? "default" : "outline"} 
+                        size="sm"
+                        onClick={() => setTimeRange("15m")}
+                      >
+                        15M
+                      </Button>
+                      <Button 
+                        variant={timeRange === "1h" ? "default" : "outline"} 
+                        size="sm"
+                        onClick={() => setTimeRange("1h")}
+                      >
+                        1H
+                      </Button>
+                      <Button 
+                        variant={timeRange === "3h" ? "default" : "outline"} 
+                        size="sm"
+                        onClick={() => setTimeRange("3h")}
+                      >
+                        3H
+                      </Button>
+                    </div>
                   </div>
                 </div>
                 <div className="h-80">
