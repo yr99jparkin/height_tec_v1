@@ -3,7 +3,7 @@ import type { User, InsertUser, Device, InsertDevice, DeviceStock, InsertDeviceS
   WindAlertThreshold, InsertWindAlertThreshold, WindData, InsertWindData, 
   NotificationContact, InsertNotificationContact } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, desc, lte, gte, sql, max, avg, inArray } from "drizzle-orm";
+import { eq, and, desc, lte, gte, sql, max, avg, inArray, sum } from "drizzle-orm";
 import { WindStatsResponse, DeviceWithLatestData } from "@shared/types";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
@@ -46,6 +46,7 @@ export interface IStorage {
   getWindDataByDeviceIdAndRange(deviceId: string, startTime: Date, endTime: Date): Promise<WindData[]>;
   getWindStatsForDevice(deviceId: string, minutes: number): Promise<WindStatsResponse>;
   getDevicesWithLatestData(userDeviceIds: string[]): Promise<DeviceWithLatestData[]>;
+  getTotalDowntimeForDevice(deviceId: string, startTime: Date, endTime: Date): Promise<number>;
 
   sessionStore: session.SessionStore;
 }
@@ -269,6 +270,24 @@ export class DatabaseStorage implements IStorage {
       alertState: latestData?.alertState || false,
       timestamp: latestData?.timestamp?.toISOString() || new Date().toISOString()
     };
+  }
+
+  async getTotalDowntimeForDevice(deviceId: string, startTime: Date, endTime: Date): Promise<number> {
+    const result = await db
+      .select({
+        totalDowntime: sum(windData.downtimeSeconds).as("totalDowntime")
+      })
+      .from(windData)
+      .where(
+        and(
+          eq(windData.deviceId, deviceId),
+          gte(windData.timestamp, startTime),
+          lte(windData.timestamp, endTime),
+          eq(windData.redAlert, true)
+        )
+      );
+    
+    return result[0]?.totalDowntime || 0;
   }
 
   async getDevicesWithLatestData(userDeviceIds: string[]): Promise<DeviceWithLatestData[]> {
