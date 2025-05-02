@@ -22,10 +22,15 @@ export default function ReportsPage() {
             <h1 className="text-2xl font-heading font-semibold text-neutral-800">Wind Reports</h1>
           </div>
           
-          <div className="bg-white border border-neutral-300 rounded-lg p-8 shadow-sm">
-            <p className="text-center text-neutral-600">
+          <div className="bg-white border border-neutral-300 rounded-lg p-8 shadow-sm flex flex-col items-center">
+            <p className="text-center text-neutral-600 mb-4">
               Report generation feature will be implemented soon...
             </p>
+            <Button 
+              className="bg-yellow-400 text-black hover:bg-yellow-500"
+            >
+              Generate Report
+            </Button>
           </div>
         </div>
       </main>
