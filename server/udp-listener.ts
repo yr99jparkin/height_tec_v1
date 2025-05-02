@@ -224,7 +224,8 @@ export function setupUdpListener(httpServer: Server) {
         alertState: windDataWithAlert.alertState,
         amberAlert: windDataWithAlert.amberAlert,
         redAlert: windDataWithAlert.redAlert,
-        downtimeSeconds: windDataWithAlert.downtimeSeconds
+        downtimeSeconds: windDataWithAlert.downtimeSeconds,
+        processed: false // Mark as not processed for aggregation
       });
 
       log(`Processed wind data for device ${data.deviceId}`, "udp");

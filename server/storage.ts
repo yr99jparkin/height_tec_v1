@@ -4,12 +4,15 @@ import type { User, InsertUser, Device, InsertDevice, DeviceStock, InsertDeviceS
   WindDataHistorical, InsertWindDataHistorical,
   NotificationContact, InsertNotificationContact } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, desc, lte, gte, sql, max, avg, inArray, sum } from "drizzle-orm";
+import { eq, and, desc, lte, gte, lt, sql, max, avg, inArray, sum } from "drizzle-orm";
 import { WindStatsResponse, DeviceWithLatestData } from "@shared/types";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 
 const PostgresSessionStore = connectPg(session);
+
+// Define Store type from express-session
+type SessionStore = session.Store;
 
 export interface IStorage {
   // User operations
@@ -57,11 +60,11 @@ export interface IStorage {
   purgeOldWindData(olderThanMinutes: number): Promise<void>;
   getLastProcessedInterval(): Promise<Date | null>;
 
-  sessionStore: session.SessionStore;
+  sessionStore: SessionStore;
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: SessionStore;
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({ 
@@ -349,6 +352,195 @@ export class DatabaseStorage implements IStorage {
     `);
 
     return result.rows as DeviceWithLatestData[];
+  }
+
+  // Historical wind data operations
+  async insertWindDataHistorical(data: InsertWindDataHistorical): Promise<WindDataHistorical> {
+    const [newWindDataHistorical] = await db.insert(windDataHistorical).values(data).returning();
+    return newWindDataHistorical;
+  }
+
+  async getHistoricalWindDataByDeviceIdAndRange(deviceId: string, startTime: Date, endTime: Date): Promise<WindDataHistorical[]> {
+    return await db.select().from(windDataHistorical)
+      .where(
+        and(
+          eq(windDataHistorical.deviceId, deviceId),
+          gte(windDataHistorical.intervalStart, startTime),
+          lte(windDataHistorical.intervalEnd, endTime)
+        )
+      )
+      .orderBy(windDataHistorical.intervalStart);
+  }
+
+  async getHistoricalWindStatsForDevice(deviceId: string, days: number): Promise<WindStatsResponse> {
+    const timeThreshold = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    // For historical data, we use the aggregated stats directly
+    const [stats] = await db
+      .select({
+        avgWindSpeed: avg(windDataHistorical.avgWindSpeed).as("avgWindSpeed"),
+        maxWindSpeed: max(windDataHistorical.maxWindSpeed).as("maxWindSpeed"),
+      })
+      .from(windDataHistorical)
+      .where(
+        and(
+          eq(windDataHistorical.deviceId, deviceId),
+          gte(windDataHistorical.intervalStart, timeThreshold)
+        )
+      );
+
+    // Get the latest record to determine alert state
+    const [latestData] = await db
+      .select()
+      .from(windDataHistorical)
+      .where(eq(windDataHistorical.deviceId, deviceId))
+      .orderBy(desc(windDataHistorical.intervalEnd))
+      .limit(1);
+
+    // For current wind speed, we always use the real-time data
+    const thirtySecondsAgo = new Date(Date.now() - 30 * 1000);
+    const [currentStats] = await db
+      .select({
+        currentWindSpeed: avg(windData.windSpeed).as("currentWindSpeed"),
+      })
+      .from(windData)
+      .where(
+        and(
+          eq(windData.deviceId, deviceId),
+          gte(windData.timestamp, thirtySecondsAgo)
+        )
+      );
+
+    return {
+      avgWindSpeed: Number(stats?.avgWindSpeed || 0),
+      maxWindSpeed: Number(stats?.maxWindSpeed || 0),
+      currentWindSpeed: Number(currentStats?.currentWindSpeed || 0),
+      alertState: latestData?.alertTriggered || false,
+      timestamp: latestData?.intervalEnd?.toISOString() || new Date().toISOString()
+    };
+  }
+
+  async aggregateWindData(intervalMinutes: number): Promise<void> {
+    // Get the last processed timestamp or default to 180 minutes ago
+    const lastProcessed = await this.getLastProcessedInterval();
+    const startTime = lastProcessed || new Date(Date.now() - 180 * 60 * 1000);
+    
+    // Determine the end time for this aggregation (current time minus 10 minutes to ensure complete data)
+    const safeBuffer = 10; // minutes
+    const endTime = new Date(Date.now() - safeBuffer * 60 * 1000);
+    
+    // Round the end time to the nearest intervalMinutes boundary
+    const roundedEndTime = new Date(
+      Math.floor(endTime.getTime() / (intervalMinutes * 60 * 1000)) * (intervalMinutes * 60 * 1000)
+    );
+
+    // Get all device IDs that have data in the time range
+    const deviceIdsResult = await db
+      .selectDistinct({ deviceId: windData.deviceId })
+      .from(windData)
+      .where(
+        and(
+          gte(windData.timestamp, startTime),
+          lte(windData.timestamp, roundedEndTime),
+          eq(windData.processed, false)
+        )
+      );
+
+    const deviceIds = deviceIdsResult.map(row => row.deviceId);
+
+    for (const deviceId of deviceIds) {
+      // Process each interval within the time range
+      let intervalStart = new Date(startTime);
+      
+      while (intervalStart < roundedEndTime) {
+        const intervalEnd = new Date(intervalStart.getTime() + intervalMinutes * 60 * 1000);
+        
+        // Fetch data for this interval
+        const intervalData = await db
+          .select()
+          .from(windData)
+          .where(
+            and(
+              eq(windData.deviceId, deviceId),
+              gte(windData.timestamp, intervalStart),
+              lt(windData.timestamp, intervalEnd),
+              eq(windData.processed, false)
+            )
+          );
+        
+        if (intervalData.length > 0) {
+          // Calculate aggregated metrics
+          const windSpeeds = intervalData.map(d => d.windSpeed);
+          const avgWindSpeed = windSpeeds.reduce((sum, speed) => sum + speed, 0) / windSpeeds.length;
+          const maxWindSpeed = Math.max(...windSpeeds);
+          
+          // Calculate standard deviation
+          const variance = windSpeeds.reduce((sum, speed) => sum + Math.pow(speed - avgWindSpeed, 2), 0) / windSpeeds.length;
+          const stdDeviation = Math.sqrt(variance);
+          
+          // Determine if alerts were triggered
+          const alertTriggered = intervalData.some(d => d.alertState);
+          const amberAlertTriggered = intervalData.some(d => d.amberAlert);
+          const redAlertTriggered = intervalData.some(d => d.redAlert);
+          
+          // Calculate total downtime
+          const downtimeSeconds = intervalData.reduce((sum, d) => sum + (d.downtimeSeconds || 0), 0);
+          
+          // Insert historical record
+          await this.insertWindDataHistorical({
+            deviceId,
+            intervalStart,
+            intervalEnd,
+            avgWindSpeed,
+            maxWindSpeed,
+            stdDeviation,
+            alertTriggered,
+            amberAlertTriggered,
+            redAlertTriggered,
+            downtimeSeconds,
+            sampleCount: intervalData.length
+          });
+          
+          // Mark data as processed
+          await db
+            .update(windData)
+            .set({ processed: true })
+            .where(
+              and(
+                eq(windData.deviceId, deviceId),
+                gte(windData.timestamp, intervalStart),
+                lt(windData.timestamp, intervalEnd)
+              )
+            );
+        }
+        
+        // Move to next interval
+        intervalStart = intervalEnd;
+      }
+    }
+  }
+
+  async purgeOldWindData(olderThanMinutes: number): Promise<void> {
+    const cutoffTime = new Date(Date.now() - olderThanMinutes * 60 * 1000);
+    
+    // Ensure we only delete processed data
+    await db
+      .delete(windData)
+      .where(
+        and(
+          lte(windData.timestamp, cutoffTime),
+          eq(windData.processed, true)
+        )
+      );
+  }
+
+  async getLastProcessedInterval(): Promise<Date | null> {
+    // Find the most recent interval end time in the historical data
+    const [result] = await db
+      .select({ maxIntervalEnd: max(windDataHistorical.intervalEnd) })
+      .from(windDataHistorical);
+    
+    return result?.maxIntervalEnd || null;
   }
 }
 
