@@ -69,7 +69,7 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
       <circle 
         cx={cx} 
         cy={cy} 
-        r={4} 
+        r={3} 
         fill={dotColor} 
         stroke="#fff"
         strokeWidth={1}
