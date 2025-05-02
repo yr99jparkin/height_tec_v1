@@ -37,13 +37,6 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
   const [projectName, setProjectName] = useState("");
   const [isUpdatingDevice, setIsUpdatingDevice] = useState(false);
   const [notificationContacts, setNotificationContacts] = useState<NotificationContact[]>([]);
-  const [exportRange, setExportRange] = useState<string>("24h");
-  const [customStartDate, setCustomStartDate] = useState<string>(
-    format(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), "yyyy-MM-dd")
-  );
-  const [customEndDate, setCustomEndDate] = useState<string>(
-    format(new Date(), "yyyy-MM-dd")
-  );
   const deviceNameInputRef = useRef<HTMLInputElement>(null);
   const projectNameInputRef = useRef<HTMLInputElement>(null);
 
@@ -238,40 +231,7 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
     },
   });
 
-  const handleExportData = () => {
-    if (!deviceId) return;
 
-    let startDate: string;
-    let endDate: string = new Date().toISOString();
-
-    switch (exportRange) {
-      case "15m":
-        startDate = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-        break;
-      case "1h":
-        startDate = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-        break;
-      case "24h":
-        startDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        break;
-      case "7d":
-        startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-        break;
-      case "30d":
-        startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-        break;
-      case "custom":
-        startDate = new Date(customStartDate).toISOString();
-        endDate = new Date(customEndDate).toISOString();
-        break;
-      default:
-        startDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    }
-
-    // Create a direct download link
-    const downloadUrl = `/api/export/${deviceId}?start=${startDate}&end=${endDate}`;
-    window.open(downloadUrl, '_blank');
-  };
 
   // Helper function to determine alert status with amber and red thresholds
   const getAlertClass = (value: number, threshold: 'amber' | 'red') => {
@@ -492,56 +452,7 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                 </div>
               </div>
               
-              {/* Export Data */}
-              <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
-                <h3 className="font-medium mb-4">Export Wind Data</h3>
-                <div className="flex items-center space-x-4">
-                  <Select value={exportRange} onValueChange={setExportRange}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Select time range" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="15m">Last 15 minutes</SelectItem>
-                      <SelectItem value="1h">Last hour</SelectItem>
-                      <SelectItem value="24h">Last 24 hours</SelectItem>
-                      <SelectItem value="7d">Last 7 days</SelectItem>
-                      <SelectItem value="30d">Last 30 days</SelectItem>
-                      <SelectItem value="custom">Custom range</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  <Button onClick={handleExportData}>
-                    Export to CSV
-                  </Button>
-                </div>
-                
-                {exportRange === "custom" && (
-                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-1">
-                        Start Date
-                      </label>
-                      <input
-                        type="date"
-                        value={customStartDate}
-                        onChange={(e) => setCustomStartDate(e.target.value)}
-                        className="px-3 py-2 border border-neutral-300 rounded-md w-full"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-1">
-                        End Date
-                      </label>
-                      <input
-                        type="date"
-                        value={customEndDate}
-                        onChange={(e) => setCustomEndDate(e.target.value)}
-                        className="px-3 py-2 border border-neutral-300 rounded-md w-full"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
+
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Alert Thresholds */}

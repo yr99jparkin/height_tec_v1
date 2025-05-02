@@ -588,54 +588,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Export wind data to CSV
-  app.get("/api/export/:deviceId", isAuthenticated, async (req, res) => {
-    try {
-      const deviceId = req.params.deviceId;
-      const startDate = req.query.start as string;
-      const endDate = req.query.end as string;
-      
-      if (!startDate || !endDate) {
-        return res.status(400).json({ message: "Start and end dates are required" });
-      }
-      
-      const device = await storage.getDeviceByDeviceId(deviceId);
-      
-      if (!device || device.userId !== req.user.id) {
-        return res.status(404).json({ message: "Device not found" });
-      }
-      
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      
-      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-        return res.status(400).json({ message: "Invalid date format" });
-      }
-      
-      const windData = await storage.getWindDataByDeviceIdAndRange(deviceId, start, end);
-      
-      if (windData.length === 0) {
-        return res.status(404).json({ message: "No data found for the specified range" });
-      }
-      
-      // Generate CSV content
-      const headers = "Device ID,Timestamp,Wind Speed (km/h),Latitude,Longitude,Alert State,Amber Alert,Red Alert\n";
-      const rows = windData.map(data => {
-        return `${data.deviceId},${data.timestamp},${data.windSpeed},${data.latitude || ''},${data.longitude || ''},${data.alertState},${data.amberAlert},${data.redAlert}`;
-      }).join("\n");
-      
-      const csv = headers + rows;
-      
-      // Set headers for file download
-      const filename = `wind_data_${device.deviceName.replace(/\s+/g, '_')}_${format(start, 'yyyy-MM-dd')}_to_${format(end, 'yyyy-MM-dd')}.csv`;
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      
-      res.send(csv);
-    } catch (error) {
-      res.status(500).json({ message: "Error exporting data" });
-    }
-  });
+
 
   return httpServer;
 }
