@@ -133,6 +133,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error fetching wind stats" });
     }
   });
+  
+  // Get historical wind data stats for a device
+  app.get("/api/wind/historical/:deviceId", isAuthenticated, async (req, res) => {
+    try {
+      const deviceId = req.params.deviceId;
+      const days = parseInt(req.query.days as string) || 7; // Default to 7 days
+      
+      // Check if device exists and belongs to user
+      const device = await storage.getDeviceByDeviceId(deviceId);
+      if (!device || device.userId !== req.user.id) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+
+      const stats = await storage.getHistoricalWindStatsForDevice(deviceId, days);
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching historical wind stats" });
+    }
+  });
+  
+  // Get historical wind data for a specific time range
+  app.get("/api/wind/historical/:deviceId/range", isAuthenticated, async (req, res) => {
+    try {
+      const deviceId = req.params.deviceId;
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : new Date();
+      
+      // Check if device exists and belongs to user
+      const device = await storage.getDeviceByDeviceId(deviceId);
+      if (!device || device.userId !== req.user.id) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+
+      const data = await storage.getHistoricalWindDataByDeviceIdAndRange(deviceId, startDate, endDate);
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching historical wind data" });
+    }
+  });
+  
+  // Get downtime information for a device
+  app.get("/api/wind/downtime/:deviceId", isAuthenticated, async (req, res) => {
+    try {
+      const deviceId = req.params.deviceId;
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : new Date();
+      
+      // Check if device exists and belongs to user
+      const device = await storage.getDeviceByDeviceId(deviceId);
+      if (!device || device.userId !== req.user.id) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+
+      const downtimeSeconds = await storage.getTotalDowntimeForDevice(deviceId, startDate, endDate);
+      
+      // Convert seconds to hours and minutes
+      const downtimeHours = Math.floor(downtimeSeconds / 3600);
+      const downtimeMinutes = Math.floor((downtimeSeconds % 3600) / 60);
+      
+      res.json({
+        deviceId,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        downtimeSeconds,
+        downtimeHours,
+        downtimeMinutes,
+        formattedDowntime: `${downtimeHours}h ${downtimeMinutes}m`
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching downtime data" });
+    }
+  });
 
   // Get all devices for the logged-in user with latest data
   app.get("/api/devices", isAuthenticated, async (req, res) => {

@@ -276,9 +276,9 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
 
     return {
-      avgWindSpeed: stats?.avgWindSpeed || 0,
-      maxWindSpeed: stats?.maxWindSpeed || 0,
-      currentWindSpeed: currentStats?.currentWindSpeed || 0,
+      avgWindSpeed: Number(stats?.avgWindSpeed || 0),
+      maxWindSpeed: Number(stats?.maxWindSpeed || 0),
+      currentWindSpeed: Number(currentStats?.currentWindSpeed || 0),
       alertState: latestData?.alertState || false,
       timestamp: latestData?.timestamp?.toISOString() || new Date().toISOString()
     };
@@ -299,7 +299,7 @@ export class DatabaseStorage implements IStorage {
         )
       );
     
-    return result[0]?.totalDowntime || 0;
+    return Number(result[0]?.totalDowntime || 0);
   }
 
   async getDevicesWithLatestData(userDeviceIds: string[]): Promise<DeviceWithLatestData[]> {
