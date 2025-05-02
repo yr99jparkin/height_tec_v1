@@ -1,6 +1,7 @@
-import { users, devices, deviceStock, windAlertThresholds, windData, notificationContacts } from "@shared/schema";
+import { users, devices, deviceStock, windAlertThresholds, windData, windDataHistorical, notificationContacts } from "@shared/schema";
 import type { User, InsertUser, Device, InsertDevice, DeviceStock, InsertDeviceStock, 
   WindAlertThreshold, InsertWindAlertThreshold, WindData, InsertWindData, 
+  WindDataHistorical, InsertWindDataHistorical,
   NotificationContact, InsertNotificationContact } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, desc, lte, gte, sql, max, avg, inArray, sum } from "drizzle-orm";
@@ -47,6 +48,14 @@ export interface IStorage {
   getWindStatsForDevice(deviceId: string, minutes: number): Promise<WindStatsResponse>;
   getDevicesWithLatestData(userDeviceIds: string[]): Promise<DeviceWithLatestData[]>;
   getTotalDowntimeForDevice(deviceId: string, startTime: Date, endTime: Date): Promise<number>;
+  
+  // Historical wind data operations
+  insertWindDataHistorical(data: InsertWindDataHistorical): Promise<WindDataHistorical>;
+  getHistoricalWindDataByDeviceIdAndRange(deviceId: string, startTime: Date, endTime: Date): Promise<WindDataHistorical[]>;
+  getHistoricalWindStatsForDevice(deviceId: string, days: number): Promise<WindStatsResponse>;
+  aggregateWindData(intervalMinutes: number): Promise<void>;
+  purgeOldWindData(olderThanMinutes: number): Promise<void>;
+  getLastProcessedInterval(): Promise<Date | null>;
 
   sessionStore: session.SessionStore;
 }

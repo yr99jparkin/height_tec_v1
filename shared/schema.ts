@@ -81,7 +81,7 @@ export const windAlertThresholdsRelations = relations(windAlertThresholds, ({ on
   }),
 }));
 
-// Wind Data table
+// Wind Data table - short-term buffer that keeps the last 180 minutes of data
 export const windData = pgTable("wind_data", {
   id: serial("id").primaryKey(),
   deviceId: text("device_id").notNull().references(() => devices.deviceId),
@@ -93,12 +93,37 @@ export const windData = pgTable("wind_data", {
   amberAlert: boolean("amber_alert").default(false).notNull(),
   redAlert: boolean("red_alert").default(false).notNull(),
   downtimeSeconds: doublePrecision("downtime_seconds").default(0),
+  processed: boolean("processed").default(false).notNull(), // Flag to track which readings have been aggregated
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const windDataRelations = relations(windData, ({ one }) => ({
   device: one(devices, {
     fields: [windData.deviceId],
+    references: [devices.deviceId],
+  }),
+}));
+
+// Wind Data Historical table - stores 10-minute aggregated data for long-term storage
+export const windDataHistorical = pgTable("wind_data_historical", {
+  id: serial("id").primaryKey(),
+  deviceId: text("device_id").notNull().references(() => devices.deviceId),
+  intervalStart: timestamp("interval_start").notNull(), // Start of the 10-minute interval
+  intervalEnd: timestamp("interval_end").notNull(),     // End of the 10-minute interval
+  avgWindSpeed: doublePrecision("avg_wind_speed").notNull(),
+  maxWindSpeed: doublePrecision("max_wind_speed").notNull(),
+  stdDeviation: doublePrecision("std_deviation"), // Standard deviation of wind speed
+  alertTriggered: boolean("alert_triggered").default(false).notNull(),
+  amberAlertTriggered: boolean("amber_alert_triggered").default(false).notNull(),
+  redAlertTriggered: boolean("red_alert_triggered").default(false).notNull(),
+  downtimeSeconds: doublePrecision("downtime_seconds").default(0),
+  sampleCount: integer("sample_count").default(0).notNull(), // Number of data points in this interval
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const windDataHistoricalRelations = relations(windDataHistorical, ({ one }) => ({
+  device: one(devices, {
+    fields: [windDataHistorical.deviceId],
     references: [devices.deviceId],
   }),
 }));
@@ -110,6 +135,7 @@ export const devicesRelations = relations(devices, ({ one, many }) => ({
     references: [users.id],
   }),
   windData: many(windData),
+  windDataHistorical: many(windDataHistorical),
   windAlertThresholds: one(windAlertThresholds),
   notificationContacts: many(notificationContacts),
 }));
@@ -155,6 +181,21 @@ export const insertWindDataSchema = createInsertSchema(windData).pick({
   amberAlert: true,
   redAlert: true,
   downtimeSeconds: true,
+  processed: true,
+});
+
+export const insertWindDataHistoricalSchema = createInsertSchema(windDataHistorical).pick({
+  deviceId: true,
+  intervalStart: true,
+  intervalEnd: true,
+  avgWindSpeed: true,
+  maxWindSpeed: true,
+  stdDeviation: true,
+  alertTriggered: true,
+  amberAlertTriggered: true,
+  redAlertTriggered: true,
+  downtimeSeconds: true,
+  sampleCount: true,
 });
 
 export const insertNotificationContactSchema = createInsertSchema(notificationContacts).pick({
@@ -178,6 +219,9 @@ export type InsertWindAlertThreshold = z.infer<typeof insertWindAlertThresholdsS
 
 export type WindData = typeof windData.$inferSelect;
 export type InsertWindData = z.infer<typeof insertWindDataSchema>;
+
+export type WindDataHistorical = typeof windDataHistorical.$inferSelect;
+export type InsertWindDataHistorical = z.infer<typeof insertWindDataHistoricalSchema>;
 
 export type NotificationContact = typeof notificationContacts.$inferSelect;
 export type InsertNotificationContact = z.infer<typeof insertNotificationContactSchema>;
