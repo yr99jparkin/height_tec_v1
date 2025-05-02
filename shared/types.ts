@@ -14,6 +14,7 @@ export interface WindDataWithAlert {
   alertState: boolean;
   amberAlert: boolean;
   redAlert: boolean;
+  downtimeSeconds?: number;
 }
 
 export interface WindSpeedWithTimestamp {

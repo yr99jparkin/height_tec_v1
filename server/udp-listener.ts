@@ -178,7 +178,30 @@ export function setupUdpListener(httpServer: Server) {
       // (this maintains backward compatibility)
       const alertState = amberAlert;
 
-      // Prepare data with alert states
+      // Get the previous reading to calculate downtime
+      let downtimeSeconds = 0;
+      try {
+        const previousReading = await storage.getLatestWindDataByDeviceId(data.deviceId);
+        
+        // Calculate downtime if this is a red alert
+        if (redAlert && previousReading) {
+          const previousTime = previousReading.timestamp;
+          const currentTime = new Date(data.timestamp);
+          
+          // Calculate time difference in seconds
+          const timeDiff = (currentTime.getTime() - previousTime.getTime()) / 1000;
+          
+          // If previous reading was also in red alert state, add the time difference to downtime
+          if (previousReading.redAlert) {
+            downtimeSeconds = timeDiff;
+            log(`Calculated downtime for device ${data.deviceId}: ${downtimeSeconds} seconds`, "udp");
+          }
+        }
+      } catch (error) {
+        log(`Error calculating downtime: ${error}`, "udp");
+      }
+
+      // Prepare data with alert states and downtime
       const windDataWithAlert: WindDataWithAlert = {
         deviceId: data.deviceId,
         timestamp: data.timestamp,
@@ -187,7 +210,8 @@ export function setupUdpListener(httpServer: Server) {
         longitude,
         alertState,
         amberAlert,
-        redAlert
+        redAlert,
+        downtimeSeconds
       };
 
       // Insert wind data into database
@@ -199,7 +223,8 @@ export function setupUdpListener(httpServer: Server) {
         longitude: windDataWithAlert.longitude,
         alertState: windDataWithAlert.alertState,
         amberAlert: windDataWithAlert.amberAlert,
-        redAlert: windDataWithAlert.redAlert
+        redAlert: windDataWithAlert.redAlert,
+        downtimeSeconds: windDataWithAlert.downtimeSeconds
       });
 
       log(`Processed wind data for device ${data.deviceId}`, "udp");

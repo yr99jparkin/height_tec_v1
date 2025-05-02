@@ -92,6 +92,7 @@ export const windData = pgTable("wind_data", {
   alertState: boolean("alert_state").default(false).notNull(),
   amberAlert: boolean("amber_alert").default(false).notNull(),
   redAlert: boolean("red_alert").default(false).notNull(),
+  downtimeSeconds: doublePrecision("downtime_seconds").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -153,6 +154,7 @@ export const insertWindDataSchema = createInsertSchema(windData).pick({
   alertState: true,
   amberAlert: true,
   redAlert: true,
+  downtimeSeconds: true,
 });
 
 export const insertNotificationContactSchema = createInsertSchema(notificationContacts).pick({
