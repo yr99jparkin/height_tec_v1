@@ -38,10 +38,6 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
     let timeFormat = "HH:mm"; // Default for 1h
     if (timeRange === "3h") {
       timeFormat = "HH:mm";
-    } else if (timeRange === "24h") {
-      timeFormat = "HH:mm";
-    } else if (timeRange === "7d") {
-      timeFormat = "dd/MM";
     } else if (timeRange === "30d") {
       timeFormat = "dd/MM";
     }
@@ -116,7 +112,7 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
           labelFormatter={(label, payload) => {
             if (payload && payload.length > 0 && payload[0].payload.date) {
               const date = payload[0].payload.date;
-              if (timeRange === "7d" || timeRange === "30d") {
+              if (timeRange === "30d") {
                 return `${format(date, "dd MMM yyyy")} ${format(date, "HH:mm")}`;
               }
               return `${format(date, "dd MMM yyyy")} ${label}`;

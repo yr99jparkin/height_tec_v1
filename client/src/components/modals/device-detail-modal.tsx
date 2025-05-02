@@ -26,7 +26,7 @@ interface DeviceDetailModalProps {
 export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetailModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [timeRange, setTimeRange] = useState<string>("24h");
+  const [timeRange, setTimeRange] = useState<string>("3h");
   const [amberThreshold, setAmberThreshold] = useState<number>(20);
   const [redThreshold, setRedThreshold] = useState<number>(30);
   const [removeModalOpen, setRemoveModalOpen] = useState(false);
@@ -390,20 +390,6 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                       onClick={() => setTimeRange("3h")}
                     >
                       3H
-                    </Button>
-                    <Button 
-                      variant={timeRange === "24h" ? "default" : "outline"} 
-                      size="sm"
-                      onClick={() => setTimeRange("24h")}
-                    >
-                      24H
-                    </Button>
-                    <Button 
-                      variant={timeRange === "7d" ? "default" : "outline"} 
-                      size="sm"
-                      onClick={() => setTimeRange("7d")}
-                    >
-                      7D
                     </Button>
                   </div>
                 </div>
