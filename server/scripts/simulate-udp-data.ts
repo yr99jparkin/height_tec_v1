@@ -7,7 +7,7 @@ const devices = [
   {
     deviceId: "HT-ANEM-001",
     location: { lat: -33.8688, lng: 151.2093 }, // Sydney
-    currentSpeed: 15 // Initial speed
+    currentSpeed: 35 // Initial speed above red threshold (30)
   },
   {
     deviceId: "HT-ANEM-002",
