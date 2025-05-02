@@ -327,20 +327,10 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
             <div className="space-y-6">
               {/* Wind Chart - Prominent section */}
               <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex flex-col items-center mb-4">
                   <h3 className="text-xl font-medium">Wind Speed Trend</h3>
-                  <div className="flex items-center space-x-2">
-                    <Button 
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        onOpenChange(false); // Close the modal
-                        window.location.href = '/reports'; // Navigate to reports page
-                      }}
-                    >
-                      Generate Report
-                    </Button>
-                    <div className="flex space-x-2 ml-2">
+                  <div className="flex justify-between items-center w-full mt-4">
+                    <div className="flex space-x-2">
                       <Button 
                         variant={timeRange === "15m" ? "default" : "outline"} 
                         size="sm"
@@ -363,6 +353,17 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                         3H
                       </Button>
                     </div>
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      className="bg-neutral-200 hover:bg-neutral-300 text-neutral-700"
+                      onClick={() => {
+                        onOpenChange(false); // Close the modal
+                        window.location.href = '/reports'; // Navigate to reports page
+                      }}
+                    >
+                      Generate Report
+                    </Button>
                   </div>
                 </div>
                 <div className="h-80">
