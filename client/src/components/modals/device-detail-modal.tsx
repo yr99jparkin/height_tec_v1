@@ -327,9 +327,8 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
             <div className="space-y-6">
               {/* Wind Chart - Prominent section */}
               <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-sm">
-                <div className="flex flex-col items-center mb-4">
-                  <h3 className="text-xl font-medium">Wind Speed Trend</h3>
-                  <div className="flex justify-between items-center w-full mt-4">
+                <div className="mb-4">
+                  <div className="flex justify-between items-center w-full">
                     <div className="flex space-x-2">
                       <Button 
                         variant={timeRange === "15m" ? "default" : "outline"} 
@@ -353,6 +352,7 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
                         3H
                       </Button>
                     </div>
+                    <h3 className="text-xl font-medium">Wind Speed Trend</h3>
                     <Button 
                       variant="outline"
                       size="sm"
