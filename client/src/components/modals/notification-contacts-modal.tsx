@@ -45,7 +45,7 @@ export function NotificationContactsModal({
 }: NotificationContactsModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [contacts, setContacts] = useState<NotificationContact[]>(initialContacts);
+  const [contacts, setContacts] = useState<NotificationContact[]>([]);
   const [newEmail, setNewEmail] = useState("");
   const [newPhoneNumber, setNewPhoneNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,10 +53,13 @@ export function NotificationContactsModal({
   const [editEmail, setEditEmail] = useState("");
   const [editPhoneNumber, setEditPhoneNumber] = useState("");
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
-
-  // Debug logging
-  console.log("NotificationContactsModal initialContacts:", initialContacts);
-  console.log("NotificationContactsModal current contacts state:", contacts);
+  
+  // Update contacts from props when they change or modal opens
+  useEffect(() => {
+    if (initialContacts && initialContacts.length > 0) {
+      setContacts(initialContacts);
+    }
+  }, [initialContacts]);
   
   // Fetch all user devices with their contacts
   const { data: devicesWithContacts = [] } = useQuery<DeviceWithContacts[]>({
