@@ -1,0 +1,103 @@
+Email Notification System Specification
+
+
+AIm is to develop an automated email notification system that alerts users when a wind speed threshold (amber or red) is breached for a device. The system will:
+
+
+Notify users listed in the notification_contacts table for the affected device.
+Enforce a default cooldown period of 15 minutes between alerts to prevent notification spam.
+Allow users to acknowledge alerts and optionally snooze further notifications.
+
+
+Notification Triggering & Workflow
+
+
+Alert Detection
+
+
+The UDP listener monitors wind speed data per device.
+When a reading exceeds a configured threshold:
+Determine the alert severity (amber or red) - this already happens
+Verify device is in an active state.
+Check timestamp of the last sent notification for the device (enforce cooldown).
+Check for any active  notification_contact specific snooze on the device
+
+
+Notification Generation
+
+
+If eligible for notification:
+
+
+Generate a secure, one-time-use token for acknowledgment - per notification_contact
+Assemble alert payload:
+Wind speed & threshold
+Device and location details
+Alert severity
+Acknowledgment options
+
+
+Render an HTML email:
+Branded consistently with the app
+Responsive for mobile and desktop
+
+
+Email is sent via the SendPulse SDK, using either:
+A server-rendered HTML string
+Or a predefined SendPulse template ID
+
+
+Email Content
+
+
+The email will include:
+
+
+Clear indication of the alert level (Amber or Red)
+Device details and current wind speed
+Timestamp of the event
+Three interactive buttons:
+Acknowledge
+Acknowledge & Snooze for 1 Hour
+Acknowledge & Snooze for the rest of today
+
+
+Each button links to a dedicated acknowledgment endpoint containing:
+A secure token (UUID or JWT)
+The selected action (acknowledge, snooze_1h, snooze_today)
+
+
+
+Acknowledgment Flow
+User clicks an acknowledgment button.
+The system routes them to a confirmation page that:
+Requires no login
+Accepts a one-time token via URL parameter
+Verifies token authenticity and expiry
+Processes the selected acknowledgment action via internal API
+Updates tracking database with:
+Acknowledged timestamp
+Acknowledgement notification_contact
+Type of acknowledgment, e.g. applied snooze duration (if any)
+
+
+Displays confirmation message:
+Summary of the action taken
+Device information
+Any next alert expectations (e.g., “snoozed until 6 PM today”)
+
+
+If the token is expired, already used, or invalid:
+Show a user-friendly error message
+Optionally link to a help page or resend mechanism
+The confirmation page should have the app logo which when clicked, hyperlinks you to the auth page to login
+
+
+Security Considerations
+One-time tokens:
+
+
+Generated using secure random UUIDs or JWTs
+Must be single-use and expire after a short time (e.g., 30–60 minutes)
+HTTPS must be enforced for all token-based acknowledgment endpoints (.app domain supports this?
+Token replay protection: Use DB flag to mark tokens as consumed.
