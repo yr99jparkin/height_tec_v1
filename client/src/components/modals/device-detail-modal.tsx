@@ -100,8 +100,10 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
   
   // Update local state when contacts data changes
   useEffect(() => {
+    console.log("Device detail modal - contacts data from API:", contacts);
     if (contacts) {
       setNotificationContacts(contacts);
+      console.log("Device detail modal - updated notificationContacts state:", contacts);
     }
   }, [contacts]);
   

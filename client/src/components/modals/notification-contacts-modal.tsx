@@ -53,6 +53,10 @@ export function NotificationContactsModal({
   const [editEmail, setEditEmail] = useState("");
   const [editPhoneNumber, setEditPhoneNumber] = useState("");
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
+
+  // Debug logging
+  console.log("NotificationContactsModal initialContacts:", initialContacts);
+  console.log("NotificationContactsModal current contacts state:", contacts);
   
   // Fetch all user devices with their contacts
   const { data: devicesWithContacts = [] } = useQuery<DeviceWithContacts[]>({
