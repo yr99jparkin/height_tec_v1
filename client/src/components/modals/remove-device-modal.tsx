@@ -105,7 +105,7 @@ export function RemoveDeviceModal({
             </div>
             <DialogTitle className="text-xl mb-1">Permanent Data Deletion!</DialogTitle>
             <DialogDescription>
-              <strong>This action cannot be undone.</strong> All data associated with "{deviceName}" will be permanently deleted from our system.
+              <strong>This action cannot be undone.</strong> All data associated with "{deviceName}" will be permanently deleted from the Height Tec system.
             </DialogDescription>
             
             <div className="flex justify-center gap-3 mt-6">
