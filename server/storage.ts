@@ -20,6 +20,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserPassword(userId: number, newPassword: string): Promise<void>;
+  updateUserSpeedUnit(userId: number, speedUnit: string): Promise<User>;
 
   // Device operations
   getDeviceById(id: number): Promise<Device | undefined>;
@@ -93,6 +94,14 @@ export class DatabaseStorage implements IStorage {
     await db.update(users)
       .set({ password: newPassword })
       .where(eq(users.id, userId));
+  }
+
+  async updateUserSpeedUnit(userId: number, speedUnit: string): Promise<User> {
+    const [updatedUser] = await db.update(users)
+      .set({ speedUnit })
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser;
   }
 
   // Device operations
