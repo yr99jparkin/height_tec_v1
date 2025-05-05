@@ -78,3 +78,7 @@ export interface UpdateDeviceRequest {
   deviceName?: string;
   project?: string;
 }
+
+export interface UpdateSpeedUnitRequest {
+  speedUnit: string;
+}
