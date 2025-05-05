@@ -4,8 +4,6 @@ import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { MapPin, Clock, Folder } from "lucide-react";
 import { getProjectColor } from "@/lib/project-colors";
-import { useAuth } from "@/hooks/use-auth";
-import { formatWindSpeed, getWindSpeedUnitDisplay } from "@/lib/unit-conversion";
 
 interface DeviceCardProps {
   device: DeviceWithLatestData;
@@ -13,11 +11,7 @@ interface DeviceCardProps {
 }
 
 export function DeviceCard({ device, onDeviceClick }: DeviceCardProps) {
-  const { user } = useAuth();
-  const speedUnit = user?.speedUnit || 'm/s';
-  
   // Determine alert status based on wind speeds
-  // These thresholds are in m/s, so we don't convert them
   const getAlertState = () => {
     if (device.alertState || device.maxWindSpeed > 30) {
       return "danger";
@@ -63,13 +57,13 @@ export function DeviceCard({ device, onDeviceClick }: DeviceCardProps) {
           <div>
             <p className="text-xs uppercase font-medium text-neutral-500">Avg. Wind Speed (10mins)</p>
             <p className={`wind-status-${alertState} text-xl font-mono font-medium mt-1`}>
-              {formatWindSpeed(device.avgWindSpeed, speedUnit)} <span className="text-sm">{getWindSpeedUnitDisplay(speedUnit)}</span>
+              {device.avgWindSpeed.toFixed(1)} <span className="text-sm">km/h</span>
             </p>
           </div>
           <div>
             <p className="text-xs uppercase font-medium text-neutral-500">Max Wind Speed (10mins)</p>
             <p className={`wind-status-${alertState} text-xl font-mono font-medium mt-1`}>
-              {formatWindSpeed(device.maxWindSpeed, speedUnit)} <span className="text-sm">{getWindSpeedUnitDisplay(speedUnit)}</span>
+              {device.maxWindSpeed.toFixed(1)} <span className="text-sm">km/h</span>
             </p>
           </div>
         </div>

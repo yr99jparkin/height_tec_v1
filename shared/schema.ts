@@ -10,7 +10,6 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   email: text("email").notNull().unique(),
   fullName: text("full_name").notNull(),
-  speedUnit: text("speed_unit").default("km/h").notNull(), // 'km/h' or 'm/s'
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -6,7 +6,7 @@ import { setupUdpListener } from "./udp-listener";
 import { and, eq } from "drizzle-orm";
 import { db } from "./db";
 import { devices, notificationContacts } from "@shared/schema";
-import { AddDeviceRequest, ExportDataParams, NotificationContactRequest, UpdateDeviceRequest, UpdateSpeedUnitRequest, UpdateThresholdsRequest } from "@shared/types";
+import { AddDeviceRequest, ExportDataParams, NotificationContactRequest, UpdateDeviceRequest, UpdateThresholdsRequest } from "@shared/types";
 import { z } from "zod";
 import { format } from "date-fns";
 import path from "path";
@@ -431,41 +431,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get current user details
-  app.get("/api/user", isAuthenticated, async (req, res) => {
-    try {
-      // Remove password from response
-      const { password, ...userWithoutPassword } = req.user;
-      res.json(userWithoutPassword);
-    } catch (error) {
-      res.status(500).json({ message: "Error fetching user data" });
-    }
-  });
-
-  // Update user speed unit preference
-  app.patch("/api/user/speed-unit", isAuthenticated, async (req, res) => {
-    try {
-      const schema = z.object({
-        speedUnit: z.string().refine(val => ['m/s', 'km/h'].includes(val), {
-          message: "Speed unit must be either 'm/s' or 'km/h'"
-        })
-      });
-      
-      const data = schema.parse(req.body) as UpdateSpeedUnitRequest;
-      
-      const updatedUser = await storage.updateUserSpeedUnit(req.user.id, data.speedUnit);
-      
-      // Remove password from response
-      const { password, ...userWithoutPassword } = updatedUser;
-      res.json(userWithoutPassword);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid input", errors: error.errors });
-      }
-      res.status(500).json({ message: "Error updating speed unit preference" });
-    }
-  });
-
   // Get all user devices with their contacts
   app.get("/api/user/devices-with-contacts", isAuthenticated, async (req, res) => {
     try {

@@ -7,7 +7,7 @@ import {
 import { insertUserSchema, User as SelectUser, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { PasswordChangeRequest, UpdateSpeedUnitRequest } from "@shared/types";
+import { PasswordChangeRequest } from "@shared/types";
 
 type AuthContextType = {
   user: SelectUser | null;
@@ -17,7 +17,6 @@ type AuthContextType = {
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
   changePasswordMutation: UseMutationResult<void, Error, PasswordChangeRequest>;
-  updateSpeedUnitMutation: UseMutationResult<SelectUser, Error, UpdateSpeedUnitRequest>;
 };
 
 type LoginData = Pick<InsertUser, "username" | "password">;
@@ -126,27 +125,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  const updateSpeedUnitMutation = useMutation({
-    mutationFn: async (data: UpdateSpeedUnitRequest) => {
-      const res = await apiRequest("PATCH", "/api/user/speed-unit", data);
-      return await res.json();
-    },
-    onSuccess: (updatedUser: SelectUser) => {
-      queryClient.setQueryData(["/api/user"], updatedUser);
-      toast({
-        title: "Preference updated",
-        description: `Wind speed unit changed to ${updatedUser.speedUnit}.`,
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Update failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
   return (
     <AuthContext.Provider
       value={{
@@ -157,7 +135,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logoutMutation,
         registerMutation,
         changePasswordMutation,
-        updateSpeedUnitMutation,
       }}
     >
       {children}

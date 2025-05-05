@@ -11,8 +11,6 @@ import {
   ReferenceLine,
   ComposedChart
 } from "recharts";
-import { useAuth } from "@/hooks/use-auth";
-import { formatWindSpeed, getWindSpeedUnitDisplay, mpsToKmh } from "@/lib/unit-conversion";
 
 interface WindChartProps {
   data: WindData[];
@@ -22,22 +20,14 @@ interface WindChartProps {
 }
 
 export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold = 30 }: WindChartProps) {
-  const { user } = useAuth();
-  const speedUnit = user?.speedUnit || 'm/s';
-  
   // Format data for the chart
   const chartData = data.map(item => {
-    // Note: We assume data comes in m/s from the server
-    // Store original wind speed in m/s for threshold calculations
-    const originalWindSpeed = item.windSpeed;
-    // Wind speed value in user's preferred unit (for display)
-    const windSpeed = speedUnit === 'km/h' ? mpsToKmh(item.windSpeed) : item.windSpeed;
+    const windSpeed = item.windSpeed;
     let windSpeedColor = "hsl(var(--safe))";
     
-    // Thresholds are in the same unit as coming from the server
-    if (originalWindSpeed >= redThreshold) {
+    if (windSpeed >= redThreshold) {
       windSpeedColor = "hsl(var(--destructive))";
-    } else if (originalWindSpeed >= amberThreshold) {
+    } else if (windSpeed >= amberThreshold) {
       windSpeedColor = "hsl(var(--warning))";
     }
     
@@ -58,7 +48,6 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
       // Format for display
       time: format(dateObj, timeFormat),
       windSpeed: windSpeed,
-      originalWindSpeed: originalWindSpeed, // Keep the original m/s value for thresholds
       alertState: item.alertState,
       windSpeedColor
     };
@@ -66,17 +55,13 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
 
   // Use custom dot to render colored dots based on thresholds
   const CustomizedDot = (props: any) => {
-    const { cx, cy, value, payload } = props;
+    const { cx, cy, value } = props;
     
-    // We need to use the original m/s values to determine color thresholds
-    // since the displayed value might be converted to km/h
-    const windSpeedMps = payload.originalWindSpeed || value;
-    
-    // Determine dot color based on value compared to thresholds in m/s
+    // Determine dot color based on value compared to thresholds
     let dotColor = "hsl(var(--safe))";
-    if (windSpeedMps >= redThreshold) {
+    if (value >= redThreshold) {
       dotColor = "hsl(var(--destructive))";
-    } else if (windSpeedMps >= amberThreshold) {
+    } else if (value >= amberThreshold) {
       dotColor = "hsl(var(--warning))";
     }
     
@@ -113,7 +98,7 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
         />
         <YAxis 
           label={{ 
-            value: `Wind Speed (${getWindSpeedUnitDisplay(speedUnit)})`, 
+            value: "Wind Speed (km/h)", 
             angle: -90, 
             position: "insideLeft",
             style: { textAnchor: "middle", fill: "#666" },
@@ -123,7 +108,7 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
           tick={{ fontSize: 12 }}
         />
         <Tooltip 
-          formatter={(value: number) => [`${value.toFixed(1)} ${getWindSpeedUnitDisplay(speedUnit)}`, "Wind Speed"]}
+          formatter={(value: number) => [`${value.toFixed(1)} km/h`, "Wind Speed"]}
           labelFormatter={(label, payload) => {
             if (payload && payload.length > 0 && payload[0].payload.date) {
               const date = payload[0].payload.date;
@@ -138,24 +123,24 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
         
         {/* Threshold reference lines */}
         <ReferenceLine 
-          y={speedUnit === 'km/h' ? mpsToKmh(amberThreshold) : amberThreshold} 
+          y={amberThreshold} 
           stroke="hsl(var(--warning))" 
           strokeDasharray="3 3" 
           strokeWidth={1.5}
           label={{ 
-            value: `Amber: ${formatWindSpeed(amberThreshold, speedUnit)} ${getWindSpeedUnitDisplay(speedUnit)}`, 
+            value: `Amber: ${amberThreshold} km/h`, 
             position: 'right',
             fill: "hsl(var(--warning))",
             fontSize: 11
           }} 
         />
         <ReferenceLine 
-          y={speedUnit === 'km/h' ? mpsToKmh(redThreshold) : redThreshold} 
+          y={redThreshold} 
           stroke="hsl(var(--destructive))" 
           strokeDasharray="3 3" 
           strokeWidth={1.5}
           label={{ 
-            value: `Red: ${formatWindSpeed(redThreshold, speedUnit)} ${getWindSpeedUnitDisplay(speedUnit)}`, 
+            value: `Red: ${redThreshold} km/h`, 
             position: 'right',
             fill: "hsl(var(--destructive))",
             fontSize: 11  
