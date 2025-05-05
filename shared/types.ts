@@ -1,14 +1,14 @@
 export interface WindDataPacket {
   deviceId: string;
   timestamp: string;
-  windSpeed: number;
+  windSpeed: number; // Wind speed in meters per second (m/s)
   gps?: string;
 }
 
 export interface WindDataWithAlert {
   deviceId: string;
   timestamp: string;
-  windSpeed: number;
+  windSpeed: number; // Wind speed in meters per second (m/s)
   latitude?: number;
   longitude?: number;
   alertState: boolean;
@@ -19,7 +19,7 @@ export interface WindDataWithAlert {
 
 export interface WindSpeedWithTimestamp {
   timestamp: string;
-  windSpeed: number;
+  windSpeed: number; // Wind speed in meters per second (m/s)
 }
 
 export interface DeviceWithLatestData {
@@ -32,15 +32,15 @@ export interface DeviceWithLatestData {
   longitude?: number;
   active: boolean;
   lastSeen?: string;
-  avgWindSpeed: number;
-  maxWindSpeed: number;
+  avgWindSpeed: number; // Wind speed in meters per second (m/s)
+  maxWindSpeed: number; // Wind speed in meters per second (m/s)
   alertState: boolean;
 }
 
 export interface WindStatsResponse {
-  avgWindSpeed: number;
-  maxWindSpeed: number;
-  currentWindSpeed: number;
+  avgWindSpeed: number; // Wind speed in meters per second (m/s)
+  maxWindSpeed: number; // Wind speed in meters per second (m/s)
+  currentWindSpeed: number; // Wind speed in meters per second (m/s)
   alertState: boolean;
   timestamp: string;
 }
@@ -65,8 +65,8 @@ export interface AddDeviceRequest {
 }
 
 export interface UpdateThresholdsRequest {
-  amberThreshold: number;
-  redThreshold: number;
+  amberThreshold: number; // Wind speed threshold in meters per second (m/s)
+  redThreshold: number; // Wind speed threshold in meters per second (m/s)
 }
 
 export interface NotificationContactRequest {
