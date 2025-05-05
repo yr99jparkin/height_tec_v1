@@ -1,18 +1,27 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ChevronDown, LogOut } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuRadioGroup, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ChevronDown, LogOut, Wind } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState } from "react";
+import { UpdateSpeedUnitRequest } from "@shared/types";
 
 export function Header() {
-  const { user, logoutMutation } = useAuth();
+  const { user, logoutMutation, updateSpeedUnitMutation } = useAuth();
   const [, setLocation] = useLocation();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logoutMutation.mutate();
     setLocation("/auth");
+  };
+  
+  const handleUnitChange = (value: string) => {
+    if (value === user?.speedUnit) return;
+    
+    updateSpeedUnitMutation.mutate({
+      speedUnit: value
+    });
   };
 
   // Extract initials for avatar
@@ -48,6 +57,20 @@ export function Header() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Wind Speed Unit</DropdownMenuLabel>
+              <DropdownMenuRadioGroup value={user?.speedUnit || 'km/h'} onValueChange={handleUnitChange}>
+                <DropdownMenuRadioItem value="km/h">
+                  <Wind className="mr-2 h-4 w-4" />
+                  <span>km/h</span>
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="m/s">
+                  <Wind className="mr-2 h-4 w-4" />
+                  <span>m/s</span>
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+              
+              <DropdownMenuSeparator />
+              
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4 text-destructive" />
                 <span className="text-destructive">Sign Out</span>
