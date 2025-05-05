@@ -11,6 +11,8 @@ import {
   ReferenceLine,
   ComposedChart
 } from "recharts";
+import { useAuth } from "@/hooks/use-auth";
+import { formatWindSpeed, getWindSpeedUnitDisplay, mpsToKmh } from "@/lib/unit-conversion";
 
 interface WindChartProps {
   data: WindData[];
@@ -20,14 +22,20 @@ interface WindChartProps {
 }
 
 export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold = 30 }: WindChartProps) {
+  const { user } = useAuth();
+  const speedUnit = user?.speedUnit || 'm/s';
+  
   // Format data for the chart
   const chartData = data.map(item => {
-    const windSpeed = item.windSpeed;
+    // Note: We assume data comes in m/s from the server
+    // Wind speed value in user's preferred unit (for display)
+    const windSpeed = speedUnit === 'km/h' ? mpsToKmh(item.windSpeed) : item.windSpeed;
     let windSpeedColor = "hsl(var(--safe))";
     
-    if (windSpeed >= redThreshold) {
+    // Thresholds are in the same unit as coming from the server
+    if (item.windSpeed >= redThreshold) {
       windSpeedColor = "hsl(var(--destructive))";
-    } else if (windSpeed >= amberThreshold) {
+    } else if (item.windSpeed >= amberThreshold) {
       windSpeedColor = "hsl(var(--warning))";
     }
     
@@ -98,7 +106,7 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
         />
         <YAxis 
           label={{ 
-            value: "Wind Speed (km/h)", 
+            value: `Wind Speed (${getWindSpeedUnitDisplay(speedUnit)})`, 
             angle: -90, 
             position: "insideLeft",
             style: { textAnchor: "middle", fill: "#666" },
@@ -108,7 +116,7 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
           tick={{ fontSize: 12 }}
         />
         <Tooltip 
-          formatter={(value: number) => [`${value.toFixed(1)} km/h`, "Wind Speed"]}
+          formatter={(value: number) => [`${value.toFixed(1)} ${getWindSpeedUnitDisplay(speedUnit)}`, "Wind Speed"]}
           labelFormatter={(label, payload) => {
             if (payload && payload.length > 0 && payload[0].payload.date) {
               const date = payload[0].payload.date;
@@ -123,24 +131,24 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
         
         {/* Threshold reference lines */}
         <ReferenceLine 
-          y={amberThreshold} 
+          y={speedUnit === 'km/h' ? mpsToKmh(amberThreshold) : amberThreshold} 
           stroke="hsl(var(--warning))" 
           strokeDasharray="3 3" 
           strokeWidth={1.5}
           label={{ 
-            value: `Amber: ${amberThreshold} km/h`, 
+            value: `Amber: ${formatWindSpeed(amberThreshold, speedUnit)} ${getWindSpeedUnitDisplay(speedUnit)}`, 
             position: 'right',
             fill: "hsl(var(--warning))",
             fontSize: 11
           }} 
         />
         <ReferenceLine 
-          y={redThreshold} 
+          y={speedUnit === 'km/h' ? mpsToKmh(redThreshold) : redThreshold} 
           stroke="hsl(var(--destructive))" 
           strokeDasharray="3 3" 
           strokeWidth={1.5}
           label={{ 
-            value: `Red: ${redThreshold} km/h`, 
+            value: `Red: ${formatWindSpeed(redThreshold, speedUnit)} ${getWindSpeedUnitDisplay(speedUnit)}`, 
             position: 'right',
             fill: "hsl(var(--destructive))",
             fontSize: 11  
