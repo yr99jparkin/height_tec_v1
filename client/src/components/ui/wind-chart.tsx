@@ -28,14 +28,16 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
   // Format data for the chart
   const chartData = data.map(item => {
     // Note: We assume data comes in m/s from the server
+    // Store original wind speed in m/s for threshold calculations
+    const originalWindSpeed = item.windSpeed;
     // Wind speed value in user's preferred unit (for display)
     const windSpeed = speedUnit === 'km/h' ? mpsToKmh(item.windSpeed) : item.windSpeed;
     let windSpeedColor = "hsl(var(--safe))";
     
     // Thresholds are in the same unit as coming from the server
-    if (item.windSpeed >= redThreshold) {
+    if (originalWindSpeed >= redThreshold) {
       windSpeedColor = "hsl(var(--destructive))";
-    } else if (item.windSpeed >= amberThreshold) {
+    } else if (originalWindSpeed >= amberThreshold) {
       windSpeedColor = "hsl(var(--warning))";
     }
     
@@ -56,6 +58,7 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
       // Format for display
       time: format(dateObj, timeFormat),
       windSpeed: windSpeed,
+      originalWindSpeed: originalWindSpeed, // Keep the original m/s value for thresholds
       alertState: item.alertState,
       windSpeedColor
     };
@@ -63,13 +66,17 @@ export function WindChart({ data, timeRange, amberThreshold = 20, redThreshold =
 
   // Use custom dot to render colored dots based on thresholds
   const CustomizedDot = (props: any) => {
-    const { cx, cy, value } = props;
+    const { cx, cy, value, payload } = props;
     
-    // Determine dot color based on value compared to thresholds
+    // We need to use the original m/s values to determine color thresholds
+    // since the displayed value might be converted to km/h
+    const windSpeedMps = payload.originalWindSpeed || value;
+    
+    // Determine dot color based on value compared to thresholds in m/s
     let dotColor = "hsl(var(--safe))";
-    if (value >= redThreshold) {
+    if (windSpeedMps >= redThreshold) {
       dotColor = "hsl(var(--destructive))";
-    } else if (value >= amberThreshold) {
+    } else if (windSpeedMps >= amberThreshold) {
       dotColor = "hsl(var(--warning))";
     }
     
