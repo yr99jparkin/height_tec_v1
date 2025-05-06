@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +39,8 @@ const addDeviceSchema = z.object({
 export function AddDeviceModal({ open, onOpenChange }: AddDeviceModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [shouldFocusNewProject, setShouldFocusNewProject] = useState(false);
+  const newProjectInputRef = useRef<HTMLInputElement>(null);
+  const [hasRendered, setHasRendered] = useState(false);
   
   // Fetch existing projects for this user
   const { data: projects = [] } = useQuery<string[]>({
@@ -71,15 +72,46 @@ export function AddDeviceModal({ open, onOpenChange }: AddDeviceModalProps) {
         isNewProject: false,
         newProjectName: ""
       });
+      setHasRendered(false);
     }
   }, [open, form]);
   
-  // Set focus flag when isNewProject changes
+  // Focus the new project input when isNewProject changes to true
   useEffect(() => {
-    if (isNewProject) {
-      setShouldFocusNewProject(true);
+    if (isNewProject && newProjectInputRef.current) {
+      // Use a slightly longer timeout to ensure React has completed rendering
+      const timer = setTimeout(() => {
+        if (newProjectInputRef.current) {
+          newProjectInputRef.current.focus();
+          // Try to place cursor at the end of any text
+          if (typeof newProjectInputRef.current.selectionStart === 'number') {
+            newProjectInputRef.current.selectionStart = newProjectInputRef.current.value.length;
+            newProjectInputRef.current.selectionEnd = newProjectInputRef.current.value.length;
+          }
+        }
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [isNewProject]);
+  
+  // Make sure the component has fully rendered before attaching refs
+  useEffect(() => {
+    setHasRendered(true);
+  }, []);
+  
+  // Handle the checkbox change with direct focus
+  const handleNewProjectChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    form.setValue("isNewProject", checked);
+    
+    if (checked) {
+      // Clear the existing project if a new one is being created
+      form.setValue("project", "");
+    } else {
+      // Clear the new project name if reverting to existing project
+      form.setValue("newProjectName", "");
+    }
+  }, [form]);
 
   const addDeviceMutation = useMutation({
     mutationFn: async (formData: z.infer<typeof addDeviceSchema>) => {
@@ -177,7 +209,7 @@ export function AddDeviceModal({ open, onOpenChange }: AddDeviceModalProps) {
                         type="checkbox"
                         className="h-4 w-4 text-primary"
                         checked={field.value}
-                        onChange={(e) => field.onChange(e.target.checked)}
+                        onChange={handleNewProjectChange}
                       />
                     </FormControl>
                     <FormLabel className="text-sm font-normal cursor-pointer">
@@ -234,12 +266,10 @@ export function AddDeviceModal({ open, onOpenChange }: AddDeviceModalProps) {
                         onBlur={field.onBlur}
                         name={field.name}
                         ref={field.ref}
-                        autoFocus={shouldFocusNewProject}
-                        onFocus={() => {
-                          if (shouldFocusNewProject) {
-                            setShouldFocusNewProject(false);
-                          }
-                        }}
+                        id="new-project-input"
+                        // Add key to force re-render when isNewProject changes
+                        key={`new-project-${hasRendered}-${isNewProject}`}
+                        autoFocus={isNewProject}
                       />
                     </FormControl>
                     <p className="text-xs text-neutral-500 mt-1">
