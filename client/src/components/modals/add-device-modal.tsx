@@ -39,6 +39,7 @@ const addDeviceSchema = z.object({
 export function AddDeviceModal({ open, onOpenChange }: AddDeviceModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [shouldFocusNewProject, setShouldFocusNewProject] = useState(false);
   
   // Fetch existing projects for this user
   const { data: projects = [] } = useQuery<string[]>({
@@ -59,6 +60,26 @@ export function AddDeviceModal({ open, onOpenChange }: AddDeviceModalProps) {
 
   // Watch for isNewProject changes to access in render
   const isNewProject = form.watch("isNewProject");
+  
+  // Reset form when modal is opened/closed
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        deviceId: "",
+        deviceName: "",
+        project: "",
+        isNewProject: false,
+        newProjectName: ""
+      });
+    }
+  }, [open, form]);
+  
+  // Set focus flag when isNewProject changes
+  useEffect(() => {
+    if (isNewProject) {
+      setShouldFocusNewProject(true);
+    }
+  }, [isNewProject]);
 
   const addDeviceMutation = useMutation({
     mutationFn: async (formData: z.infer<typeof addDeviceSchema>) => {
@@ -213,6 +234,12 @@ export function AddDeviceModal({ open, onOpenChange }: AddDeviceModalProps) {
                         onBlur={field.onBlur}
                         name={field.name}
                         ref={field.ref}
+                        autoFocus={shouldFocusNewProject}
+                        onFocus={() => {
+                          if (shouldFocusNewProject) {
+                            setShouldFocusNewProject(false);
+                          }
+                        }}
                       />
                     </FormControl>
                     <p className="text-xs text-neutral-500 mt-1">
