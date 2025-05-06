@@ -179,7 +179,7 @@ export function AddDeviceModal({ open, onOpenChange }: AddDeviceModalProps) {
               <Label htmlFor="projectSelect">Device Project</Label>
               <select 
                 id="projectSelect"
-                className="w-full p-2 border border-input rounded-md"
+                className="w-full p-2 border border-input rounded-md text-base"
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
               >
