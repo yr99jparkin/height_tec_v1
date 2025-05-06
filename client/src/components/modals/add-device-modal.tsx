@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,40 +7,28 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { AddDeviceRequest } from "@shared/types";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlusCircle } from "lucide-react";
 
 interface AddDeviceModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const addDeviceSchema = z.object({
-  deviceId: z.string().min(1, "Device ID is required"),
-  deviceName: z.string().min(1, "Device name is required"),
-  project: z.string().optional(),
-  isNewProject: z.boolean().default(false),
-  newProjectName: z.string().optional()
-}).refine(data => {
-  // When creating a new project, new project name is required
-  if (data.isNewProject && (!data.newProjectName || data.newProjectName.trim() === '')) {
-    return false;
-  }
-  return true;
-}, {
-  message: "New project name is required when creating a new project",
-  path: ["newProjectName"]
-});
-
 export function AddDeviceModal({ open, onOpenChange }: AddDeviceModalProps) {
+  // Form state
+  const [deviceId, setDeviceId] = useState("");
+  const [deviceName, setDeviceName] = useState("");
+  const [isNewProject, setIsNewProject] = useState(false);
+  const [projectName, setProjectName] = useState("");
+  const [newProjectName, setNewProjectName] = useState("");
+  const [isFormValid, setIsFormValid] = useState(false);
+  const [formErrors, setFormErrors] = useState<{
+    deviceId?: string;
+    deviceName?: string;
+    newProjectName?: string;
+  }>({});
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const newProjectInputRef = useRef<HTMLInputElement>(null);
-  const [hasRendered, setHasRendered] = useState(false);
   
   // Fetch existing projects for this user
   const { data: projects = [] } = useQuery<string[]>({
@@ -48,105 +36,85 @@ export function AddDeviceModal({ open, onOpenChange }: AddDeviceModalProps) {
     enabled: open, // Only fetch when modal is open
   });
   
-  const form = useForm<z.infer<typeof addDeviceSchema>>({
-    resolver: zodResolver(addDeviceSchema),
-    defaultValues: {
-      deviceId: "",
-      deviceName: "",
-      project: "",
-      isNewProject: false,
-      newProjectName: ""
-    }
-  });
-
-  // Watch for isNewProject changes to access in render
-  const isNewProject = form.watch("isNewProject");
-  
   // Reset form when modal is opened/closed
   useEffect(() => {
     if (open) {
-      form.reset({
-        deviceId: "",
-        deviceName: "",
-        project: "",
-        isNewProject: false,
-        newProjectName: ""
-      });
-      setHasRendered(false);
+      // Reset form state
+      setDeviceId("");
+      setDeviceName("");
+      setIsNewProject(false);
+      setProjectName("");
+      setNewProjectName("");
+      setFormErrors({});
     }
-  }, [open, form]);
+  }, [open]);
   
-  // Focus the new project input when isNewProject changes to true
+  // Validate form
   useEffect(() => {
-    if (isNewProject && newProjectInputRef.current) {
-      // Use a slightly longer timeout to ensure React has completed rendering
-      const timer = setTimeout(() => {
-        if (newProjectInputRef.current) {
-          newProjectInputRef.current.focus();
-          // Try to place cursor at the end of any text
-          if (typeof newProjectInputRef.current.selectionStart === 'number') {
-            newProjectInputRef.current.selectionStart = newProjectInputRef.current.value.length;
-            newProjectInputRef.current.selectionEnd = newProjectInputRef.current.value.length;
-          }
-        }
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [isNewProject]);
-  
-  // Make sure the component has fully rendered before attaching refs
-  useEffect(() => {
-    setHasRendered(true);
-  }, []);
-  
-  // Handle the checkbox change with direct focus
-  const handleNewProjectChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const checked = e.target.checked;
-    form.setValue("isNewProject", checked);
+    const errors: {
+      deviceId?: string;
+      deviceName?: string;
+      newProjectName?: string;
+    } = {};
     
-    if (checked) {
-      // Clear the existing project if a new one is being created
-      form.setValue("project", "");
-    } else {
-      // Clear the new project name if reverting to existing project
-      form.setValue("newProjectName", "");
+    if (!deviceId) {
+      errors.deviceId = "Device ID is required";
     }
-  }, [form]);
+    
+    if (!deviceName) {
+      errors.deviceName = "Device name is required";
+    }
+    
+    if (isNewProject && !newProjectName) {
+      errors.newProjectName = "Project name is required when creating a new project";
+    }
+    
+    setFormErrors(errors);
+    setIsFormValid(Object.keys(errors).length === 0);
+  }, [deviceId, deviceName, isNewProject, newProjectName]);
 
-  const addDeviceMutation = useMutation({
-    mutationFn: async (formData: z.infer<typeof addDeviceSchema>) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Submit handler 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Check form validity
+    if (!isFormValid) {
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
       const data: AddDeviceRequest = {
-        deviceId: formData.deviceId,
-        deviceName: formData.deviceName,
-        project: formData.isNewProject && formData.newProjectName 
-          ? formData.newProjectName 
-          : formData.project
+        deviceId,
+        deviceName,
+        project: isNewProject ? newProjectName : projectName
       };
       
       const response = await apiRequest("POST", "/api/devices", data);
-      return response.json();
-    },
-    onSuccess: () => {
+      const result = await response.json();
+      
       toast({
         title: "Device added successfully",
         description: "The device has been added to your account",
       });
+      
       queryClient.invalidateQueries({ queryKey: ["/api/devices"] });
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
-      form.reset();
+      
+      // Close modal
       onOpenChange(false);
-    },
-    onError: (error: Error) => {
+    } catch (error) {
       toast({
         title: "Failed to add device",
-        description: error.message,
+        description: error instanceof Error ? error.message : "An unknown error occurred",
         variant: "destructive",
       });
-    },
-  });
-
-  const onSubmit = (data: z.infer<typeof addDeviceSchema>) => {
-    addDeviceMutation.mutate(data);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -156,148 +124,111 @@ export function AddDeviceModal({ open, onOpenChange }: AddDeviceModalProps) {
           <DialogTitle>Add New Device</DialogTitle>
         </DialogHeader>
         
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-            <FormField
-              control={form.control}
-              name="deviceId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Device ID</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Enter device ID" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <p className="text-xs text-neutral-500 mt-1">
-                    Enter the Device ID provided with your anemometer.
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
+        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          {/* Device ID */}
+          <div className="space-y-2">
+            <Label htmlFor="deviceId">Device ID</Label>
+            <Input 
+              id="deviceId"
+              placeholder="Enter device ID" 
+              value={deviceId}
+              onChange={(e) => setDeviceId(e.target.value)}
             />
-            
-            <FormField
-              control={form.control}
-              name="deviceName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Device Name</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Enter a name for this device" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <p className="text-xs text-neutral-500 mt-1">
-                    Choose a descriptive name for easy identification.
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="isNewProject"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center space-x-2 mt-3">
-                    <FormControl>
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 text-primary"
-                        checked={field.value}
-                        onChange={handleNewProjectChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="text-sm font-normal cursor-pointer">
-                      Create a new project
-                    </FormLabel>
-                  </div>
-                </FormItem>
-              )}
-            />
-
-            {!isNewProject ? (
-              <FormField
-                control={form.control}
-                name="project"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Device Project</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select an existing project (optional)" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {projects.map((project) => (
-                          <SelectItem key={project} value={project}>
-                            {project}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-neutral-500 mt-1">
-                      Group devices by project for easier management.
-                    </p>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            ) : (
-              <FormField
-                control={form.control}
-                name="newProjectName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>New Project Name</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Enter a name for the new project" 
-                        value={field.value || ''}
-                        onChange={(e) => field.onChange(e.target.value)}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                        ref={field.ref}
-                        id="new-project-input"
-                        // Add key to force re-render when isNewProject changes
-                        key={`new-project-${hasRendered}-${isNewProject}`}
-                        autoFocus={isNewProject}
-                      />
-                    </FormControl>
-                    <p className="text-xs text-neutral-500 mt-1">
-                      Create a new project to group your devices.
-                    </p>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {formErrors.deviceId && (
+              <p className="text-xs text-destructive">{formErrors.deviceId}</p>
             )}
-            
-            <DialogFooter className="mt-6">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => onOpenChange(false)}
+            <p className="text-xs text-neutral-500">
+              Enter the Device ID provided with your anemometer.
+            </p>
+          </div>
+          
+          {/* Device Name */}
+          <div className="space-y-2">
+            <Label htmlFor="deviceName">Device Name</Label>
+            <Input 
+              id="deviceName"
+              placeholder="Enter a name for this device" 
+              value={deviceName}
+              onChange={(e) => setDeviceName(e.target.value)}
+            />
+            {formErrors.deviceName && (
+              <p className="text-xs text-destructive">{formErrors.deviceName}</p>
+            )}
+            <p className="text-xs text-neutral-500">
+              Choose a descriptive name for easy identification.
+            </p>
+          </div>
+          
+          {/* Create New Project Checkbox */}
+          <div className="flex items-center space-x-2 mt-3">
+            <input
+              id="createNewProject"
+              type="checkbox"
+              className="h-4 w-4 text-primary"
+              checked={isNewProject}
+              onChange={(e) => setIsNewProject(e.target.checked)}
+            />
+            <Label htmlFor="createNewProject" className="text-sm font-normal cursor-pointer">
+              Create a new project
+            </Label>
+          </div>
+          
+          {/* Project Selection */}
+          {!isNewProject ? (
+            <div className="space-y-2">
+              <Label htmlFor="projectSelect">Device Project</Label>
+              <select 
+                id="projectSelect"
+                className="w-full p-2 border border-input rounded-md"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
               >
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={addDeviceMutation.isPending}
-              >
-                {addDeviceMutation.isPending ? "Adding..." : "Add Device"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+                <option value="">Select an existing project (optional)</option>
+                {projects.map((project) => (
+                  <option key={project} value={project}>
+                    {project}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-neutral-500">
+                Group devices by project for easier management.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="newProjectName">New Project Name</Label>
+              <Input 
+                id="newProjectName"
+                placeholder="Enter a name for the new project" 
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+                autoFocus={isNewProject}
+              />
+              {formErrors.newProjectName && (
+                <p className="text-xs text-destructive">{formErrors.newProjectName}</p>
+              )}
+              <p className="text-xs text-neutral-500">
+                Create a new project to group your devices.
+              </p>
+            </div>
+          )}
+          
+          <DialogFooter className="mt-6">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || !isFormValid}
+            >
+              {isSubmitting ? "Adding..." : "Add Device"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
