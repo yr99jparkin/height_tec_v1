@@ -171,25 +171,47 @@ export function WindReportChart({
           dataKey="time" 
           tick={{ fontSize: 12 }} 
           tickMargin={10}
-          interval={Math.max(Math.floor(chartData.length / 12), 1)} // Show approximately 12 ticks for better readability
-          tickFormatter={(value, index) => {
-            // Get the actual date from chartData
-            const tickDate = chartData[index]?.date;
-            if (!tickDate) return value;
+          // Custom ticks to ensure proper date distribution
+          ticks={(() => {
+            if (chartData.length === 0) return [];
             
-            if (timeRange <= 1) {
-              // For 1 day, show hour intervals (3h format)
-              return format(tickDate, "HH:mm");
-            } else if (timeRange <= 7) {
-              // For less than a week, show day name and date
-              return format(tickDate, "EEE d");
-            } else if (timeRange <= 31) {
-              // For a month, show date with short month
-              return format(tickDate, "d MMM");
-            } else {
-              // For longer periods, show month and date
-              return format(tickDate, "MMM d");
+            // Create evenly distributed ticks
+            const firstDate = chartData[0].date;
+            const lastDate = chartData[chartData.length - 1].date;
+            
+            // Calculate how many ticks to show based on time range
+            const tickCount = timeRange <= 2 ? 6 : timeRange <= 7 ? 7 : timeRange <= 14 ? 7 : 10;
+            
+            // Generate ticks evenly spaced across the date range
+            const ticks = [];
+            for (let i = 0; i < tickCount; i++) {
+              const timestamp = firstDate.getTime() + (i / (tickCount - 1)) * (lastDate.getTime() - firstDate.getTime());
+              const index = Math.min(
+                Math.floor((timestamp - firstDate.getTime()) / (lastDate.getTime() - firstDate.getTime()) * (chartData.length - 1)),
+                chartData.length - 1
+              );
+              if (index >= 0 && index < chartData.length) {
+                ticks.push(index);
+              }
             }
+            return ticks;
+          })()}
+          tickFormatter={(value, index) => {
+            if (typeof value === 'number') {
+              // Direct index provided
+              const tickData = chartData[value];
+              if (tickData?.date instanceof Date) {
+                const tickDate = tickData.date;
+                if (timeRange <= 1) {
+                  return format(tickDate, "HH:mm");
+                } else if (timeRange <= 7) {
+                  return format(tickDate, "MMM d");
+                } else {
+                  return format(tickDate, "MMM d");
+                }
+              }
+            }
+            return '';
           }}
           padding={{ left: 10, right: 10 }}
         />
