@@ -10,8 +10,7 @@ import {
   CartesianGrid,
   Tooltip,
   ReferenceLine,
-  Customized,
-  Rectangle
+  Legend
 } from "recharts";
 
 interface WindReportChartProps {
@@ -58,7 +57,7 @@ export function WindReportChart({
     maxVal = Math.max(maxVal, thresholdMax * 1.1);
     setMaxValue(maxVal);
 
-    // Format data for the chart
+    // Format data for the chart with stacked values
     const formattedData = sortedData.map(item => {
       const value = item[dataKey] as number;
       const date = new Date(item.intervalStart);
@@ -79,15 +78,40 @@ export function WindReportChart({
         formattedDate = format(startOfWeek(date, { weekStartsOn: 1 }), timeFormat);
       }
       
+      // Split the value into green, amber, and red segments for stacking
+      let greenValue = 0;
+      let amberValue = 0;
+      let redValue = 0;
+      
+      if (value <= amberThreshold) {
+        // When value is in the green zone
+        greenValue = value;
+      } else if (value <= redThreshold) {
+        // When value is in the amber zone
+        greenValue = amberThreshold;
+        amberValue = value - amberThreshold;
+      } else {
+        // When value is in the red zone
+        greenValue = amberThreshold;
+        amberValue = redThreshold - amberThreshold;
+        redValue = value - redThreshold;
+      }
+      
       return {
         id: item.id,
         intervalStart: item.intervalStart,
         date: date,
         time: formattedDate,
-        [dataKey]: value,
+        [dataKey]: value, // Keep original value for tooltip
         alertState: item.alertTriggered,
         amberAlert: item.amberAlertTriggered,
         redAlert: item.redAlertTriggered,
+        // Stacked values
+        greenValue,
+        amberValue,
+        redValue,
+        // For tooltip/display
+        displayValue: value.toFixed(1),
       };
     });
 
@@ -107,12 +131,14 @@ export function WindReportChart({
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
+      const value = data[dataKey]; // Original value
+      
       return (
         <div className="custom-tooltip bg-white p-3 border border-neutral-200 shadow-md rounded-md">
           <p className="font-medium">{format(new Date(data.intervalStart), "PPpp")}</p>
           <p className="text-sm text-neutral-600">
             {dataKey === "avgWindSpeed" ? "Average" : "Maximum"} Wind Speed: 
-            <span className="font-medium"> {payload[0].value.toFixed(1)} km/h</span>
+            <span className="font-medium"> {value.toFixed(1)} km/h</span>
           </p>
           <p className="text-xs mt-1">
             Status: 
@@ -130,50 +156,6 @@ export function WindReportChart({
       );
     }
     return null;
-  };
-
-  // Custom gradient that changes color based on thresholds
-  const GradientMaker = () => {
-    // Define gradient steps as percentages of the maxValue
-    const redPosition = redThreshold ? (redThreshold / maxValue) * 100 : 100;
-    const amberPosition = amberThreshold ? (amberThreshold / maxValue) * 100 : 0;
-    
-    return (
-      <defs>
-        <linearGradient id={`gradient-${dataKey}`} x1="0" y1="0" x2="0" y2="1">
-          {/* Green zone (0 to amber threshold) */}
-          <stop
-            offset={`${amberPosition}%`}
-            stopColor="hsl(var(--safe))"
-            stopOpacity={0.8}
-          />
-          
-          {/* Amber zone (amber threshold to red threshold) */}
-          <stop
-            offset={`${amberPosition}%`}
-            stopColor="hsl(var(--warning))"
-            stopOpacity={0.8}
-          />
-          
-          {/* Red zone (red threshold to max) */}
-          <stop
-            offset={`${redPosition}%`}
-            stopColor="hsl(var(--warning))"
-            stopOpacity={0.8}
-          />
-          <stop
-            offset={`${redPosition}%`}
-            stopColor="hsl(var(--destructive))"
-            stopOpacity={0.8}
-          />
-          <stop
-            offset="100%"
-            stopColor="hsl(var(--destructive))"
-            stopOpacity={0.8}
-          />
-        </linearGradient>
-      </defs>
-    );
   };
 
   return (
@@ -207,9 +189,6 @@ export function WindReportChart({
         />
         <Tooltip content={<CustomTooltip />} />
         
-        {/* Gradient definition for AreaChartFillByValue style */}
-        <GradientMaker />
-        
         {/* Reference lines for thresholds */}
         {amberThreshold && (
           <ReferenceLine 
@@ -218,7 +197,7 @@ export function WindReportChart({
             strokeDasharray="3 3" 
             strokeWidth={1.5}
             label={{
-              value: `Amber Alert (${amberThreshold} km/h)`,
+              value: `Amber (${amberThreshold} km/h)`,
               position: "right",
               fill: "hsl(var(--warning))",
               fontSize: 12
@@ -233,7 +212,7 @@ export function WindReportChart({
             strokeDasharray="3 3" 
             strokeWidth={1.5}
             label={{
-              value: `Red Alert (${redThreshold} km/h)`,
+              value: `Red (${redThreshold} km/h)`,
               position: "right",
               fill: "hsl(var(--destructive))",
               fontSize: 12
@@ -241,14 +220,30 @@ export function WindReportChart({
           />
         )}
         
-        {/* Single area with gradient fill that changes based on thresholds */}
+        {/* Stacked areas for different threshold zones */}
         <Area 
-          type="monotone" 
-          dataKey={dataKey} 
-          stroke="#8884d8"
-          strokeWidth={2}
-          fillOpacity={1}
-          fill={`url(#gradient-${dataKey})`}
+          type="monotone"
+          dataKey="greenValue"
+          stackId="stack"
+          stroke="rgba(34, 197, 94, 0.8)"
+          fill="rgba(34, 197, 94, 0.8)"
+          name="Normal"
+        />
+        <Area 
+          type="monotone"
+          dataKey="amberValue"
+          stackId="stack"
+          stroke="rgba(234, 179, 8, 0.8)"
+          fill="rgba(234, 179, 8, 0.8)"
+          name="Amber Alert"
+        />
+        <Area 
+          type="monotone"
+          dataKey="redValue"
+          stackId="stack"
+          stroke="rgba(239, 68, 68, 0.8)"
+          fill="rgba(239, 68, 68, 0.8)"
+          name="Red Alert"
           activeDot={{ r: 6 }}
         />
       </AreaChart>
