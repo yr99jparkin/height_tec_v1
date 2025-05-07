@@ -223,10 +223,8 @@ export default function ReportsPage() {
       case "1day":
         return format(date, "MMMM yyyy");
       case "1week":
-        // Make sure we use Monday as the start of the week
-        const weekStart = startOfWeek(date, { weekStartsOn: 1 });
-        const weekEnd = endOfWeek(date, { weekStartsOn: 1 });
-        return `w/c ${format(weekStart, "MMMM d, yyyy")}`;
+        // For weekly view, just show the month name as the gray bar header
+        return format(date, "MMMM yyyy");
       default:
         return format(date, "MMMM d, yyyy");
     }
@@ -296,9 +294,8 @@ export default function ReportsPage() {
           key = format(date, 'yyyy-MM');
           break;
         case "1week":
-          // For weekly data, group by the start of the week (Monday)
-          const weekStartDate = startOfWeek(date, { weekStartsOn: 1 });
-          key = format(weekStartDate, 'yyyy-MM-dd');
+          // For weekly data, group by month for the gray bar headers
+          key = format(date, 'yyyy-MM');
           break;
         default:
           key = format(date, 'yyyy-MM-dd');
