@@ -1,15 +1,15 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Header } from "@/components/layout/header";
 import { useLocation } from "wouter";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { DeviceWithLatestData } from "@shared/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
-import { CalendarIcon, FileDown, RefreshCw } from "lucide-react";
-import { format, parseISO, isSameDay, differenceInDays, startOfWeek, isAfter, isBefore, addDays } from "date-fns";
+import { CalendarIcon, FileDown, RefreshCw, ChevronDown, ChevronRight } from "lucide-react";
+import { format, parseISO, isSameDay, differenceInDays, startOfWeek, endOfWeek, isAfter, isBefore, addDays, startOfDay, endOfDay, startOfHour, endOfHour, getHours, getDay, getWeek } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -17,6 +17,10 @@ import { WindAlertThreshold, WindDataHistorical } from "@shared/schema";
 import { WindReportChart } from "@/components/ui/wind-report-chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
+// Define the aggregation level type
+type AggregationLevel = "10min" | "1hour" | "1day" | "1week";
 
 export default function ReportsPage() {
   const { user } = useAuth();
@@ -31,6 +35,10 @@ export default function ReportsPage() {
   });
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [reportGenTime, setReportGenTime] = useState(new Date());
+  // State for the selected aggregation level
+  const [aggregationLevel, setAggregationLevel] = useState<AggregationLevel>("10min");
+  // Expanded sections for aggregated data
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
 
   // Update the report generation time when the report is updated
   useEffect(() => {
@@ -179,15 +187,167 @@ export default function ReportsPage() {
     return null;
   }
 
-  // Group data by date for the table
-  const groupedData: { [key: string]: WindDataHistorical[] } = {};
-  windData.forEach(data => {
-    const dateKey = format(new Date(data.intervalStart), 'yyyy-MM-dd');
-    if (!groupedData[dateKey]) {
-      groupedData[dateKey] = [];
+  // Toggle expanded section
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionId]: !prev[sectionId]
+    }));
+  };
+  
+  // Format keys based on aggregation level
+  const formatAggregationKey = (date: Date): string => {
+    switch (aggregationLevel) {
+      case "10min":
+        return format(date, 'yyyy-MM-dd');
+      case "1hour":
+        return format(date, 'yyyy-MM-dd HH:00');
+      case "1day":
+        return format(date, 'yyyy-MM-dd');
+      case "1week":
+        const weekStart = startOfWeek(date, { weekStartsOn: 1 });
+        return format(weekStart, 'yyyy-MM-dd');
+      default:
+        return format(date, 'yyyy-MM-dd');
     }
-    groupedData[dateKey].push(data);
-  });
+  };
+  
+  // Format display headers based on aggregation level
+  const formatAggregationHeader = (key: string): string => {
+    const date = new Date(key);
+    switch (aggregationLevel) {
+      case "10min":
+        return format(date, "EEEE, MMMM d, yyyy");
+      case "1hour":
+        return format(date, "MMMM d, yyyy, HH:00");
+      case "1day":
+        return format(date, "MMMM d, yyyy");
+      case "1week":
+        const weekEnd = endOfWeek(date, { weekStartsOn: 1 });
+        return `Week of ${format(date, "MMMM d, yyyy")} - ${format(weekEnd, "MMMM d, yyyy")}`;
+      default:
+        return format(date, "MMMM d, yyyy");
+    }
+  };
+  
+  // Aggregate data function - creates a single aggregated entry from multiple readings
+  const aggregateDataPoints = (dataPoints: WindDataHistorical[]): WindDataHistorical => {
+    if (dataPoints.length === 0) {
+      throw new Error("Cannot aggregate empty data set");
+    }
+    
+    // Sort by timestamp to get start and end times
+    const sortedData = [...dataPoints].sort(
+      (a, b) => new Date(a.intervalStart).getTime() - new Date(b.intervalStart).getTime()
+    );
+    
+    const firstPoint = sortedData[0];
+    const lastPoint = sortedData[sortedData.length - 1];
+    
+    // Calculate aggregated values
+    const avgWindSpeed = sortedData.reduce((sum, point) => sum + point.avgWindSpeed, 0) / sortedData.length;
+    const maxWindSpeed = Math.max(...sortedData.map(point => point.maxWindSpeed));
+    
+    // Check if any alerts were triggered
+    const amberAlertTriggered = sortedData.some(point => point.amberAlertTriggered);
+    const redAlertTriggered = sortedData.some(point => point.redAlertTriggered);
+    
+    // Calculate downtime
+    const downtimeSeconds = sortedData.reduce((sum, point) => sum + (point.downtimeSeconds || 0), 0);
+    
+    // Create aggregated data point
+    return {
+      ...firstPoint,
+      id: firstPoint.id, // Keep original ID for React keys
+      intervalStart: firstPoint.intervalStart,
+      intervalEnd: lastPoint.intervalEnd,
+      avgWindSpeed,
+      maxWindSpeed,
+      amberAlertTriggered,
+      redAlertTriggered,
+      downtimeSeconds,
+    };
+  };
+  
+  // Group and aggregate data for the table based on selected aggregation level
+  const aggregateWindData = (data: WindDataHistorical[], level: AggregationLevel): { [key: string]: WindDataHistorical[] } => {
+    if (!data.length) return {};
+    
+    const aggregatedData: { [key: string]: WindDataHistorical[] } = {};
+    
+    // Group based on appropriate time period
+    data.forEach(point => {
+      const date = new Date(point.intervalStart);
+      let key: string;
+      
+      switch (level) {
+        case "10min":
+          // For raw data, just group by date
+          key = format(date, 'yyyy-MM-dd');
+          break;
+        case "1hour":
+          // For hourly data, round to hour
+          key = format(startOfHour(date), 'yyyy-MM-dd HH:00');
+          break;
+        case "1day":
+          // For daily data, use date
+          key = format(startOfDay(date), 'yyyy-MM-dd');
+          break;
+        case "1week":
+          // For weekly data, use week starting date
+          const weekStart = startOfWeek(date, { weekStartsOn: 1 });
+          key = format(weekStart, 'yyyy-MM-dd');
+          break;
+        default:
+          key = format(date, 'yyyy-MM-dd');
+      }
+      
+      if (!aggregatedData[key]) {
+        aggregatedData[key] = [];
+      }
+      
+      aggregatedData[key].push(point);
+    });
+    
+    // For 1hour, 1day, and 1week, we need to aggregate the data points into single entries
+    if (level !== "10min") {
+      // Further aggregate hourly, daily, or weekly data points
+      Object.keys(aggregatedData).forEach(key => {
+        const dataPoints = aggregatedData[key];
+        
+        if (level === "1hour") {
+          // For hourly view, aggregate into hourly chunks
+          const hourlyGroups: { [hourKey: string]: WindDataHistorical[] } = {};
+          
+          dataPoints.forEach(point => {
+            const hourKey = format(new Date(point.intervalStart), 'yyyy-MM-dd HH:00');
+            if (!hourlyGroups[hourKey]) {
+              hourlyGroups[hourKey] = [];
+            }
+            hourlyGroups[hourKey].push(point);
+          });
+          
+          aggregatedData[key] = Object.values(hourlyGroups).map(points => aggregateDataPoints(points));
+          
+        } else if (level === "1day") {
+          // For daily view, all points in the day are aggregated
+          aggregatedData[key] = [aggregateDataPoints(dataPoints)];
+          
+        } else if (level === "1week") {
+          // For weekly view, all points in the week are aggregated
+          aggregatedData[key] = [aggregateDataPoints(dataPoints)];
+        }
+      });
+    }
+    
+    return aggregatedData;
+  };
+  
+  // Generate the grouped data based on current aggregation level
+  const groupedData = useMemo(() => 
+    aggregateWindData(windData, aggregationLevel), 
+    [windData, aggregationLevel]
+  );
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -417,78 +577,157 @@ export default function ReportsPage() {
 
                     {/* Detailed Data Table */}
                     <div>
-                      <h3 className="text-lg font-medium mb-4">Detailed Data</h3>
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium">Detailed Data</h3>
+                        <div className="flex items-center justify-end">
+                          <Label className="mr-2">Show data in:</Label>
+                          <RadioGroup
+                            value={aggregationLevel}
+                            onValueChange={(value) => setAggregationLevel(value as AggregationLevel)}
+                            className="flex space-x-4"
+                          >
+                            <div className="flex items-center space-x-1">
+                              <RadioGroupItem value="10min" id="r-10min" />
+                              <Label htmlFor="r-10min" className="cursor-pointer">10 Min</Label>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <RadioGroupItem value="1hour" id="r-1hour" />
+                              <Label htmlFor="r-1hour" className="cursor-pointer">1 Hour</Label>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <RadioGroupItem value="1day" id="r-1day" />
+                              <Label htmlFor="r-1day" className="cursor-pointer">1 Day</Label>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <RadioGroupItem value="1week" id="r-1week" />
+                              <Label htmlFor="r-1week" className="cursor-pointer">1 Week</Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                      </div>
+                      
                       <div className="border rounded-lg overflow-hidden">
                         {Object.keys(groupedData).length > 0 ? (
                           <div className="divide-y">
                             {Object.entries(groupedData)
                               .sort(([dateA], [dateB]) => new Date(dateB).getTime() - new Date(dateA).getTime())
-                              .map(([date, entries]) => (
-                                <div key={date} className="divide-y">
-                                  <div className="bg-neutral-100 px-4 py-2 font-medium">
-                                    {format(new Date(date), "EEEE, MMMM d, yyyy")}
+                              .map(([key, entries]) => {
+                                const sectionId = `section-${key}`;
+                                const isExpanded = expandedSections[sectionId] !== false; // Default to expanded
+                                
+                                return (
+                                  <div key={key} className="divide-y">
+                                    <button 
+                                      className="bg-neutral-100 px-4 py-2 font-medium w-full text-left flex justify-between items-center hover:bg-neutral-200 transition-colors"
+                                      onClick={() => toggleSection(sectionId)}
+                                    >
+                                      <span>{formatAggregationHeader(key)}</span>
+                                      <span>{isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}</span>
+                                    </button>
+                                    
+                                    {isExpanded && (
+                                      <table className="min-w-full divide-y divide-neutral-200">
+                                        <thead>
+                                          <tr>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Time Period</th>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Avg Wind Speed</th>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Max Wind Speed</th>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Alert Status</th>
+                                            {aggregationLevel !== "10min" && (
+                                              <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Downtime</th>
+                                            )}
+                                          </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-neutral-200">
+                                          {entries
+                                            .sort((a, b) => new Date(b.intervalStart).getTime() - new Date(a.intervalStart).getTime())
+                                            .map((entry) => {
+                                              // Determine cell background colors based on thresholds
+                                              const getAvgWindSpeedClass = () => {
+                                                if (!thresholds) return "";
+                                                if (entry.avgWindSpeed >= thresholds.redThreshold) return "bg-red-100";
+                                                if (entry.avgWindSpeed >= thresholds.amberThreshold) return "bg-amber-100";
+                                                return "bg-green-100";
+                                              };
+                                              
+                                              const getMaxWindSpeedClass = () => {
+                                                if (!thresholds) return "";
+                                                if (entry.maxWindSpeed >= thresholds.redThreshold) return "bg-red-100";
+                                                if (entry.maxWindSpeed >= thresholds.amberThreshold) return "bg-amber-100";
+                                                return "bg-green-100";
+                                              };
+                                              
+                                              const getAlertStatusClass = () => {
+                                                if (entry.redAlertTriggered) return "bg-red-100";
+                                                if (entry.amberAlertTriggered) return "bg-amber-100";
+                                                return "bg-green-100";
+                                              };
+                                              
+                                              const getAlertStatusText = () => {
+                                                if (entry.redAlertTriggered) return "Red Alert";
+                                                if (entry.amberAlertTriggered) return "Amber Alert";
+                                                return "Normal";
+                                              };
+                                              
+                                              // Format time period based on aggregation level
+                                              const formatTimePeriod = () => {
+                                                const start = new Date(entry.intervalStart);
+                                                const end = new Date(entry.intervalEnd);
+                                                
+                                                switch (aggregationLevel) {
+                                                  case "10min":
+                                                    return `${format(start, "HH:mm")} - ${format(end, "HH:mm")}`;
+                                                  case "1hour":
+                                                    return format(start, "HH:mm") + " - " + format(end, "HH:mm");
+                                                  case "1day":
+                                                    return format(start, "MMM d, yyyy");
+                                                  case "1week":
+                                                    return `${format(start, "MMM d")} - ${format(end, "MMM d")}`;
+                                                  default:
+                                                    return `${format(start, "HH:mm")} - ${format(end, "HH:mm")}`;
+                                                }
+                                              };
+                                              
+                                              // Format downtime for aggregated data
+                                              const formatDowntime = () => {
+                                                const seconds = entry.downtimeSeconds || 0;
+                                                if (seconds < 60) {
+                                                  return `${seconds.toFixed(0)}s`;
+                                                } else if (seconds < 3600) {
+                                                  return `${(seconds / 60).toFixed(1)}m`;
+                                                } else {
+                                                  return `${(seconds / 3600).toFixed(1)}h`;
+                                                }
+                                              };
+                                              
+                                              return (
+                                                <tr key={entry.id}>
+                                                  <td className="px-4 py-2 text-sm">
+                                                    {formatTimePeriod()}
+                                                  </td>
+                                                  <td className={`px-4 py-2 text-sm ${getAvgWindSpeedClass()}`}>
+                                                    {entry.avgWindSpeed.toFixed(1)} km/h
+                                                  </td>
+                                                  <td className={`px-4 py-2 text-sm ${getMaxWindSpeedClass()}`}>
+                                                    {entry.maxWindSpeed.toFixed(1)} km/h
+                                                  </td>
+                                                  <td className={`px-4 py-2 text-sm ${getAlertStatusClass()}`}>
+                                                    {getAlertStatusText()}
+                                                  </td>
+                                                  {aggregationLevel !== "10min" && (
+                                                    <td className="px-4 py-2 text-sm">
+                                                      {formatDowntime()}
+                                                    </td>
+                                                  )}
+                                                </tr>
+                                              );
+                                            })}
+                                        </tbody>
+                                      </table>
+                                    )}
                                   </div>
-                                  <table className="min-w-full divide-y divide-neutral-200">
-                                    <thead>
-                                      <tr>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Time</th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Avg Wind Speed</th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Max Wind Speed</th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Alert Status</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-neutral-200">
-                                      {entries
-                                        .sort((a, b) => new Date(b.intervalStart).getTime() - new Date(a.intervalStart).getTime())
-                                        .map((entry) => {
-                                          // Determine cell background colors based on thresholds
-                                          const getAvgWindSpeedClass = () => {
-                                            if (!thresholds) return "";
-                                            if (entry.avgWindSpeed >= thresholds.redThreshold) return "bg-red-100";
-                                            if (entry.avgWindSpeed >= thresholds.amberThreshold) return "bg-amber-100";
-                                            return "bg-green-100";
-                                          };
-                                          
-                                          const getMaxWindSpeedClass = () => {
-                                            if (!thresholds) return "";
-                                            if (entry.maxWindSpeed >= thresholds.redThreshold) return "bg-red-100";
-                                            if (entry.maxWindSpeed >= thresholds.amberThreshold) return "bg-amber-100";
-                                            return "bg-green-100";
-                                          };
-                                          
-                                          const getAlertStatusClass = () => {
-                                            if (entry.redAlertTriggered) return "bg-red-100";
-                                            if (entry.amberAlertTriggered) return "bg-amber-100";
-                                            return "bg-green-100";
-                                          };
-                                          
-                                          const getAlertStatusText = () => {
-                                            if (entry.redAlertTriggered) return "Red Alert";
-                                            if (entry.amberAlertTriggered) return "Amber Alert";
-                                            return "Normal";
-                                          };
-                                          
-                                          return (
-                                            <tr key={entry.id}>
-                                              <td className="px-4 py-2 text-sm">
-                                                {format(new Date(entry.intervalStart), "HH:mm")} - {format(new Date(entry.intervalEnd), "HH:mm")}
-                                              </td>
-                                              <td className={`px-4 py-2 text-sm ${getAvgWindSpeedClass()}`}>
-                                                {entry.avgWindSpeed.toFixed(1)} km/h
-                                              </td>
-                                              <td className={`px-4 py-2 text-sm ${getMaxWindSpeedClass()}`}>
-                                                {entry.maxWindSpeed.toFixed(1)} km/h
-                                              </td>
-                                              <td className={`px-4 py-2 text-sm ${getAlertStatusClass()}`}>
-                                                {getAlertStatusText()}
-                                              </td>
-                                            </tr>
-                                          );
-                                        })}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              ))}
+                                );
+                              })}
                           </div>
                         ) : (
                           <div className="text-center py-6">
