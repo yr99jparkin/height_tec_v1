@@ -105,7 +105,7 @@ export default function ReportsPage() {
         maxWindSpeed: 0,
         maxWindSpeedTime: null,
         avgWindSpeed: 0,
-        totalDowntime: downtimeData?.totalDowntimeSeconds || 0,
+        totalDowntime: downtimeData?.downtimeSeconds || 0,
         greenPercentage: 0,
         amberPercentage: 0,
         redPercentage: 0
@@ -147,7 +147,7 @@ export default function ReportsPage() {
       maxWindSpeed,
       maxWindSpeedTime,
       avgWindSpeed: sumWindSpeed / windData.length,
-      totalDowntime: downtimeData?.totalDowntimeSeconds || 0,
+      totalDowntime: downtimeData?.downtimeSeconds || 0,
       greenPercentage: totalTime > 0 ? (totalGreenTime / totalTime) * 100 : 0,
       amberPercentage: totalTime > 0 ? (totalAmberTime / totalTime) * 100 : 0,
       redPercentage: totalTime > 0 ? (totalRedTime / totalTime) * 100 : 0
