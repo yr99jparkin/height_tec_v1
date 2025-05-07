@@ -113,19 +113,13 @@ export default function ReportsPage() {
         maxWindSpeed: 0,
         maxWindSpeedTime: null,
         avgWindSpeed: 0,
-        totalDowntime: downtimeData?.downtimeSeconds || 0,
-        greenPercentage: 0,
-        amberPercentage: 0,
-        redPercentage: 0
+        totalDowntime: downtimeData?.downtimeSeconds || 0
       };
     }
 
     let maxWindSpeed = 0;
     let maxWindSpeedTime: Date | null = null;
     let sumWindSpeed = 0;
-    let totalGreenTime = 0;
-    let totalAmberTime = 0;
-    let totalRedTime = 0;
 
     windData.forEach(data => {
       // Track max wind speed
@@ -136,29 +130,13 @@ export default function ReportsPage() {
 
       // Accumulate for average
       sumWindSpeed += data.avgWindSpeed;
-
-      // Calculate time in each alert state
-      const intervalDuration = (new Date(data.intervalEnd).getTime() - new Date(data.intervalStart).getTime()) / 1000; // in seconds
-      
-      if (data.redAlertTriggered) {
-        totalRedTime += intervalDuration;
-      } else if (data.amberAlertTriggered) {
-        totalAmberTime += intervalDuration;
-      } else {
-        totalGreenTime += intervalDuration;
-      }
     });
-
-    const totalTime = totalGreenTime + totalAmberTime + totalRedTime;
     
     return {
       maxWindSpeed,
       maxWindSpeedTime,
       avgWindSpeed: sumWindSpeed / windData.length,
-      totalDowntime: downtimeData?.downtimeSeconds || 0,
-      greenPercentage: totalTime > 0 ? (totalGreenTime / totalTime) * 100 : 0,
-      amberPercentage: totalTime > 0 ? (totalAmberTime / totalTime) * 100 : 0,
-      redPercentage: totalTime > 0 ? (totalRedTime / totalTime) * 100 : 0
+      totalDowntime: downtimeData?.downtimeSeconds || 0
     };
   };
 
@@ -251,10 +229,10 @@ export default function ReportsPage() {
     // Calculate downtime
     const downtimeSeconds = sortedData.reduce((sum, point) => sum + (point.downtimeSeconds || 0), 0);
     
-    // Create aggregated data point
+    // Create aggregated data point without alert status
     return {
-      ...firstPoint,
-      id: firstPoint.id, // Keep original ID for React keys
+      id: firstPoint.id,
+      deviceId: firstPoint.deviceId,
       intervalStart: firstPoint.intervalStart,
       intervalEnd: lastPoint.intervalEnd,
       avgWindSpeed,
