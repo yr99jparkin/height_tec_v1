@@ -5,7 +5,7 @@ import { setupAuth } from "./auth";
 import { setupUdpListener } from "./udp-listener";
 import { and, eq } from "drizzle-orm";
 import { db } from "./db";
-import { devices, notificationContacts } from "@shared/schema";
+import { devices, notificationContacts, windDataHistorical } from "@shared/schema";
 import { AddDeviceRequest, ExportDataParams, NotificationContactRequest, UpdateDeviceRequest, UpdateThresholdsRequest } from "@shared/types";
 import { z } from "zod";
 import { format } from "date-fns";
@@ -180,13 +180,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const startDate = req.query.startDate ? new Date(req.query.startDate as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : new Date();
       
+      console.log(`[downtime] Fetching downtime for ${deviceId} from ${startDate.toISOString()} to ${endDate.toISOString()}`);
+      
       // Check if device exists and belongs to user
       const device = await storage.getDeviceByDeviceId(deviceId);
       if (!device || device.userId !== req.user.id) {
         return res.status(404).json({ message: "Device not found" });
       }
 
+      // Debug: Log some historical data for reference (limit to 3 records)
+      const sampleData = await db
+        .select({ 
+          id: windDataHistorical.id,
+          deviceId: windDataHistorical.deviceId,
+          intervalStart: windDataHistorical.intervalStart,
+          intervalEnd: windDataHistorical.intervalEnd,
+          downtimeSeconds: windDataHistorical.downtimeSeconds
+        })
+        .from(windDataHistorical)
+        .where(
+          and(
+            eq(windDataHistorical.deviceId, deviceId),
+            gte(windDataHistorical.intervalStart, startDate),
+            lte(windDataHistorical.intervalEnd, endDate)
+          )
+        )
+        .limit(3);
+      
+      console.log(`[downtime] Sample data: ${JSON.stringify(sampleData)}`);
+
       const downtimeSeconds = await storage.getTotalDowntimeForDevice(deviceId, startDate, endDate);
+      console.log(`[downtime] Total downtime seconds: ${downtimeSeconds}`);
       
       // Convert seconds to hours and minutes
       const downtimeHours = Math.floor(downtimeSeconds / 3600);
@@ -202,6 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         formattedDowntime: `${downtimeHours}h ${downtimeMinutes}m`
       });
     } catch (error) {
+      console.error(`[downtime] Error: ${error}`);
       res.status(500).json({ message: "Error fetching downtime data" });
     }
   });
