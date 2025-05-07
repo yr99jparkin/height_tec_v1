@@ -8,7 +8,7 @@ import { DeviceWithLatestData } from "@shared/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
-import { CalendarIcon, FileDown, RefreshCw, ChevronDown, ChevronRight } from "lucide-react";
+import { CalendarIcon, FileDown, RefreshCw, ChevronDown, ChevronRight, Clock } from "lucide-react";
 import { format, parseISO, isSameDay, differenceInDays, startOfWeek, endOfWeek, isAfter, isBefore, addDays, startOfDay, endOfDay, startOfHour, endOfHour, getHours, getDay, getWeek } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -18,6 +18,8 @@ import { WindReportChart } from "@/components/ui/wind-report-chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Input } from "@/components/ui/input";
+import { TimeInput } from "@/components/ui/time-input";
 
 // Define the aggregation level type
 type AggregationLevel = "10min" | "1hour" | "1day" | "1week";
@@ -414,7 +416,7 @@ export default function ReportsPage() {
 
               {/* Date Range Picker */}
               <div className="space-y-2">
-                <Label>Date Range</Label>
+                <Label>Date & Time Range</Label>
                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
                     <Button
@@ -428,41 +430,116 @@ export default function ReportsPage() {
                       {dateRange?.from ? (
                         dateRange.to ? (
                           <>
-                            {format(dateRange.from, "PPP")} - {format(dateRange.to, "PPP")}
+                            {format(dateRange.from, "PPP HH:mm")} - {format(dateRange.to, "PPP HH:mm")}
                           </>
                         ) : (
-                          format(dateRange.from, "PPP")
+                          format(dateRange.from, "PPP HH:mm")
                         )
                       ) : (
-                        <span>Pick a date range</span>
+                        <span>Pick a date and time range</span>
                       )}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      initialFocus
-                      mode="range"
-                      defaultMonth={dateRange?.from}
-                      selected={{
-                        from: dateRange?.from,
-                        to: dateRange?.to,
-                      }}
-                      onSelect={(range) => {
-                        if (range?.from && range?.to) {
-                          setDateRange({
-                            from: range.from,
-                            to: new Date(range.to.setHours(23, 59, 59, 999))
-                          });
-                          setIsCalendarOpen(false);
-                        } else if (range?.from) {
-                          setDateRange({
-                            from: range.from,
-                            to: range.from
-                          });
-                        }
-                      }}
-                      numberOfMonths={2}
-                    />
+                  <PopoverContent className="w-auto p-6" align="start">
+                    <div className="grid gap-6">
+                      <Calendar
+                        initialFocus
+                        mode="range"
+                        defaultMonth={dateRange?.from}
+                        selected={{
+                          from: dateRange?.from,
+                          to: dateRange?.to,
+                        }}
+                        onSelect={(range) => {
+                          if (range?.from) {
+                            // Preserve the previous time when changing the date
+                            const newFrom = new Date(range.from);
+                            if (dateRange.from) {
+                              newFrom.setHours(
+                                dateRange.from.getHours(),
+                                dateRange.from.getMinutes(),
+                                0, 0
+                              );
+                            }
+                            
+                            let newTo;
+                            if (range.to) {
+                              newTo = new Date(range.to);
+                              if (dateRange.to) {
+                                // Preserve time for end date
+                                newTo.setHours(
+                                  dateRange.to.getHours(),
+                                  dateRange.to.getMinutes(),
+                                  59, 999
+                                );
+                              } else {
+                                // Default end time to 23:59:59
+                                newTo.setHours(23, 59, 59, 999);
+                              }
+                            } else {
+                              newTo = new Date(newFrom);
+                              newTo.setHours(23, 59, 59, 999);
+                            }
+                            
+                            setDateRange({
+                              from: newFrom,
+                              to: newTo
+                            });
+                          }
+                        }}
+                        numberOfMonths={2}
+                      />
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="block mb-2">Start Time</Label>
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-neutral-500" />
+                            <Input 
+                              type="time" 
+                              value={format(dateRange.from, "HH:mm")}
+                              onChange={(e) => {
+                                const [hours, minutes] = e.target.value.split(':').map(Number);
+                                if (!isNaN(hours) && !isNaN(minutes)) {
+                                  const newFrom = new Date(dateRange.from);
+                                  newFrom.setHours(hours, minutes, 0, 0);
+                                  setDateRange({
+                                    from: newFrom,
+                                    to: dateRange.to
+                                  });
+                                }
+                              }}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <Label className="block mb-2">End Time</Label>
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-neutral-500" />
+                            <Input 
+                              type="time" 
+                              value={format(dateRange.to, "HH:mm")}
+                              onChange={(e) => {
+                                const [hours, minutes] = e.target.value.split(':').map(Number);
+                                if (!isNaN(hours) && !isNaN(minutes)) {
+                                  const newTo = new Date(dateRange.to);
+                                  newTo.setHours(hours, minutes, 59, 999);
+                                  setDateRange({
+                                    from: dateRange.from,
+                                    to: newTo
+                                  });
+                                }
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <Button onClick={() => setIsCalendarOpen(false)}>
+                        Apply
+                      </Button>
+                    </div>
                   </PopoverContent>
                 </Popover>
               </div>
@@ -495,7 +572,7 @@ export default function ReportsPage() {
                   <div className="text-sm font-medium">
                     {dateRange.from && dateRange.to && (
                       <span>
-                        Period: {format(dateRange.from, "PPP")} - {format(dateRange.to, "PPP")}
+                        Period: {format(dateRange.from, "PPP p")} - {format(dateRange.to, "PPP p")}
                       </span>
                     )}
                   </div>
