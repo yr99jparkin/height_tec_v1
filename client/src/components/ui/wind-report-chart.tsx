@@ -10,9 +10,7 @@ import {
   CartesianGrid,
   Tooltip,
   ReferenceLine,
-  Legend,
-  Line,
-  ComposedChart
+  Legend
 } from "recharts";
 
 interface WindReportChartProps {
@@ -159,26 +157,9 @@ export function WindReportChart({
     return null;
   };
 
-  // Custom dot component with color based on thresholds
-  const CustomDot = (props: any) => {
-    const { cx, cy, payload } = props;
-    const value = payload[dataKey];
-    let color = "#16a34a"; // green default
-    
-    if (value >= redThreshold) {
-      color = "#dc2626"; // red
-    } else if (value >= amberThreshold) {
-      color = "#d97706"; // amber
-    }
-    
-    return (
-      <circle cx={cx} cy={cy} r={3} fill={color} stroke="white" strokeWidth={1} />
-    );
-  };
-
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <ComposedChart
+      <AreaChart
         data={chartData}
         margin={{
           top: 10,
@@ -243,92 +224,34 @@ export function WindReportChart({
         
         {/* Stacked areas for different threshold zones */}
         <Area 
-          type="monotone"
+          type="stepAfter"
           dataKey="greenValue"
           stackId="stack"
-          stroke="none"
+          stroke="rgba(134, 239, 172, 0.9)"
           fill="rgba(134, 239, 172, 0.9)"
           name="Normal"
           isAnimationActive={false}
         />
         <Area 
-          type="monotone"
+          type="stepAfter"
           dataKey="amberValue"
           stackId="stack"
-          stroke="none"
+          stroke="rgba(253, 224, 71, 0.9)"
           fill="rgba(253, 224, 71, 0.9)"
           name="Amber Alert"
           isAnimationActive={false}
         />
         <Area 
-          type="monotone"
+          type="stepAfter"
           dataKey="redValue"
           stackId="stack"
-          stroke="none"
+          stroke="rgba(252, 165, 165, 0.9)"
           fill="rgba(252, 165, 165, 0.9)"
           name="Red Alert"
+          activeDot={{ r: 6 }}
           isAnimationActive={false}
         />
-        
-        {/* Three lines for different color segments */}
-        <Line
-          type="monotone" 
-          dataKey={dataKey}
-          dot={false}
-          activeDot={false}
-          strokeWidth={2}
-          isAnimationActive={false}
-          connectNulls={true}
-          hide={true} // Hide this line but use it to register the dataKey
-        />
-        
-        {/* Green line segment (shows only when value is below amberThreshold) */}
-        <Line
-          type="monotone" 
-          name="Normal Wind Speed"
-          dataKey={(data) => data[dataKey] < amberThreshold ? data[dataKey] : null}
-          stroke="#16a34a" // Green
-          dot={false}
-          activeDot={false}
-          strokeWidth={2}
-          isAnimationActive={false}
-        />
-        
-        {/* Amber line segment (shows only when value is between amberThreshold and redThreshold) */}
-        <Line
-          type="monotone" 
-          name="Amber Alert Wind Speed"
-          dataKey={(data) => data[dataKey] >= amberThreshold && data[dataKey] < redThreshold ? data[dataKey] : null}
-          stroke="#d97706" // Amber
-          dot={false}
-          activeDot={false}
-          strokeWidth={2}
-          isAnimationActive={false}
-        />
-        
-        {/* Red line segment (shows only when value is above redThreshold) */}
-        <Line
-          type="monotone" 
-          name="Red Alert Wind Speed"
-          dataKey={(data) => data[dataKey] >= redThreshold ? data[dataKey] : null}
-          stroke="#dc2626" // Red
-          dot={false}
-          activeDot={false}
-          strokeWidth={2}
-          isAnimationActive={false}
-        />
-        
-        {/* Custom dots on top */}
-        <Line
-          type="monotone" 
-          dataKey={dataKey}
-          dot={<CustomDot />}
-          activeDot={{ r: 6, strokeWidth: 1 }}
-          stroke="transparent"
-          isAnimationActive={false}
-          connectNulls={false}
-        />
-      </ComposedChart>
+      </AreaChart>
     </ResponsiveContainer>
   );
 }

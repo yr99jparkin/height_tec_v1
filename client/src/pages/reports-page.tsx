@@ -102,7 +102,11 @@ export default function ReportsPage() {
     setSelectedDeviceId(deviceId);
   };
 
-  // Removed update button - data refreshes automatically when dependencies change
+  // Handle the update button click
+  const handleUpdateReport = () => {
+    setReportGenTime(new Date());
+    // The queries will automatically refresh when their dependencies change
+  };
 
   // Calculate statistics
   const calculateStats = () => {
@@ -540,8 +544,17 @@ export default function ReportsPage() {
                 </Popover>
               </div>
 
-              {/* Empty div to maintain layout spacing */}
-              <div className="flex items-end"></div>
+              {/* Update Button */}
+              <div className="flex items-end">
+                <Button 
+                  className="w-full"
+                  onClick={handleUpdateReport}
+                  disabled={!selectedDeviceId}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Update Report
+                </Button>
+              </div>
             </div>
           </div>
 
