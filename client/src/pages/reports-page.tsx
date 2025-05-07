@@ -632,7 +632,6 @@ export default function ReportsPage() {
                                             <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Time Period</th>
                                             <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Avg Wind Speed</th>
                                             <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Max Wind Speed</th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Alert Status</th>
                                             {aggregationLevel !== "10min" && (
                                               <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Downtime</th>
                                             )}
@@ -655,18 +654,6 @@ export default function ReportsPage() {
                                                 if (entry.maxWindSpeed >= thresholds.redThreshold) return "bg-red-100";
                                                 if (entry.maxWindSpeed >= thresholds.amberThreshold) return "bg-amber-100";
                                                 return "bg-green-100";
-                                              };
-                                              
-                                              const getAlertStatusClass = () => {
-                                                if (entry.redAlertTriggered) return "bg-red-100";
-                                                if (entry.amberAlertTriggered) return "bg-amber-100";
-                                                return "bg-green-100";
-                                              };
-                                              
-                                              const getAlertStatusText = () => {
-                                                if (entry.redAlertTriggered) return "Red Alert";
-                                                if (entry.amberAlertTriggered) return "Amber Alert";
-                                                return "Normal";
                                               };
                                               
                                               // Format time period based on aggregation level
@@ -710,9 +697,6 @@ export default function ReportsPage() {
                                                   </td>
                                                   <td className={`px-4 py-2 text-sm ${getMaxWindSpeedClass()}`}>
                                                     {entry.maxWindSpeed.toFixed(1)} km/h
-                                                  </td>
-                                                  <td className={`px-4 py-2 text-sm ${getAlertStatusClass()}`}>
-                                                    {getAlertStatusText()}
                                                   </td>
                                                   {aggregationLevel !== "10min" && (
                                                     <td className="px-4 py-2 text-sm">
