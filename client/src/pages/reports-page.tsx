@@ -29,11 +29,11 @@ export default function ReportsPage() {
   const [, setLocation] = useLocation();
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
   const [dateRange, setDateRange] = useState<{
-    from: Date;
-    to: Date;
+    from: Date | undefined;
+    to: Date | undefined;
   }>({
-    from: new Date(new Date().setHours(0, 0, 0, 0)),
-    to: new Date(),
+    from: undefined,
+    to: undefined,
   });
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [reportGenTime, setReportGenTime] = useState(new Date());
@@ -69,9 +69,11 @@ export default function ReportsPage() {
 
   // Fetch historical wind data for the selected period
   const { data: windData = [], isLoading: isLoadingWindData } = useQuery<WindDataHistorical[]>({
-    queryKey: ["/api/wind/historical", selectedDeviceId, dateRange.from.toISOString(), dateRange.to.toISOString()],
+    queryKey: ["/api/wind/historical", selectedDeviceId, dateRange.from?.toISOString(), dateRange.to?.toISOString()],
     queryFn: async () => {
       if (!selectedDeviceId) throw new Error("No device selected");
+      if (!dateRange.from || !dateRange.to) throw new Error("Date range not selected");
+      
       const response = await apiRequest(
         "GET", 
         `/api/wind/historical/${selectedDeviceId}/range?startDate=${dateRange.from.toISOString()}&endDate=${dateRange.to.toISOString()}`
@@ -84,9 +86,11 @@ export default function ReportsPage() {
 
   // Fetch downtime data for the selected period
   const { data: downtimeData, isLoading: isLoadingDowntime } = useQuery({
-    queryKey: ["/api/wind/downtime", selectedDeviceId, dateRange.from.toISOString(), dateRange.to.toISOString()],
+    queryKey: ["/api/wind/downtime", selectedDeviceId, dateRange.from?.toISOString(), dateRange.to?.toISOString()],
     queryFn: async () => {
       if (!selectedDeviceId) throw new Error("No device selected");
+      if (!dateRange.from || !dateRange.to) throw new Error("Date range not selected");
+      
       const response = await apiRequest(
         "GET", 
         `/api/wind/downtime/${selectedDeviceId}?startDate=${dateRange.from.toISOString()}&endDate=${dateRange.to.toISOString()}`
@@ -102,11 +106,7 @@ export default function ReportsPage() {
     setSelectedDeviceId(deviceId);
   };
 
-  // Handle the update button click
-  const handleUpdateReport = () => {
-    setReportGenTime(new Date());
-    // The queries will automatically refresh when their dependencies change
-  };
+
 
   // Calculate statistics
   const calculateStats = () => {
@@ -169,6 +169,12 @@ export default function ReportsPage() {
   // Function to format timestamp based on date range
   const formatTimestamp = (timestamp: string) => {
     const date = parseISO(timestamp);
+    
+    if (!dateRange.from || !dateRange.to) {
+      // Default format if no date range is selected
+      return format(date, 'HH:mm dd MMM');
+    }
+    
     const daysDiff = differenceInDays(dateRange.to, dateRange.from);
     
     if (daysDiff <= 1) {
@@ -497,11 +503,11 @@ export default function ReportsPage() {
                             <Clock className="h-4 w-4 text-neutral-500" />
                             <Input 
                               type="time" 
-                              value={format(dateRange.from, "HH:mm")}
+                              value={dateRange.from ? format(dateRange.from, "HH:mm") : "00:00"}
                               onChange={(e) => {
                                 const [hours, minutes] = e.target.value.split(':').map(Number);
                                 if (!isNaN(hours) && !isNaN(minutes)) {
-                                  const newFrom = new Date(dateRange.from);
+                                  const newFrom = new Date(dateRange.from || new Date());
                                   newFrom.setHours(hours, minutes, 0, 0);
                                   setDateRange({
                                     from: newFrom,
@@ -519,11 +525,11 @@ export default function ReportsPage() {
                             <Clock className="h-4 w-4 text-neutral-500" />
                             <Input 
                               type="time" 
-                              value={format(dateRange.to, "HH:mm")}
+                              value={dateRange.to ? format(dateRange.to, "HH:mm") : "23:59"}
                               onChange={(e) => {
                                 const [hours, minutes] = e.target.value.split(':').map(Number);
                                 if (!isNaN(hours) && !isNaN(minutes)) {
-                                  const newTo = new Date(dateRange.to);
+                                  const newTo = new Date(dateRange.to || new Date());
                                   newTo.setHours(hours, minutes, 59, 999);
                                   setDateRange({
                                     from: dateRange.from,
@@ -544,17 +550,8 @@ export default function ReportsPage() {
                 </Popover>
               </div>
 
-              {/* Update Button */}
-              <div className="flex items-end">
-                <Button 
-                  className="w-full"
-                  onClick={handleUpdateReport}
-                  disabled={!selectedDeviceId}
-                >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Update Report
-                </Button>
-              </div>
+              {/* Placeholder for symmetry */}
+              <div className="hidden md:block"></div>
             </div>
           </div>
 
@@ -652,7 +649,7 @@ export default function ReportsPage() {
                           <WindReportChart 
                             data={windData}
                             dataKey="maxWindSpeed"
-                            timeRange={differenceInDays(dateRange.to, dateRange.from)}
+                            timeRange={dateRange.from && dateRange.to ? differenceInDays(dateRange.to, dateRange.from) : 1}
                             amberThreshold={thresholds?.amberThreshold}
                             redThreshold={thresholds?.redThreshold}
                           />
@@ -666,7 +663,7 @@ export default function ReportsPage() {
                           <WindReportChart 
                             data={windData}
                             dataKey="avgWindSpeed"
-                            timeRange={differenceInDays(dateRange.to, dateRange.from)}
+                            timeRange={dateRange.from && dateRange.to ? differenceInDays(dateRange.to, dateRange.from) : 1}
                             amberThreshold={thresholds?.amberThreshold}
                             redThreshold={thresholds?.redThreshold}
                           />
