@@ -51,7 +51,7 @@ export function WindReportChart({
         maxVal = value;
       }
     });
-    
+
     // Ensure maxValue is at least 10% higher than the highest threshold for better visualization
     const thresholdMax = Math.max(redThreshold || 0, amberThreshold || 0);
     maxVal = Math.max(maxVal, thresholdMax * 1.1);
@@ -61,7 +61,7 @@ export function WindReportChart({
     const formattedData = sortedData.map(item => {
       const value = item[dataKey] as number;
       const date = new Date(item.intervalStart);
-      
+
       // Format time display based on range
       let timeFormat = "HH:mm"; // Default for 1 day
       if (timeRange <= 1) {
@@ -71,19 +71,19 @@ export function WindReportChart({
       } else {
         timeFormat = "dd MMM"; // For weeks, we'll use startOfWeek in the next step
       }
-      
+
       // For week ranges, group by week start
       let formattedDate = format(date, timeFormat);
       if (timeRange >= 7) {
         formattedDate = format(startOfWeek(date, { weekStartsOn: 1 }), timeFormat);
       }
-      
+
       // Split the value into green, amber, and red segments for stacking
       // Always use exact values for color boundaries
       let greenValue = Math.min(value, amberThreshold);
       let amberValue = 0;
       let redValue = 0;
-      
+
       if (value > amberThreshold) {
         if (value <= redThreshold) {
           // When value is in the amber zone
@@ -94,7 +94,7 @@ export function WindReportChart({
           redValue = value - redThreshold;
         }
       }
-      
+
       return {
         id: item.id,
         intervalStart: item.intervalStart,
@@ -130,7 +130,7 @@ export function WindReportChart({
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       const value = data[dataKey]; // Original value
-      
+
       return (
         <div className="custom-tooltip bg-white p-3 border border-neutral-200 shadow-md rounded-md">
           <p className="font-medium">{format(new Date(data.intervalStart), "PPpp")}</p>
@@ -183,10 +183,10 @@ export function WindReportChart({
             fontSize: 12
           }}
           tick={{ fontSize: 12 }}
-          domain={[0, maxValue]}
+          domain={[0, Math.min(maxValue, 75)]} // Cap at 75 km/h for better readability
         />
         <Tooltip content={<CustomTooltip />} />
-        
+
         {/* Reference lines for thresholds */}
         {amberThreshold && (
           <ReferenceLine 
@@ -202,7 +202,7 @@ export function WindReportChart({
             }}
           />
         )}
-        
+
         {redThreshold && (
           <ReferenceLine 
             y={redThreshold} 
@@ -217,7 +217,7 @@ export function WindReportChart({
             }}
           />
         )}
-        
+
         {/* Stacked areas for different threshold zones */}
         <Area 
           type="stepAfter"
