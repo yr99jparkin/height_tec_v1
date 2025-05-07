@@ -227,7 +227,7 @@ export function WindReportChart({
           type="stepAfter"
           dataKey="greenValue"
           stackId="stack"
-          stroke="rgba(134, 239, 172, 0.9)"
+          stroke="transparent"
           fill="rgba(134, 239, 172, 0.9)"
           name="Normal"
           isAnimationActive={false}
@@ -236,7 +236,7 @@ export function WindReportChart({
           type="stepAfter"
           dataKey="amberValue"
           stackId="stack"
-          stroke="rgba(253, 224, 71, 0.9)"
+          stroke="transparent"
           fill="rgba(253, 224, 71, 0.9)"
           name="Amber Alert"
           isAnimationActive={false}
@@ -245,7 +245,7 @@ export function WindReportChart({
           type="stepAfter"
           dataKey="redValue"
           stackId="stack"
-          stroke="rgba(252, 165, 165, 0.9)"
+          stroke="transparent"
           fill="rgba(252, 165, 165, 0.9)"
           name="Red Alert"
           activeDot={{ r: 6 }}

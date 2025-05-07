@@ -29,11 +29,11 @@ export default function ReportsPage() {
   const [, setLocation] = useLocation();
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
   const [dateRange, setDateRange] = useState<{
-    from: Date;
-    to: Date;
+    from: Date | undefined;
+    to: Date | undefined;
   }>({
-    from: new Date(new Date().setHours(0, 0, 0, 0)),
-    to: new Date(),
+    from: undefined,
+    to: undefined,
   });
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [reportGenTime, setReportGenTime] = useState(new Date());
@@ -69,9 +69,10 @@ export default function ReportsPage() {
 
   // Fetch historical wind data for the selected period
   const { data: windData = [], isLoading: isLoadingWindData } = useQuery<WindDataHistorical[]>({
-    queryKey: ["/api/wind/historical", selectedDeviceId, dateRange.from.toISOString(), dateRange.to.toISOString()],
+    queryKey: ["/api/wind/historical", selectedDeviceId, dateRange.from?.toISOString(), dateRange.to?.toISOString()],
     queryFn: async () => {
       if (!selectedDeviceId) throw new Error("No device selected");
+      if (!dateRange.from || !dateRange.to) throw new Error("Date range not selected");
       const response = await apiRequest(
         "GET", 
         `/api/wind/historical/${selectedDeviceId}/range?startDate=${dateRange.from.toISOString()}&endDate=${dateRange.to.toISOString()}`
@@ -84,9 +85,10 @@ export default function ReportsPage() {
 
   // Fetch downtime data for the selected period
   const { data: downtimeData, isLoading: isLoadingDowntime } = useQuery({
-    queryKey: ["/api/wind/downtime", selectedDeviceId, dateRange.from.toISOString(), dateRange.to.toISOString()],
+    queryKey: ["/api/wind/downtime", selectedDeviceId, dateRange.from?.toISOString(), dateRange.to?.toISOString()],
     queryFn: async () => {
       if (!selectedDeviceId) throw new Error("No device selected");
+      if (!dateRange.from || !dateRange.to) throw new Error("Date range not selected");
       const response = await apiRequest(
         "GET", 
         `/api/wind/downtime/${selectedDeviceId}?startDate=${dateRange.from.toISOString()}&endDate=${dateRange.to.toISOString()}`
@@ -169,6 +171,10 @@ export default function ReportsPage() {
   // Function to format timestamp based on date range
   const formatTimestamp = (timestamp: string) => {
     const date = parseISO(timestamp);
+    if (!dateRange.from || !dateRange.to) {
+      return format(date, 'dd MMM HH:mm');
+    }
+    
     const daysDiff = differenceInDays(dateRange.to, dateRange.from);
     
     if (daysDiff <= 1) {
@@ -652,7 +658,7 @@ export default function ReportsPage() {
                           <WindReportChart 
                             data={windData}
                             dataKey="maxWindSpeed"
-                            timeRange={differenceInDays(dateRange.to, dateRange.from)}
+                            timeRange={dateRange.from && dateRange.to ? differenceInDays(dateRange.to, dateRange.from) : 1}
                             amberThreshold={thresholds?.amberThreshold}
                             redThreshold={thresholds?.redThreshold}
                           />
@@ -666,7 +672,7 @@ export default function ReportsPage() {
                           <WindReportChart 
                             data={windData}
                             dataKey="avgWindSpeed"
-                            timeRange={differenceInDays(dateRange.to, dateRange.from)}
+                            timeRange={dateRange.from && dateRange.to ? differenceInDays(dateRange.to, dateRange.from) : 1}
                             amberThreshold={thresholds?.amberThreshold}
                             redThreshold={thresholds?.redThreshold}
                           />
