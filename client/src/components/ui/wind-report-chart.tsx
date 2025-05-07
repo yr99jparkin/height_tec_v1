@@ -62,20 +62,19 @@ export function WindReportChart({
       const value = item[dataKey] as number;
       const date = new Date(item.intervalStart);
       
-      // Format time display based on range
-      let timeFormat = "HH:mm"; // Default for 1 day
-      if (timeRange <= 1) {
-        timeFormat = "HH:mm";
-      } else if (timeRange < 7) {
-        timeFormat = "dd MMM";
-      } else {
-        timeFormat = "dd MMM"; // For weeks, we'll use startOfWeek in the next step
-      }
+      // Store date for formatting in X-axis tickFormatter
+      // The actual display format will be determined by the XAxis tickFormatter
+      let formattedDate = '';
       
-      // For week ranges, group by week start
-      let formattedDate = format(date, timeFormat);
-      if (timeRange >= 7) {
-        formattedDate = format(startOfWeek(date, { weekStartsOn: 1 }), timeFormat);
+      // Store a simplified version for data binding
+      if (timeRange <= 1) {
+        formattedDate = format(date, "HH:mm");
+      } else if (timeRange <= 7) {
+        formattedDate = format(date, "EEE d");
+      } else if (timeRange <= 31) {
+        formattedDate = format(date, "d MMM");
+      } else {
+        formattedDate = format(date, "MMM d");
       }
       
       // Split the value into green, amber, and red segments for stacking
@@ -172,6 +171,27 @@ export function WindReportChart({
           dataKey="time" 
           tick={{ fontSize: 12 }} 
           tickMargin={10}
+          interval={Math.max(Math.floor(chartData.length / 12), 1)} // Show approximately 12 ticks for better readability
+          tickFormatter={(value, index) => {
+            // Get the actual date from chartData
+            const tickDate = chartData[index]?.date;
+            if (!tickDate) return value;
+            
+            if (timeRange <= 1) {
+              // For 1 day, show hour intervals (3h format)
+              return format(tickDate, "HH:mm");
+            } else if (timeRange <= 7) {
+              // For less than a week, show day name and date
+              return format(tickDate, "EEE d");
+            } else if (timeRange <= 31) {
+              // For a month, show date with short month
+              return format(tickDate, "d MMM");
+            } else {
+              // For longer periods, show month and date
+              return format(tickDate, "MMM d");
+            }
+          }}
+          padding={{ left: 10, right: 10 }}
         />
         <YAxis 
           label={{ 
