@@ -573,7 +573,7 @@ export default function ReportsPage() {
                       Generated: {format(reportGenTime, "PPp")}
                     </div>
                   </div>
-                  <div className="text-sm font-medium">
+                  <div className="text-sm text-neutral-500">
                     {dateRange.from && dateRange.to && (
                       <span>
                         Period: {format(dateRange.from, "PPP p")} - {format(dateRange.to, "PPP p")}
