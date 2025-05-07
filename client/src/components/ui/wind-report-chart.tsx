@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 import { format, parseISO, addDays, isSameDay, differenceInDays, startOfWeek } from "date-fns";
+import { WindDataHistorical } from "@shared/schema";
 import {
+  ResponsiveContainer,
   AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Area,
-  ResponsiveContainer,
-  ReferenceLine,
+  ReferenceLine
 } from "recharts";
-import { WindDataHistorical } from "@shared/schema";
 
 interface WindReportChartProps {
   data: WindDataHistorical[];
@@ -60,6 +60,16 @@ export function WindReportChart({
       if (timeRange >= 7) {
         formattedDate = format(startOfWeek(date, { weekStartsOn: 1 }), timeFormat);
       }
+
+      // Determine value zones for area fill styling (like AreaChartFillByValue)
+      let zone;
+      if (redThreshold && value >= redThreshold) {
+        zone = "red";
+      } else if (amberThreshold && value >= amberThreshold) {
+        zone = "amber";
+      } else {
+        zone = "green";
+      }
       
       return {
         id: item.id,
@@ -67,6 +77,7 @@ export function WindReportChart({
         date: date,
         time: formattedDate,
         [dataKey]: value,
+        zone: zone,
         alertState: item.alertTriggered,
         amberAlert: item.amberAlertTriggered,
         redAlert: item.redAlertTriggered,
@@ -74,7 +85,7 @@ export function WindReportChart({
     });
 
     setChartData(formattedData);
-  }, [data, dataKey, timeRange]);
+  }, [data, dataKey, timeRange, amberThreshold, redThreshold]);
 
   // No data to display
   if (chartData.length === 0) {
@@ -113,6 +124,48 @@ export function WindReportChart({
     }
     return null;
   };
+
+  // Split the data into different zones for coloring like AreaChartFillByValue
+  const greenData = chartData.map(d => ({
+    ...d,
+    [dataKey]: d.zone === 'green' ? d[dataKey] : amberThreshold
+  }));
+
+  const amberData = chartData.map(d => {
+    if (d.zone === 'amber') {
+      return {
+        ...d,
+        [dataKey]: d[dataKey],
+        greenBase: amberThreshold
+      };
+    } else if (d.zone === 'red') {
+      return {
+        ...d,
+        [dataKey]: redThreshold,
+        greenBase: amberThreshold
+      };
+    }
+    return {
+      ...d,
+      [dataKey]: 0,
+      greenBase: 0
+    };
+  });
+
+  const redData = chartData.map(d => {
+    if (d.zone === 'red') {
+      return {
+        ...d,
+        [dataKey]: d[dataKey],
+        amberBase: redThreshold
+      };
+    }
+    return {
+      ...d,
+      [dataKey]: 0,
+      amberBase: 0
+    };
+  });
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -175,59 +228,46 @@ export function WindReportChart({
           />
         )}
         
-        {/* Fill by value for the wind speed - changes color based on thresholds */}
-        <defs>
-          <linearGradient id="splitColor" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={0.8}/>
-            <stop offset="100%" stopColor="hsl(var(--destructive))" stopOpacity={0}/>
-          </linearGradient>
-          <linearGradient id="warningColor" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="hsl(var(--warning))" stopOpacity={0.8}/>
-            <stop offset="100%" stopColor="hsl(var(--warning))" stopOpacity={0}/>
-          </linearGradient>
-          <linearGradient id="safeColor" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="hsl(var(--safe))" stopOpacity={0.8}/>
-            <stop offset="100%" stopColor="hsl(var(--safe))" stopOpacity={0}/>
-          </linearGradient>
-        </defs>
-        
-        {/* Using fill patterns based on thresholds */}
+        {/* Green Area - below amber threshold */}
         <Area 
           type="monotone" 
           dataKey={dataKey} 
-          stroke="#8884d8" 
+          data={greenData}
+          stroke="transparent"
+          fillOpacity={0.8}
+          fill="hsl(var(--safe))"
           activeDot={{ r: 6 }}
-          fill="url(#safeColor)"
-          bassValue={0}
+          isAnimationActive={false}
+          stackId="1"
         />
         
-        {amberThreshold && (
-          <Area 
-            type="monotone" 
-            dataKey={dataKey}
-            baseLine={amberThreshold}
-            stroke="#8884d8" 
-            fillOpacity={1}
-            fill="url(#warningColor)"
-            baseValue={amberThreshold}
-            activeDot={{ r: 6 }}
-            isAnimationActive={false}
-          />
-        )}
+        {/* Amber Area - between amber and red threshold */}
+        <Area 
+          type="monotone" 
+          dataKey={dataKey}
+          data={amberData}
+          stroke="transparent"
+          fillOpacity={0.8}
+          fill="hsl(var(--warning))"
+          activeDot={{ r: 6 }}
+          isAnimationActive={false}
+          baseValue={d => d.greenBase || 0}
+          stackId="2"
+        />
         
-        {redThreshold && (
-          <Area 
-            type="monotone" 
-            dataKey={dataKey}
-            baseLine={redThreshold}
-            stroke="#8884d8" 
-            fillOpacity={1}
-            fill="url(#splitColor)"
-            baseValue={redThreshold}
-            activeDot={{ r: 6 }}
-            isAnimationActive={false}
-          />
-        )}
+        {/* Red Area - above red threshold */}
+        <Area 
+          type="monotone" 
+          dataKey={dataKey}
+          data={redData}
+          stroke="transparent"
+          fillOpacity={0.8}
+          fill="hsl(var(--destructive))"
+          activeDot={{ r: 6 }}
+          isAnimationActive={false}
+          baseValue={d => d.amberBase || 0}
+          stackId="3"
+        />
       </AreaChart>
     </ResponsiveContainer>
   );
