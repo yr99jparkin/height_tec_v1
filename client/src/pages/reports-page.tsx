@@ -248,10 +248,6 @@ export default function ReportsPage() {
     const avgWindSpeed = sortedData.reduce((sum, point) => sum + point.avgWindSpeed, 0) / sortedData.length;
     const maxWindSpeed = Math.max(...sortedData.map(point => point.maxWindSpeed));
     
-    // Check if any alerts were triggered
-    const amberAlertTriggered = sortedData.some(point => point.amberAlertTriggered);
-    const redAlertTriggered = sortedData.some(point => point.redAlertTriggered);
-    
     // Calculate downtime
     const downtimeSeconds = sortedData.reduce((sum, point) => sum + (point.downtimeSeconds || 0), 0);
     
@@ -263,8 +259,6 @@ export default function ReportsPage() {
       intervalEnd: lastPoint.intervalEnd,
       avgWindSpeed,
       maxWindSpeed,
-      amberAlertTriggered,
-      redAlertTriggered,
       downtimeSeconds,
     };
   };
