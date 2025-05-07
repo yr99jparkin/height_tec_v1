@@ -62,18 +62,20 @@ export function WindReportChart({
       const value = item[dataKey] as number;
       const date = new Date(item.intervalStart);
       
-      // Store date for formatting in X-axis tickFormatter
-      // The actual display format will be determined by the XAxis tickFormatter
+      // Format time display based on range for the X-axis
       let formattedDate = '';
       
-      // Store a simplified version for data binding
       if (timeRange <= 1) {
+        // For 1 day - show hours
         formattedDate = format(date, "HH:mm");
       } else if (timeRange <= 7) {
+        // For 1 week or less - show day + date
         formattedDate = format(date, "EEE d");
       } else if (timeRange <= 31) {
+        // For 1 month or less - show date + month
         formattedDate = format(date, "d MMM");
       } else {
+        // For longer periods - show month + date
         formattedDate = format(date, "MMM d");
       }
       
@@ -168,51 +170,10 @@ export function WindReportChart({
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
         <XAxis 
-          dataKey="time" 
+          dataKey="time"
           tick={{ fontSize: 12 }} 
           tickMargin={10}
-          // Custom ticks to ensure proper date distribution
-          ticks={(() => {
-            if (chartData.length === 0) return [];
-            
-            // Create evenly distributed ticks
-            const firstDate = chartData[0].date;
-            const lastDate = chartData[chartData.length - 1].date;
-            
-            // Calculate how many ticks to show based on time range
-            const tickCount = timeRange <= 2 ? 6 : timeRange <= 7 ? 7 : timeRange <= 14 ? 7 : 10;
-            
-            // Generate ticks evenly spaced across the date range
-            const ticks = [];
-            for (let i = 0; i < tickCount; i++) {
-              const timestamp = firstDate.getTime() + (i / (tickCount - 1)) * (lastDate.getTime() - firstDate.getTime());
-              const index = Math.min(
-                Math.floor((timestamp - firstDate.getTime()) / (lastDate.getTime() - firstDate.getTime()) * (chartData.length - 1)),
-                chartData.length - 1
-              );
-              if (index >= 0 && index < chartData.length) {
-                ticks.push(index);
-              }
-            }
-            return ticks;
-          })()}
-          tickFormatter={(value, index) => {
-            if (typeof value === 'number') {
-              // Direct index provided
-              const tickData = chartData[value];
-              if (tickData?.date instanceof Date) {
-                const tickDate = tickData.date;
-                if (timeRange <= 1) {
-                  return format(tickDate, "HH:mm");
-                } else if (timeRange <= 7) {
-                  return format(tickDate, "MMM d");
-                } else {
-                  return format(tickDate, "MMM d");
-                }
-              }
-            }
-            return '';
-          }}
+          interval={Math.max(Math.floor(chartData.length / 10), 1)}
           padding={{ left: 10, right: 10 }}
         />
         <YAxis 
