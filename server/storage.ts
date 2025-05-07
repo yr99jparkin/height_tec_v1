@@ -292,7 +292,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTotalDowntimeForDevice(deviceId: string, startTime: Date, endTime: Date): Promise<number> {
-    const result = await db
+    // Check for historical data first, as that's where most downtime will be stored
+    const historicalResult = await db
+      .select({
+        totalDowntime: sum(windDataHistorical.downtimeSeconds).as("totalDowntime")
+      })
+      .from(windDataHistorical)
+      .where(
+        and(
+          eq(windDataHistorical.deviceId, deviceId),
+          gte(windDataHistorical.intervalStart, startTime),
+          lte(windDataHistorical.intervalEnd, endTime)
+        )
+      );
+
+    // Then check for recent downtime in the real-time data
+    const realtimeResult = await db
       .select({
         totalDowntime: sum(windData.downtimeSeconds).as("totalDowntime")
       })
@@ -306,7 +321,11 @@ export class DatabaseStorage implements IStorage {
         )
       );
     
-    return Number(result[0]?.totalDowntime || 0);
+    // Combine both results
+    const historicalDowntime = Number(historicalResult[0]?.totalDowntime || 0);
+    const realtimeDowntime = Number(realtimeResult[0]?.totalDowntime || 0);
+    
+    return historicalDowntime + realtimeDowntime;
   }
 
   async getDevicesWithLatestData(userDeviceIds: string[]): Promise<DeviceWithLatestData[]> {

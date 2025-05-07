@@ -396,7 +396,7 @@ export default function ReportsPage() {
                     {/* Summary Statistics */}
                     <div className="mb-8">
                       <h3 className="text-lg font-medium mb-4">Summary Statistics</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="bg-neutral-50 p-4 rounded-lg">
                           <h4 className="text-sm text-neutral-500 mb-1">Maximum Wind Speed</h4>
                           <p className="text-xl font-bold">{stats.maxWindSpeed.toFixed(1)} km/h</p>
@@ -411,19 +411,6 @@ export default function ReportsPage() {
                         <div className="bg-neutral-50 p-4 rounded-lg">
                           <h4 className="text-sm text-neutral-500 mb-1">Total Downtime</h4>
                           <p className="text-xl font-bold">{(stats.totalDowntime / 3600).toFixed(1)} hours</p>
-                        </div>
-                        <div className="bg-neutral-50 p-4 rounded-lg">
-                          <h4 className="text-sm text-neutral-500 mb-1">Alert State Distribution</h4>
-                          <div className="flex items-center gap-2 mt-2">
-                            <div className="h-3 bg-[hsl(var(--safe))]" style={{ width: `${stats.greenPercentage}%` }}></div>
-                            <div className="h-3 bg-[hsl(var(--warning))]" style={{ width: `${stats.amberPercentage}%` }}></div>
-                            <div className="h-3 bg-[hsl(var(--destructive))]" style={{ width: `${stats.redPercentage}%` }}></div>
-                          </div>
-                          <div className="flex justify-between text-xs mt-1">
-                            <span>Normal: {stats.greenPercentage.toFixed(1)}%</span>
-                            <span>Amber: {stats.amberPercentage.toFixed(1)}%</span>
-                            <span>Red: {stats.redPercentage.toFixed(1)}%</span>
-                          </div>
                         </div>
                       </div>
                     </div>
