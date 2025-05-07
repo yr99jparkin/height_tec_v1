@@ -184,6 +184,7 @@ export function WindReportChart({
           }}
           tick={{ fontSize: 12 }}
           domain={[0, maxValue]}
+          tickFormatter={(value) => value.toFixed(0)}
         />
         <Tooltip content={<CustomTooltip />} />
         
