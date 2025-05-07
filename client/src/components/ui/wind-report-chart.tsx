@@ -228,7 +228,7 @@ export function WindReportChart({
           dataKey="greenValue"
           stackId="stack"
           stroke="transparent"
-          fill="rgba(134, 239, 172, 0.9)"
+          fill="rgba(34, 197, 94, 1)"
           name="Normal"
           isAnimationActive={false}
         />
@@ -237,7 +237,7 @@ export function WindReportChart({
           dataKey="amberValue"
           stackId="stack"
           stroke="transparent"
-          fill="rgba(253, 224, 71, 0.9)"
+          fill="rgba(245, 158, 11, 1)"
           name="Amber Alert"
           isAnimationActive={false}
         />
@@ -246,7 +246,7 @@ export function WindReportChart({
           dataKey="redValue"
           stackId="stack"
           stroke="transparent"
-          fill="rgba(252, 165, 165, 0.9)"
+          fill="rgba(239, 68, 68, 1)"
           name="Red Alert"
           activeDot={{ r: 6 }}
           isAnimationActive={false}
