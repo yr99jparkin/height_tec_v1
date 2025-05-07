@@ -8,7 +8,7 @@ import { DeviceWithLatestData } from "@shared/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
-import { CalendarIcon, FileDown, RefreshCw, ChevronDown, ChevronRight, Clock } from "lucide-react";
+import { CalendarIcon, FileDown, ChevronDown, ChevronRight, Clock } from "lucide-react";
 import { format, parseISO, isSameDay, differenceInDays, startOfWeek, endOfWeek, isAfter, isBefore, addDays, startOfDay, endOfDay, startOfHour, endOfHour, getHours, getDay, getWeek } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
