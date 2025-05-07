@@ -217,14 +217,14 @@ export default function ReportsPage() {
     const date = new Date(key);
     switch (aggregationLevel) {
       case "10min":
-        return format(date, "EEEE, MMMM d, yyyy");
-      case "1hour":
-        return format(date, "MMMM d, yyyy, HH:00");
-      case "1day":
         return format(date, "MMMM d, yyyy");
+      case "1hour":
+        return format(date, "MMMM d, yyyy");
+      case "1day":
+        return format(date, "MMMM yyyy");
       case "1week":
         const weekEnd = endOfWeek(date, { weekStartsOn: 1 });
-        return `Week of ${format(date, "MMMM d, yyyy")} - ${format(weekEnd, "MMMM d, yyyy")}`;
+        return `${format(date, "MMMM d")} - ${format(weekEnd, "MMMM d, yyyy")}`;
       default:
         return format(date, "MMMM d, yyyy");
     }
@@ -286,17 +286,16 @@ export default function ReportsPage() {
           key = format(date, 'yyyy-MM-dd');
           break;
         case "1hour":
-          // For hourly data, round to hour
-          key = format(startOfHour(date), 'yyyy-MM-dd HH:00');
-          break;
-        case "1day":
-          // For daily data, use date
+          // For hourly data, group by date (not by hour)
           key = format(startOfDay(date), 'yyyy-MM-dd');
           break;
+        case "1day":
+          // For daily data, group by month
+          key = format(date, 'yyyy-MM');
+          break;
         case "1week":
-          // For weekly data, use week starting date
-          const weekStart = startOfWeek(date, { weekStartsOn: 1 });
-          key = format(weekStart, 'yyyy-MM-dd');
+          // For weekly data, group by month
+          key = format(date, 'yyyy-MM');
           break;
         default:
           key = format(date, 'yyyy-MM-dd');
@@ -618,7 +617,7 @@ export default function ReportsPage() {
                                 return (
                                   <div key={key} className="divide-y">
                                     <button 
-                                      className="bg-neutral-100 px-4 py-2 font-medium w-full text-left flex justify-between items-center hover:bg-neutral-200 transition-colors"
+                                      className="bg-neutral-200 px-4 py-2 font-medium w-full text-left flex justify-between items-center hover:bg-neutral-300 transition-colors rounded-lg shadow-sm mb-2"
                                       onClick={() => toggleSection(sectionId)}
                                     >
                                       <span>{formatAggregationHeader(key)}</span>
@@ -632,10 +631,7 @@ export default function ReportsPage() {
                                             <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Time Period</th>
                                             <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Avg Wind Speed</th>
                                             <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Max Wind Speed</th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Alert Status</th>
-                                            {aggregationLevel !== "10min" && (
-                                              <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Downtime</th>
-                                            )}
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Downtime</th>
                                           </tr>
                                         </thead>
                                         <tbody className="divide-y divide-neutral-200">
@@ -676,15 +672,15 @@ export default function ReportsPage() {
                                                 
                                                 switch (aggregationLevel) {
                                                   case "10min":
-                                                    return `${format(start, "HH:mm")} - ${format(end, "HH:mm")}`;
+                                                    return format(start, "HH:mm");
                                                   case "1hour":
-                                                    return format(start, "HH:mm") + " - " + format(end, "HH:mm");
+                                                    return format(start, "HH:mm");
                                                   case "1day":
-                                                    return format(start, "MMM d, yyyy");
+                                                    return format(start, "MMMM d");
                                                   case "1week":
-                                                    return `${format(start, "MMM d")} - ${format(end, "MMM d")}`;
+                                                    return format(start, "MMM d");
                                                   default:
-                                                    return `${format(start, "HH:mm")} - ${format(end, "HH:mm")}`;
+                                                    return format(start, "HH:mm");
                                                 }
                                               };
                                               
@@ -711,14 +707,9 @@ export default function ReportsPage() {
                                                   <td className={`px-4 py-2 text-sm ${getMaxWindSpeedClass()}`}>
                                                     {entry.maxWindSpeed.toFixed(1)} km/h
                                                   </td>
-                                                  <td className={`px-4 py-2 text-sm ${getAlertStatusClass()}`}>
-                                                    {getAlertStatusText()}
+                                                  <td className="px-4 py-2 text-sm">
+                                                    {formatDowntime()}
                                                   </td>
-                                                  {aggregationLevel !== "10min" && (
-                                                    <td className="px-4 py-2 text-sm">
-                                                      {formatDowntime()}
-                                                    </td>
-                                                  )}
                                                 </tr>
                                               );
                                             })}
