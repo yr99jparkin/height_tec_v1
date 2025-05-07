@@ -282,7 +282,7 @@ export default function ReportsPage() {
       
       switch (level) {
         case "10min":
-          // For raw data, just group by date
+          // For raw data, group by date only, we'll display each interval as is
           key = format(date, 'yyyy-MM-dd');
           break;
         case "1hour":
@@ -633,9 +633,7 @@ export default function ReportsPage() {
                                             <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Avg Wind Speed</th>
                                             <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Max Wind Speed</th>
                                             <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Alert Status</th>
-                                            {aggregationLevel !== "10min" && (
-                                              <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Downtime</th>
-                                            )}
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Downtime</th>
                                           </tr>
                                         </thead>
                                         <tbody className="divide-y divide-neutral-200">
@@ -674,9 +672,19 @@ export default function ReportsPage() {
                                                 const start = new Date(entry.intervalStart);
                                                 const end = new Date(entry.intervalEnd);
                                                 
+                                                // Calculate the interval duration in minutes
+                                                const intervalMinutes = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
+                                                
                                                 switch (aggregationLevel) {
                                                   case "10min":
-                                                    return `${format(start, "HH:mm")} - ${format(end, "HH:mm")}`;
+                                                    // Format based on actual interval (might be 10min or 1hr based on DB data)
+                                                    if (intervalMinutes <= 15) {
+                                                      // For actual 10-minute intervals
+                                                      return `${format(start, "HH:mm")} - ${format(end, "HH:mm")}`;
+                                                    } else {
+                                                      // Special format for longer intervals in 10min view
+                                                      return `${format(start, "HH:mm")} - ${format(end, "HH:mm")} (${Math.round(intervalMinutes/60)}h span)`;
+                                                    }
                                                   case "1hour":
                                                     return format(start, "HH:mm") + " - " + format(end, "HH:mm");
                                                   case "1day":
@@ -714,11 +722,9 @@ export default function ReportsPage() {
                                                   <td className={`px-4 py-2 text-sm ${getAlertStatusClass()}`}>
                                                     {getAlertStatusText()}
                                                   </td>
-                                                  {aggregationLevel !== "10min" && (
-                                                    <td className="px-4 py-2 text-sm">
-                                                      {formatDowntime()}
-                                                    </td>
-                                                  )}
+                                                  <td className="px-4 py-2 text-sm">
+                                                    {formatDowntime()}
+                                                  </td>
                                                 </tr>
                                               );
                                             })}
