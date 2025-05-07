@@ -188,26 +188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Device not found" });
       }
 
-      // Debug: Log some historical data for reference (limit to 3 records)
-      const sampleData = await db
-        .select({ 
-          id: windDataHistorical.id,
-          deviceId: windDataHistorical.deviceId,
-          intervalStart: windDataHistorical.intervalStart,
-          intervalEnd: windDataHistorical.intervalEnd,
-          downtimeSeconds: windDataHistorical.downtimeSeconds
-        })
-        .from(windDataHistorical)
-        .where(
-          and(
-            eq(windDataHistorical.deviceId, deviceId),
-            gte(windDataHistorical.intervalStart, startDate),
-            lte(windDataHistorical.intervalEnd, endDate)
-          )
-        )
-        .limit(3);
-      
-      console.log(`[downtime] Sample data: ${JSON.stringify(sampleData)}`);
+      // Let's skip the complex SQL debug for now to fix the error
 
       const downtimeSeconds = await storage.getTotalDowntimeForDevice(deviceId, startDate, endDate);
       console.log(`[downtime] Total downtime seconds: ${downtimeSeconds}`);

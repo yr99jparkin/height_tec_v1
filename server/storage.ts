@@ -292,21 +292,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTotalDowntimeForDevice(deviceId: string, startTime: Date, endTime: Date): Promise<number> {
-    // For the reports page, only use historical data for downtime calculations
-    const historicalResult = await db
-      .select({
-        totalDowntime: sum(windDataHistorical.downtimeSeconds).as("totalDowntime")
-      })
-      .from(windDataHistorical)
-      .where(
-        and(
-          eq(windDataHistorical.deviceId, deviceId),
-          gte(windDataHistorical.intervalStart, startTime),
-          lte(windDataHistorical.intervalEnd, endTime)
-        )
-      );
+    // For the reports page, use direct SQL to query the sum of downtime_seconds
+    // This avoids any issues with TypeScript operators
+    const result = await db.execute(
+      sql`SELECT SUM(downtime_seconds) as total_downtime
+          FROM wind_data_historical
+          WHERE device_id = ${deviceId}
+          AND interval_start >= ${startTime}
+          AND interval_end <= ${endTime}`
+    );
     
-    return Number(historicalResult[0]?.totalDowntime || 0);
+    // Get the value from the result
+    const totalDowntime = result.rows[0]?.total_downtime;
+    return Number(totalDowntime || 0);
   }
 
   async getDevicesWithLatestData(userDeviceIds: string[]): Promise<DeviceWithLatestData[]> {
