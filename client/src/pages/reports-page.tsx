@@ -362,6 +362,28 @@ export default function ReportsPage() {
                   </div>
                 ) : (
                   <>
+                    {/* Summary Statistics */}
+                    <div className="mb-8">
+                      <h3 className="text-lg font-medium mb-4">Summary Statistics</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-neutral-50 p-4 rounded-lg">
+                          <h4 className="text-sm text-neutral-500 mb-1">Maximum Wind Speed</h4>
+                          <p className="text-xl font-bold">{stats.maxWindSpeed.toFixed(1)} km/h</p>
+                          {stats.maxWindSpeedTime && (
+                            <p className="text-xs text-neutral-600">at {format(stats.maxWindSpeedTime, "PPp")}</p>
+                          )}
+                        </div>
+                        <div className="bg-neutral-50 p-4 rounded-lg">
+                          <h4 className="text-sm text-neutral-500 mb-1">Average Wind Speed</h4>
+                          <p className="text-xl font-bold">{stats.avgWindSpeed.toFixed(1)} km/h</p>
+                        </div>
+                        <div className="bg-neutral-50 p-4 rounded-lg">
+                          <h4 className="text-sm text-neutral-500 mb-1">Total Downtime</h4>
+                          <p className="text-xl font-bold">{(stats.totalDowntime / 3600).toFixed(1)} hours</p>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Wind Speed Charts */}
                     <div className="space-y-8 mb-8">
                       {/* Max Wind Speed Chart */}
@@ -389,28 +411,6 @@ export default function ReportsPage() {
                             amberThreshold={thresholds?.amberThreshold}
                             redThreshold={thresholds?.redThreshold}
                           />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Summary Statistics */}
-                    <div className="mb-8">
-                      <h3 className="text-lg font-medium mb-4">Summary Statistics</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-neutral-50 p-4 rounded-lg">
-                          <h4 className="text-sm text-neutral-500 mb-1">Maximum Wind Speed</h4>
-                          <p className="text-xl font-bold">{stats.maxWindSpeed.toFixed(1)} km/h</p>
-                          {stats.maxWindSpeedTime && (
-                            <p className="text-xs text-neutral-600">at {format(stats.maxWindSpeedTime, "PPp")}</p>
-                          )}
-                        </div>
-                        <div className="bg-neutral-50 p-4 rounded-lg">
-                          <h4 className="text-sm text-neutral-500 mb-1">Average Wind Speed</h4>
-                          <p className="text-xl font-bold">{stats.avgWindSpeed.toFixed(1)} km/h</p>
-                        </div>
-                        <div className="bg-neutral-50 p-4 rounded-lg">
-                          <h4 className="text-sm text-neutral-500 mb-1">Total Downtime</h4>
-                          <p className="text-xl font-bold">{(stats.totalDowntime / 3600).toFixed(1)} hours</p>
                         </div>
                       </div>
                     </div>
