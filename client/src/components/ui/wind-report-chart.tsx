@@ -143,10 +143,10 @@ export function WindReportChart({
             Status: 
             <span className={`font-medium ${
               data.redAlert 
-                ? "text-[hsl(var(--destructive))]" 
+                ? "text-red-600" 
                 : data.amberAlert 
-                  ? "text-[hsl(var(--warning))]" 
-                  : "text-[hsl(var(--safe))]"
+                  ? "text-amber-600" 
+                  : "text-green-600"
             }`}>
               {data.redAlert ? " Red Alert" : data.amberAlert ? " Amber Alert" : " Normal"}
             </span>
@@ -227,8 +227,8 @@ export function WindReportChart({
           type="stepAfter"
           dataKey="greenValue"
           stackId="stack"
-          stroke="transparent"
-          fill="hsla(var(--safe), 0.8)"
+          stroke="rgba(134, 239, 172, 0.9)"
+          fill="rgba(134, 239, 172, 0.9)"
           name="Normal"
           isAnimationActive={false}
         />
@@ -236,8 +236,8 @@ export function WindReportChart({
           type="stepAfter"
           dataKey="amberValue"
           stackId="stack"
-          stroke="transparent"
-          fill="hsla(var(--warning), 0.8)"
+          stroke="rgba(253, 224, 71, 0.9)"
+          fill="rgba(253, 224, 71, 0.9)"
           name="Amber Alert"
           isAnimationActive={false}
         />
@@ -245,8 +245,8 @@ export function WindReportChart({
           type="stepAfter"
           dataKey="redValue"
           stackId="stack"
-          stroke="transparent"
-          fill="hsla(var(--destructive), 0.8)"
+          stroke="rgba(252, 165, 165, 0.9)"
+          fill="rgba(252, 165, 165, 0.9)"
           name="Red Alert"
           activeDot={{ r: 6 }}
           isAnimationActive={false}

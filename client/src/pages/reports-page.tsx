@@ -8,7 +8,7 @@ import { DeviceWithLatestData } from "@shared/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
-import { CalendarIcon, FileDown, ChevronDown, ChevronRight, Clock } from "lucide-react";
+import { CalendarIcon, FileDown, RefreshCw, ChevronDown, ChevronRight, Clock } from "lucide-react";
 import { format, parseISO, isSameDay, differenceInDays, startOfWeek, endOfWeek, isAfter, isBefore, addDays, startOfDay, endOfDay, startOfHour, endOfHour, getHours, getDay, getWeek } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -29,11 +29,11 @@ export default function ReportsPage() {
   const [, setLocation] = useLocation();
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
   const [dateRange, setDateRange] = useState<{
-    from: Date | undefined;
-    to: Date | undefined;
+    from: Date;
+    to: Date;
   }>({
-    from: undefined,
-    to: undefined,
+    from: new Date(new Date().setHours(0, 0, 0, 0)),
+    to: new Date(),
   });
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [reportGenTime, setReportGenTime] = useState(new Date());
@@ -69,11 +69,9 @@ export default function ReportsPage() {
 
   // Fetch historical wind data for the selected period
   const { data: windData = [], isLoading: isLoadingWindData } = useQuery<WindDataHistorical[]>({
-    queryKey: ["/api/wind/historical", selectedDeviceId, dateRange.from?.toISOString(), dateRange.to?.toISOString()],
+    queryKey: ["/api/wind/historical", selectedDeviceId, dateRange.from.toISOString(), dateRange.to.toISOString()],
     queryFn: async () => {
       if (!selectedDeviceId) throw new Error("No device selected");
-      if (!dateRange.from || !dateRange.to) throw new Error("Date range not selected");
-      
       const response = await apiRequest(
         "GET", 
         `/api/wind/historical/${selectedDeviceId}/range?startDate=${dateRange.from.toISOString()}&endDate=${dateRange.to.toISOString()}`
@@ -86,11 +84,9 @@ export default function ReportsPage() {
 
   // Fetch downtime data for the selected period
   const { data: downtimeData, isLoading: isLoadingDowntime } = useQuery({
-    queryKey: ["/api/wind/downtime", selectedDeviceId, dateRange.from?.toISOString(), dateRange.to?.toISOString()],
+    queryKey: ["/api/wind/downtime", selectedDeviceId, dateRange.from.toISOString(), dateRange.to.toISOString()],
     queryFn: async () => {
       if (!selectedDeviceId) throw new Error("No device selected");
-      if (!dateRange.from || !dateRange.to) throw new Error("Date range not selected");
-      
       const response = await apiRequest(
         "GET", 
         `/api/wind/downtime/${selectedDeviceId}?startDate=${dateRange.from.toISOString()}&endDate=${dateRange.to.toISOString()}`
@@ -106,7 +102,11 @@ export default function ReportsPage() {
     setSelectedDeviceId(deviceId);
   };
 
-
+  // Handle the update button click
+  const handleUpdateReport = () => {
+    setReportGenTime(new Date());
+    // The queries will automatically refresh when their dependencies change
+  };
 
   // Calculate statistics
   const calculateStats = () => {
@@ -169,12 +169,6 @@ export default function ReportsPage() {
   // Function to format timestamp based on date range
   const formatTimestamp = (timestamp: string) => {
     const date = parseISO(timestamp);
-    
-    if (!dateRange.from || !dateRange.to) {
-      // Default format if no date range is selected
-      return format(date, 'HH:mm dd MMM');
-    }
-    
     const daysDiff = differenceInDays(dateRange.to, dateRange.from);
     
     if (daysDiff <= 1) {
@@ -503,11 +497,11 @@ export default function ReportsPage() {
                             <Clock className="h-4 w-4 text-neutral-500" />
                             <Input 
                               type="time" 
-                              value={dateRange.from ? format(dateRange.from, "HH:mm") : "00:00"}
+                              value={format(dateRange.from, "HH:mm")}
                               onChange={(e) => {
                                 const [hours, minutes] = e.target.value.split(':').map(Number);
                                 if (!isNaN(hours) && !isNaN(minutes)) {
-                                  const newFrom = new Date(dateRange.from || new Date());
+                                  const newFrom = new Date(dateRange.from);
                                   newFrom.setHours(hours, minutes, 0, 0);
                                   setDateRange({
                                     from: newFrom,
@@ -525,11 +519,11 @@ export default function ReportsPage() {
                             <Clock className="h-4 w-4 text-neutral-500" />
                             <Input 
                               type="time" 
-                              value={dateRange.to ? format(dateRange.to, "HH:mm") : "23:59"}
+                              value={format(dateRange.to, "HH:mm")}
                               onChange={(e) => {
                                 const [hours, minutes] = e.target.value.split(':').map(Number);
                                 if (!isNaN(hours) && !isNaN(minutes)) {
-                                  const newTo = new Date(dateRange.to || new Date());
+                                  const newTo = new Date(dateRange.to);
                                   newTo.setHours(hours, minutes, 59, 999);
                                   setDateRange({
                                     from: dateRange.from,
@@ -550,8 +544,17 @@ export default function ReportsPage() {
                 </Popover>
               </div>
 
-              {/* Placeholder for symmetry */}
-              <div className="hidden md:block"></div>
+              {/* Update Button */}
+              <div className="flex items-end">
+                <Button 
+                  className="w-full"
+                  onClick={handleUpdateReport}
+                  disabled={!selectedDeviceId}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Update Report
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -649,7 +652,7 @@ export default function ReportsPage() {
                           <WindReportChart 
                             data={windData}
                             dataKey="maxWindSpeed"
-                            timeRange={dateRange.from && dateRange.to ? differenceInDays(dateRange.to, dateRange.from) : 1}
+                            timeRange={differenceInDays(dateRange.to, dateRange.from)}
                             amberThreshold={thresholds?.amberThreshold}
                             redThreshold={thresholds?.redThreshold}
                           />
@@ -663,7 +666,7 @@ export default function ReportsPage() {
                           <WindReportChart 
                             data={windData}
                             dataKey="avgWindSpeed"
-                            timeRange={dateRange.from && dateRange.to ? differenceInDays(dateRange.to, dateRange.from) : 1}
+                            timeRange={differenceInDays(dateRange.to, dateRange.from)}
                             amberThreshold={thresholds?.amberThreshold}
                             redThreshold={thresholds?.redThreshold}
                           />
