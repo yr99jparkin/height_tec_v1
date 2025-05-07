@@ -543,10 +543,6 @@ export default function ReportsPage() {
                           </div>
                         </div>
                       </div>
-                      
-                      <Button onClick={() => setIsCalendarOpen(false)}>
-                        Apply
-                      </Button>
                     </div>
                   </PopoverContent>
                 </Popover>
