@@ -113,13 +113,19 @@ export default function ReportsPage() {
         maxWindSpeed: 0,
         maxWindSpeedTime: null,
         avgWindSpeed: 0,
-        totalDowntime: downtimeData?.downtimeSeconds || 0
+        totalDowntime: downtimeData?.downtimeSeconds || 0,
+        greenPercentage: 0,
+        amberPercentage: 0,
+        redPercentage: 0
       };
     }
 
     let maxWindSpeed = 0;
     let maxWindSpeedTime: Date | null = null;
     let sumWindSpeed = 0;
+    let totalGreenTime = 0;
+    let totalAmberTime = 0;
+    let totalRedTime = 0;
 
     windData.forEach(data => {
       // Track max wind speed
@@ -130,13 +136,29 @@ export default function ReportsPage() {
 
       // Accumulate for average
       sumWindSpeed += data.avgWindSpeed;
+
+      // Calculate time in each alert state
+      const intervalDuration = (new Date(data.intervalEnd).getTime() - new Date(data.intervalStart).getTime()) / 1000; // in seconds
+      
+      if (data.redAlertTriggered) {
+        totalRedTime += intervalDuration;
+      } else if (data.amberAlertTriggered) {
+        totalAmberTime += intervalDuration;
+      } else {
+        totalGreenTime += intervalDuration;
+      }
     });
+
+    const totalTime = totalGreenTime + totalAmberTime + totalRedTime;
     
     return {
       maxWindSpeed,
       maxWindSpeedTime,
       avgWindSpeed: sumWindSpeed / windData.length,
-      totalDowntime: downtimeData?.downtimeSeconds || 0
+      totalDowntime: downtimeData?.downtimeSeconds || 0,
+      greenPercentage: totalTime > 0 ? (totalGreenTime / totalTime) * 100 : 0,
+      amberPercentage: totalTime > 0 ? (totalAmberTime / totalTime) * 100 : 0,
+      redPercentage: totalTime > 0 ? (totalRedTime / totalTime) * 100 : 0
     };
   };
 
@@ -226,17 +248,23 @@ export default function ReportsPage() {
     const avgWindSpeed = sortedData.reduce((sum, point) => sum + point.avgWindSpeed, 0) / sortedData.length;
     const maxWindSpeed = Math.max(...sortedData.map(point => point.maxWindSpeed));
     
+    // Check if any alerts were triggered
+    const amberAlertTriggered = sortedData.some(point => point.amberAlertTriggered);
+    const redAlertTriggered = sortedData.some(point => point.redAlertTriggered);
+    
     // Calculate downtime
     const downtimeSeconds = sortedData.reduce((sum, point) => sum + (point.downtimeSeconds || 0), 0);
     
-    // Create aggregated data point without alert status
+    // Create aggregated data point
     return {
-      id: firstPoint.id,
-      deviceId: firstPoint.deviceId,
+      ...firstPoint,
+      id: firstPoint.id, // Keep original ID for React keys
       intervalStart: firstPoint.intervalStart,
       intervalEnd: lastPoint.intervalEnd,
       avgWindSpeed,
       maxWindSpeed,
+      amberAlertTriggered,
+      redAlertTriggered,
       downtimeSeconds,
     };
   };
@@ -604,6 +632,7 @@ export default function ReportsPage() {
                                             <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Time Period</th>
                                             <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Avg Wind Speed</th>
                                             <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Max Wind Speed</th>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Alert Status</th>
                                             {aggregationLevel !== "10min" && (
                                               <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Downtime</th>
                                             )}
@@ -626,6 +655,18 @@ export default function ReportsPage() {
                                                 if (entry.maxWindSpeed >= thresholds.redThreshold) return "bg-red-100";
                                                 if (entry.maxWindSpeed >= thresholds.amberThreshold) return "bg-amber-100";
                                                 return "bg-green-100";
+                                              };
+                                              
+                                              const getAlertStatusClass = () => {
+                                                if (entry.redAlertTriggered) return "bg-red-100";
+                                                if (entry.amberAlertTriggered) return "bg-amber-100";
+                                                return "bg-green-100";
+                                              };
+                                              
+                                              const getAlertStatusText = () => {
+                                                if (entry.redAlertTriggered) return "Red Alert";
+                                                if (entry.amberAlertTriggered) return "Amber Alert";
+                                                return "Normal";
                                               };
                                               
                                               // Format time period based on aggregation level
@@ -669,6 +710,9 @@ export default function ReportsPage() {
                                                   </td>
                                                   <td className={`px-4 py-2 text-sm ${getMaxWindSpeedClass()}`}>
                                                     {entry.maxWindSpeed.toFixed(1)} km/h
+                                                  </td>
+                                                  <td className={`px-4 py-2 text-sm ${getAlertStatusClass()}`}>
+                                                    {getAlertStatusText()}
                                                   </td>
                                                   {aggregationLevel !== "10min" && (
                                                     <td className="px-4 py-2 text-sm">
