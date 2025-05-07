@@ -451,7 +451,7 @@ export default function ReportsPage() {
                       <Calendar
                         initialFocus
                         mode="range"
-                        defaultMonth={dateRange?.from}
+                        defaultMonth={dateRange?.from || new Date()}
                         selected={{
                           from: dateRange?.from,
                           to: dateRange?.to,
@@ -503,11 +503,12 @@ export default function ReportsPage() {
                             <Clock className="h-4 w-4 text-neutral-500" />
                             <Input 
                               type="time" 
-                              value={format(dateRange.from, "HH:mm")}
+                              value={dateRange.from ? format(dateRange.from, "HH:mm") : "00:00"}
                               onChange={(e) => {
                                 const [hours, minutes] = e.target.value.split(':').map(Number);
                                 if (!isNaN(hours) && !isNaN(minutes)) {
-                                  const newFrom = new Date(dateRange.from);
+                                  // Use current date if from is undefined
+                                  const newFrom = new Date(dateRange.from || new Date());
                                   newFrom.setHours(hours, minutes, 0, 0);
                                   setDateRange({
                                     from: newFrom,
@@ -525,11 +526,12 @@ export default function ReportsPage() {
                             <Clock className="h-4 w-4 text-neutral-500" />
                             <Input 
                               type="time" 
-                              value={format(dateRange.to, "HH:mm")}
+                              value={dateRange.to ? format(dateRange.to, "HH:mm") : "23:59"}
                               onChange={(e) => {
                                 const [hours, minutes] = e.target.value.split(':').map(Number);
                                 if (!isNaN(hours) && !isNaN(minutes)) {
-                                  const newTo = new Date(dateRange.to);
+                                  // Use current date if to is undefined
+                                  const newTo = new Date(dateRange.to || new Date());
                                   newTo.setHours(hours, minutes, 59, 999);
                                   setDateRange({
                                     from: dateRange.from,
