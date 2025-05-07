@@ -749,22 +749,28 @@ export default function ReportsPage() {
                                               // Determine cell background colors based on thresholds
                                               const getAvgWindSpeedClass = () => {
                                                 if (!thresholds) return "";
-                                                if (entry.avgWindSpeed >= thresholds.redThreshold) return "bg-red-100";
-                                                if (entry.avgWindSpeed >= thresholds.amberThreshold) return "bg-amber-100";
-                                                return "bg-green-100";
+                                                if (entry.avgWindSpeed >= thresholds.redThreshold) 
+                                                  return "bg-red-500 bg-opacity-20 text-red-900";
+                                                if (entry.avgWindSpeed >= thresholds.amberThreshold) 
+                                                  return "bg-amber-500 bg-opacity-20 text-amber-900";
+                                                return "bg-green-500 bg-opacity-20 text-green-900";
                                               };
                                               
                                               const getMaxWindSpeedClass = () => {
                                                 if (!thresholds) return "";
-                                                if (entry.maxWindSpeed >= thresholds.redThreshold) return "bg-red-100";
-                                                if (entry.maxWindSpeed >= thresholds.amberThreshold) return "bg-amber-100";
-                                                return "bg-green-100";
+                                                if (entry.maxWindSpeed >= thresholds.redThreshold) 
+                                                  return "bg-red-500 bg-opacity-20 text-red-900";
+                                                if (entry.maxWindSpeed >= thresholds.amberThreshold) 
+                                                  return "bg-amber-500 bg-opacity-20 text-amber-900";
+                                                return "bg-green-500 bg-opacity-20 text-green-900";
                                               };
                                               
                                               const getAlertStatusClass = () => {
-                                                if (entry.redAlertTriggered) return "bg-red-100";
-                                                if (entry.amberAlertTriggered) return "bg-amber-100";
-                                                return "bg-green-100";
+                                                if (entry.redAlertTriggered) 
+                                                  return "bg-red-500 bg-opacity-20 text-red-900";
+                                                if (entry.amberAlertTriggered) 
+                                                  return "bg-amber-500 bg-opacity-20 text-amber-900";
+                                                return "bg-green-500 bg-opacity-20 text-green-900";
                                               };
                                               
                                               const getAlertStatusText = () => {
