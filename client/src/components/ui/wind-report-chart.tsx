@@ -79,22 +79,20 @@ export function WindReportChart({
       }
       
       // Split the value into green, amber, and red segments for stacking
-      let greenValue = 0;
+      // Always use exact values for color boundaries
+      let greenValue = Math.min(value, amberThreshold);
       let amberValue = 0;
       let redValue = 0;
       
-      if (value <= amberThreshold) {
-        // When value is in the green zone
-        greenValue = value;
-      } else if (value <= redThreshold) {
-        // When value is in the amber zone
-        greenValue = amberThreshold;
-        amberValue = value - amberThreshold;
-      } else {
-        // When value is in the red zone
-        greenValue = amberThreshold;
-        amberValue = redThreshold - amberThreshold;
-        redValue = value - redThreshold;
+      if (value > amberThreshold) {
+        if (value <= redThreshold) {
+          // When value is in the amber zone
+          amberValue = value - amberThreshold;
+        } else {
+          // When value is in the red zone
+          amberValue = redThreshold - amberThreshold;
+          redValue = value - redThreshold;
+        }
       }
       
       return {
@@ -222,29 +220,32 @@ export function WindReportChart({
         
         {/* Stacked areas for different threshold zones */}
         <Area 
-          type="monotone"
+          type="stepAfter"
           dataKey="greenValue"
           stackId="stack"
-          stroke="rgba(34, 197, 94, 0.8)"
-          fill="rgba(34, 197, 94, 0.8)"
+          stroke="rgba(134, 239, 172, 0.9)"
+          fill="rgba(134, 239, 172, 0.9)"
           name="Normal"
+          isAnimationActive={false}
         />
         <Area 
-          type="monotone"
+          type="stepAfter"
           dataKey="amberValue"
           stackId="stack"
-          stroke="rgba(234, 179, 8, 0.8)"
-          fill="rgba(234, 179, 8, 0.8)"
+          stroke="rgba(253, 224, 71, 0.9)"
+          fill="rgba(253, 224, 71, 0.9)"
           name="Amber Alert"
+          isAnimationActive={false}
         />
         <Area 
-          type="monotone"
+          type="stepAfter"
           dataKey="redValue"
           stackId="stack"
-          stroke="rgba(239, 68, 68, 0.8)"
-          fill="rgba(239, 68, 68, 0.8)"
+          stroke="rgba(252, 165, 165, 0.9)"
+          fill="rgba(252, 165, 165, 0.9)"
           name="Red Alert"
           activeDot={{ r: 6 }}
+          isAnimationActive={false}
         />
       </AreaChart>
     </ResponsiveContainer>
