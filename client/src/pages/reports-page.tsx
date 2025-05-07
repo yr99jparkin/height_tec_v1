@@ -329,12 +329,35 @@ export default function ReportsPage() {
           aggregatedData[key] = Object.values(hourlyGroups).map(points => aggregateDataPoints(points));
           
         } else if (level === "1day") {
-          // For daily view, all points in the day are aggregated
-          aggregatedData[key] = [aggregateDataPoints(dataPoints)];
+          // For daily view, aggregate data by each day
+          const dailyGroups: { [dayKey: string]: WindDataHistorical[] } = {};
+          
+          dataPoints.forEach(point => {
+            const date = new Date(point.intervalStart);
+            const dayKey = format(date, 'yyyy-MM-dd');
+            if (!dailyGroups[dayKey]) {
+              dailyGroups[dayKey] = [];
+            }
+            dailyGroups[dayKey].push(point);
+          });
+          
+          aggregatedData[key] = Object.values(dailyGroups).map(points => aggregateDataPoints(points));
           
         } else if (level === "1week") {
-          // For weekly view, all points in the week are aggregated
-          aggregatedData[key] = [aggregateDataPoints(dataPoints)];
+          // For weekly view, aggregate by each week
+          const weeklyGroups: { [weekKey: string]: WindDataHistorical[] } = {};
+          
+          dataPoints.forEach(point => {
+            const date = new Date(point.intervalStart);
+            const weekStart = startOfWeek(date, { weekStartsOn: 1 });
+            const weekKey = format(weekStart, 'yyyy-MM-dd');
+            if (!weeklyGroups[weekKey]) {
+              weeklyGroups[weekKey] = [];
+            }
+            weeklyGroups[weekKey].push(point);
+          });
+          
+          aggregatedData[key] = Object.values(weeklyGroups).map(points => aggregateDataPoints(points));
         }
       });
     }
