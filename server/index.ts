@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { setupAggregationJob } from "./aggregation-job";
+import { setupCleanupJob } from "./cleanup-job";
 
 const app = express();
 app.use(express.json());
@@ -70,5 +71,8 @@ app.use((req, res, next) => {
     
     // Start the wind data aggregation job
     setupAggregationJob();
+    
+    // Start the notification tables cleanup job
+    setupCleanupJob();
   });
 })();

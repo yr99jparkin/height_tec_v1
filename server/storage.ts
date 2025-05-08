@@ -8,7 +8,7 @@ import type { User, InsertUser, Device, InsertDevice, DeviceStock, InsertDeviceS
   NotificationToken, InsertNotificationToken,
   NotificationSnoozeStatus, InsertNotificationSnoozeStatus } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, desc, lte, gte, lt, gt, sql, max, avg, inArray, sum } from "drizzle-orm";
+import { eq, and, or, desc, lte, gte, lt, gt, sql, max, avg, inArray, sum } from "drizzle-orm";
 import { WindStatsResponse, DeviceWithLatestData } from "@shared/types";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
@@ -683,12 +683,47 @@ export class DatabaseStorage implements IStorage {
     return snooze;
   }
   
-  async deleteExpiredSnoozes(): Promise<void> {
+  async deleteExpiredSnoozes(): Promise<number> {
     // Delete all snoozes that have expired
     const now = new Date();
     
-    await db.delete(notificationSnoozeStatus)
-      .where(lt(notificationSnoozeStatus.snoozedUntil, now));
+    const result = await db.delete(notificationSnoozeStatus)
+      .where(lt(notificationSnoozeStatus.snoozedUntil, now))
+      .returning();
+    
+    return result.length;
+  }
+  
+  async deleteExpiredAndUsedTokens(): Promise<number> {
+    // Delete tokens that are:
+    // 1. Already used (used = true)
+    // 2. Expired (expiresAt < current time)
+    const now = new Date();
+    
+    const result = await db.delete(notificationTokens)
+      .where(
+        or(
+          eq(notificationTokens.used, true),
+          lt(notificationTokens.expiresAt, now)
+        )
+      )
+      .returning();
+    
+    return result.length;
+  }
+  
+  async archiveOldNotificationHistory(days: number): Promise<number> {
+    // Optional method to archive notification history older than X days
+    // In a real production system, we might move this to an archive table
+    // For now, we'll just return a count of records that would be archived
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    
+    const oldRecords = await db.select({ count: sql<number>`count(*)` })
+      .from(notificationHistory)
+      .where(lt(notificationHistory.sentAt, cutoffDate));
+    
+    return oldRecords[0]?.count || 0;
   }
 }
 
