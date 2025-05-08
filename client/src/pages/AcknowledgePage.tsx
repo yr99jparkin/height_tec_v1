@@ -20,18 +20,32 @@ const AcknowledgePage = () => {
   const searchParams = new URLSearchParams(window.location.search);
   const action = searchParams.get('action') || "acknowledge";
 
+  // Define interface for token details
+  interface TokenDetails {
+    deviceId: string;
+    deviceName: string;
+    location?: string;
+    tokenId: string;
+    action: string;
+    alertLevel: 'amber' | 'red';
+    windSpeed: number;
+    notificationContact: number;
+    notificationId: number;
+  }
+
   // Fetch token details
-  const { data: tokenDetails, isLoading, error } = useQuery({
+  const { data: tokenDetails, isLoading, error } = useQuery<TokenDetails>({
     queryKey: ['/api/alerts/token', tokenId],
     enabled: !!tokenId,
   });
 
   // Acknowledge or snooze mutation
   const acknowledgeMutation = useMutation({
-    mutationFn: () => apiRequest(`/api/alerts/acknowledge/${tokenId}`, {
-      method: 'POST', 
-      data: { action }
-    }),
+    mutationFn: () => apiRequest(
+      'POST',
+      `/api/alerts/acknowledge/${tokenId}`, 
+      { action }
+    ),
     onSuccess: () => {
       setHasConfirmed(true);
     }

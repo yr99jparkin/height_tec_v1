@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import DevicesPage from "@/pages/devices-page";
 import ReportsPage from "@/pages/reports-page";
+import AcknowledgePage from "@/pages/AcknowledgePage";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
 import { GoogleMapsProvider } from "@/hooks/use-google-maps";
@@ -19,6 +20,8 @@ function Router() {
       <ProtectedRoute path="/" component={DevicesPage} />
       <ProtectedRoute path="/reports" component={ReportsPage} />
       <Route path="/auth" component={AuthPage} />
+      {/* Alert acknowledgement route - publicly accessible with valid token */}
+      <Route path="/alert/acknowledge/:tokenId" component={AcknowledgePage} />
       <Route component={NotFound} />
     </Switch>
   );
