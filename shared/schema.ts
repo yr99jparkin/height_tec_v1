@@ -138,6 +138,9 @@ export const devicesRelations = relations(devices, ({ one, many }) => ({
   windDataHistorical: many(windDataHistorical),
   windAlertThresholds: one(windAlertThresholds),
   notificationContacts: many(notificationContacts),
+  notificationHistory: many(notificationHistory),
+  notificationTokens: many(notificationTokens),
+  notificationSnoozeStatus: many(notificationSnoozeStatus),
 }));
 
 // Insert schemas using drizzle-zod
@@ -225,3 +228,106 @@ export type InsertWindDataHistorical = z.infer<typeof insertWindDataHistoricalSc
 
 export type NotificationContact = typeof notificationContacts.$inferSelect;
 export type InsertNotificationContact = z.infer<typeof insertNotificationContactSchema>;
+
+// Notification History table
+export const notificationHistory = pgTable("notification_history", {
+  id: serial("id").primaryKey(),
+  deviceId: text("device_id").notNull().references(() => devices.deviceId),
+  notificationContactId: integer("notification_contact_id").notNull().references(() => notificationContacts.id),
+  alertLevel: text("alert_level").notNull(), // "amber" or "red"
+  windSpeed: doublePrecision("wind_speed").notNull(),
+  sentAt: timestamp("sent_at").notNull(),
+  acknowledged: boolean("acknowledged").default(false).notNull(),
+  acknowledgedAt: timestamp("acknowledged_at"),
+  acknowledgedAction: text("acknowledged_action"), // "acknowledge", "snooze_1h", "snooze_today"
+});
+
+export const notificationHistoryRelations = relations(notificationHistory, ({ one }) => ({
+  device: one(devices, {
+    fields: [notificationHistory.deviceId],
+    references: [devices.deviceId],
+  }),
+  notificationContact: one(notificationContacts, {
+    fields: [notificationHistory.notificationContactId],
+    references: [notificationContacts.id],
+  }),
+}));
+
+// Notification Tokens table
+export const notificationTokens = pgTable("notification_tokens", {
+  id: text("id").primaryKey(), // UUID
+  deviceId: text("device_id").notNull().references(() => devices.deviceId),
+  notificationContactId: integer("notification_contact_id").notNull().references(() => notificationContacts.id),
+  action: text("action").notNull(), // "acknowledge", "snooze_1h", "snooze_today"
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  used: boolean("used").default(false).notNull(),
+});
+
+export const notificationTokensRelations = relations(notificationTokens, ({ one }) => ({
+  device: one(devices, {
+    fields: [notificationTokens.deviceId],
+    references: [devices.deviceId],
+  }),
+  notificationContact: one(notificationContacts, {
+    fields: [notificationTokens.notificationContactId],
+    references: [notificationContacts.id],
+  }),
+}));
+
+// Notification Snooze Status table
+export const notificationSnoozeStatus = pgTable("notification_snooze_status", {
+  id: serial("id").primaryKey(),
+  deviceId: text("device_id").notNull().references(() => devices.deviceId),
+  notificationContactId: integer("notification_contact_id").notNull().references(() => notificationContacts.id),
+  snoozedUntil: timestamp("snoozed_until").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const notificationSnoozeStatusRelations = relations(notificationSnoozeStatus, ({ one }) => ({
+  device: one(devices, {
+    fields: [notificationSnoozeStatus.deviceId],
+    references: [devices.deviceId],
+  }),
+  notificationContact: one(notificationContacts, {
+    fields: [notificationSnoozeStatus.notificationContactId],
+    references: [notificationContacts.id],
+  }),
+}));
+
+// Insert schemas for notification-related tables
+export const insertNotificationHistorySchema = createInsertSchema(notificationHistory).pick({
+  deviceId: true,
+  notificationContactId: true,
+  alertLevel: true,
+  windSpeed: true,
+  sentAt: true,
+  acknowledged: true,
+  acknowledgedAt: true,
+  acknowledgedAction: true,
+});
+
+export const insertNotificationTokenSchema = createInsertSchema(notificationTokens).pick({
+  id: true,
+  deviceId: true,
+  notificationContactId: true,
+  action: true,
+  expiresAt: true,
+  used: true,
+});
+
+export const insertNotificationSnoozeStatusSchema = createInsertSchema(notificationSnoozeStatus).pick({
+  deviceId: true,
+  notificationContactId: true,
+  snoozedUntil: true,
+});
+
+// Export types for the notification-related tables
+export type NotificationHistory = typeof notificationHistory.$inferSelect;
+export type InsertNotificationHistory = z.infer<typeof insertNotificationHistorySchema>;
+
+export type NotificationToken = typeof notificationTokens.$inferSelect;
+export type InsertNotificationToken = z.infer<typeof insertNotificationTokenSchema>;
+
+export type NotificationSnoozeStatus = typeof notificationSnoozeStatus.$inferSelect;
+export type InsertNotificationSnoozeStatus = z.infer<typeof insertNotificationSnoozeStatusSchema>;
