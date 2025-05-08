@@ -663,8 +663,16 @@ export class DatabaseStorage implements IStorage {
   
   // Notification snooze operations
   async createNotificationSnooze(snooze: InsertNotificationSnoozeStatus): Promise<NotificationSnoozeStatus> {
+    // Using onConflictDoUpdate to handle the case where there's already a snooze for this device+contact
     const [newSnooze] = await db.insert(notificationSnoozeStatus)
       .values(snooze)
+      .onConflictDoUpdate({
+        target: [notificationSnoozeStatus.deviceId, notificationSnoozeStatus.notificationContactId],
+        set: { 
+          snoozedUntil: snooze.snoozedUntil,
+          createdAt: new Date() // Update creation time when updating an existing record
+        }
+      })
       .returning();
     return newSnooze;
   }

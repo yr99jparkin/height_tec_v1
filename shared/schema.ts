@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, foreignKey } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, foreignKey, uniqueIndex } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -283,6 +283,12 @@ export const notificationSnoozeStatus = pgTable("notification_snooze_status", {
   notificationContactId: integer("notification_contact_id").notNull().references(() => notificationContacts.id),
   snoozedUntil: timestamp("snoozed_until").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => {
+  return {
+    // Add a unique constraint to ensure only one active snooze per device+contact
+    deviceContactIdx: uniqueIndex("notification_snooze_device_contact_idx")
+      .on(table.deviceId, table.notificationContactId),
+  };
 });
 
 export const notificationSnoozeStatusRelations = relations(notificationSnoozeStatus, ({ one }) => ({
