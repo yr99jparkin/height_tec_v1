@@ -40,9 +40,8 @@ async function setupTestData() {
   const expiredDate = new Date();
   expiredDate.setHours(expiredDate.getHours() - 1);
   
-  await db.update(notificationTokens)
-    .set({ expiresAt: expiredDate })
-    .where(eq(notificationTokens.id, expiredToken.id));
+  // Directly use storage method instead to update the token expiry time
+  await storage.markTokenAsExpired(expiredToken.id, expiredDate);
   
   log('Created expired token', 'cleanup-test');
   

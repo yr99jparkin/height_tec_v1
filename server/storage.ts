@@ -603,6 +603,12 @@ export class DatabaseStorage implements IStorage {
       .where(eq(notificationTokens.id, tokenId));
   }
   
+  async markTokenAsExpired(tokenId: string, expiresAt: Date): Promise<void> {
+    await db.update(notificationTokens)
+      .set({ expiresAt })
+      .where(eq(notificationTokens.id, tokenId));
+  }
+  
   async createNotificationHistory(history: InsertNotificationHistory): Promise<NotificationHistory> {
     const [newHistory] = await db.insert(notificationHistory)
       .values(history)

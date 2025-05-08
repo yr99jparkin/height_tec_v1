@@ -35,7 +35,7 @@ const AcknowledgePage = () => {
 
   // Fetch token details
   const { data: tokenDetails, isLoading, error } = useQuery<TokenDetails>({
-    queryKey: ['/api/alerts/token', tokenId],
+    queryKey: [`/api/alerts/token/${tokenId}`],
     enabled: !!tokenId,
   });
 
