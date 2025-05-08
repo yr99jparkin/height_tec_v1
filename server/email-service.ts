@@ -37,9 +37,9 @@ export class EmailService {
     const { device, contact, windSpeed, alertLevel, timestamp, tokens } = params;
 
     // Generate links with tokens
-    const acknowledgeUrl = `${BASE_URL}/alert/acknowledge/${tokens.acknowledge.id}`;
-    const snooze1hUrl = `${BASE_URL}/alert/acknowledge/${tokens.snooze1h.id}?action=snooze_1h`;
-    const snoozeTodayUrl = `${BASE_URL}/alert/acknowledge/${tokens.snoozeToday.id}?action=snooze_today`;
+    const acknowledgeUrl = `${BASE_URL}/token/${tokens.acknowledge.id}`;
+    const snooze1hUrl = `${BASE_URL}/token/${tokens.snooze1h.id}?action=snooze_1h`;
+    const snoozeTodayUrl = `${BASE_URL}/token/${tokens.snoozeToday.id}?action=snooze_today`;
 
     // Format date for display
     const formattedDate = timestamp.toLocaleString();
