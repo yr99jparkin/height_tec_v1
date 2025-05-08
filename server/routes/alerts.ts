@@ -1,7 +1,12 @@
 import { Router, Request, Response } from 'express';
 import { storage } from '../storage';
-import { log } from '../logger';
 import { z } from 'zod';
+
+// Simple logging function
+function log(message: string, category: string = 'alerts') {
+  const timestamp = new Date().toLocaleTimeString();
+  console.log(`${timestamp} [${category}] ${message}`);
+}
 
 const router = Router();
 

@@ -5,8 +5,8 @@ import { storage } from "./storage";
 import { Device, NotificationContact } from "@shared/schema";
 import { NotificationTokenInfo } from "@shared/types";
 
-const APP_BASE_URL = process.env.APP_BASE_URL || "https://www.heighttec.app";
-const EMAIL_FROM = process.env.EMAIL_FROM;
+const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
+const EMAIL_FROM = process.env.EMAIL_FROM || "no-reply@heighttec.app";
 const NOTIFICATION_COOLDOWN_MINUTES = 15; // 15 minutes between notifications for the same device
 
 export class EmailService {
@@ -37,9 +37,9 @@ export class EmailService {
     const { device, contact, windSpeed, alertLevel, timestamp, tokens } = params;
 
     // Generate links with tokens
-    const acknowledgeUrl = `${APP_BASE_URL}/alerts/acknowledge/${tokens.acknowledge.id}`;
-    const snooze1hUrl = `${APP_BASE_URL}/alerts/acknowledge/${tokens.snooze1h.id}`;
-    const snoozeTodayUrl = `${APP_BASE_URL}/alerts/acknowledge/${tokens.snoozeToday.id}`;
+    const acknowledgeUrl = `${BASE_URL}/alert/acknowledge/${tokens.acknowledge.id}`;
+    const snooze1hUrl = `${BASE_URL}/alert/acknowledge/${tokens.snooze1h.id}?action=snooze_1h`;
+    const snoozeTodayUrl = `${BASE_URL}/alert/acknowledge/${tokens.snoozeToday.id}?action=snooze_today`;
 
     // Format date for display
     const formattedDate = timestamp.toLocaleString();
@@ -70,7 +70,7 @@ export class EmailService {
             </tr>
             <tr>
               <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Wind Speed:</strong></td>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${windSpeed.toFixed(1)} km/h</td>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${windSpeed.toFixed(1)} m/s</td>
             </tr>
             <tr>
               <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Alert Level:</strong></td>
@@ -112,7 +112,7 @@ export class EmailService {
 
       // Send the email via Postmark
       const response = await this.client.sendEmail({
-        From: EMAIL_FROM || "no-reply@heighttec.app",
+        From: EMAIL_FROM,
         To: contact.email,
         Subject: subject,
         HtmlBody: htmlContent,
