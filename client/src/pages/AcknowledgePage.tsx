@@ -88,7 +88,7 @@ const AcknowledgePage = () => {
           </CardContent>
           <CardFooter className="flex justify-center">
             <Button asChild>
-              <Link to="/login">Go to Login</Link>
+              <Link to="/auth">Go to Login</Link>
             </Button>
           </CardFooter>
         </Card>
@@ -131,6 +131,11 @@ const AcknowledgePage = () => {
                 <span className={tokenDetails.alertLevel === "red" ? "text-destructive font-bold" : "text-amber-500 font-bold"}>
                   {tokenDetails.alertLevel.toUpperCase()}
                 </span>
+              </div>
+              <Separator />
+              <div className="flex justify-between">
+                <span className="font-medium">Wind Speed:</span>
+                <span className="font-semibold">{tokenDetails.windSpeed.toFixed(1)} m/s</span>
               </div>
             </div>
           </CardContent>
@@ -186,11 +191,23 @@ const AcknowledgePage = () => {
               <span className="font-medium">Location:</span>
               <span>{tokenDetails.location || "Unknown"}</span>
             </div>
+            <Separator />
+            <div className="flex justify-between">
+              <span className="font-medium">Alert Level:</span>
+              <span className={tokenDetails.alertLevel === "red" ? "text-destructive font-bold" : "text-amber-500 font-bold"}>
+                {tokenDetails.alertLevel.toUpperCase()}
+              </span>
+            </div>
+            <Separator />
+            <div className="flex justify-between">
+              <span className="font-medium">Wind Speed:</span>
+              <span className="font-semibold">{tokenDetails.windSpeed.toFixed(1)} m/s</span>
+            </div>
           </div>
         </CardContent>
         <CardFooter className="flex justify-center">
           <Button asChild>
-            <Link to="/login">Go to Dashboard</Link>
+            <Link to="/">Go to Dashboard</Link>
           </Button>
         </CardFooter>
       </Card>
