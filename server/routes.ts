@@ -32,6 +32,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register alert routes - these don't require authentication for token verification
   app.use('/api/alerts', alertsRouter);
+  
+  // Also register alerts router at a client-accessible path matching the client-side routes
+  app.use('/alert', alertsRouter);
 
   // API Routes
   // Get latest wind data for a specific device
