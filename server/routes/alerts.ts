@@ -16,7 +16,7 @@ const acknowledgeSchema = z.object({
 });
 
 // Get token details
-router.get('/acknowledge/:tokenId', async (req: Request, res: Response) => {
+router.get('/token/:tokenId', async (req: Request, res: Response) => {
   try {
     const { tokenId } = req.params;
     
