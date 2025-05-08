@@ -568,11 +568,14 @@ export class DatabaseStorage implements IStorage {
 
   // Email notification operations
   async createNotificationToken(deviceId: string, notificationContactId: number, action: string): Promise<NotificationToken> {
+    // Generate a UUID for the token ID
+    const id = require('uuid').v4();
+    
     // Create a token that expires in 1 hour
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
     
     const [token] = await db.insert(notificationTokens).values({
-      id: action, // Will be replaced with actual UUID in the email service
+      id,
       deviceId,
       notificationContactId,
       action,

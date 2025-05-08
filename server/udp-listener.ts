@@ -25,11 +25,11 @@ async function getLocationFromCoordinates(latitude: number, longitude: number): 
     
     if (response.data.status === 'OK' && response.data.results && response.data.results.length > 0) {
       // Log full response for debugging
-      log(`Geocoding response for ${latitude},${longitude}: ${JSON.stringify(response.data.results[0].address_components.map(c => ({ name: c.long_name, types: c.types })))}`, "udp");
+      log(`Geocoding response for ${latitude},${longitude}: ${JSON.stringify(response.data.results[0].address_components.map((c: any) => ({ name: c.long_name, types: c.types })))}`, "udp");
       
       // First check for Australian results
-      const isAustralian = response.data.results.some(result => 
-        result.address_components.some(component => 
+      const isAustralian = response.data.results.some((result: any) => 
+        result.address_components.some((component: any) => 
           component.types.includes('country') && component.short_name === 'AU'
         )
       );
@@ -230,6 +230,22 @@ export function setupUdpListener(httpServer: Server) {
       });
 
       log(`Processed wind data for device ${data.deviceId}`, "udp");
+      
+      // Process email notifications if alert thresholds are exceeded
+      if (amberAlert || redAlert) {
+        const alertLevel = redAlert ? "red" : "amber";
+        log(`${alertLevel.toUpperCase()} alert triggered for device ${data.deviceId} - Wind speed: ${data.windSpeed}`, "udp");
+        
+        // Send email notifications asynchronously to avoid delaying the UDP processing
+        emailService.processWindAlert({
+          deviceId: data.deviceId,
+          windSpeed: data.windSpeed,
+          alertLevel: alertLevel as "amber" | "red",
+          timestamp: new Date(data.timestamp)
+        }).catch(error => {
+          log(`Error sending alert notifications: ${error}`, "udp");
+        });
+      }
     } catch (error) {
       log(`Error processing UDP message: ${error}`, "udp");
     }

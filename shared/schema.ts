@@ -160,6 +160,7 @@ export const insertDeviceSchema = createInsertSchema(devices).pick({
   latitude: true,
   longitude: true,
   active: true,
+  lastSeen: true,
 });
 
 export const insertDeviceStockSchema = createInsertSchema(deviceStock).pick({

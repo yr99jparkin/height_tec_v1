@@ -174,17 +174,15 @@ export class EmailService {
     snoozeToday: NotificationTokenInfo;
   }> {
     const createToken = async (action: "acknowledge" | "snooze_1h" | "snooze_today"): Promise<NotificationTokenInfo> => {
-      const id = uuidv4();
-      const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours expiry
-      
-      await storage.createNotificationToken(deviceId, notificationContactId, action);
+      // Create the token and get the generated UUID
+      const token = await storage.createNotificationToken(deviceId, notificationContactId, action);
       
       return {
-        id,
+        id: token.id,
         deviceId,
         notificationContactId,
         action,
-        expiresAt: expiresAt.toISOString()
+        expiresAt: token.expiresAt.toISOString()
       };
     };
     
