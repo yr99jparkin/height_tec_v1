@@ -1,6 +1,5 @@
-import * as postmark from "postmark";
-const { ServerClient } = postmark;
-import { v4 as uuidv4 } from "uuid";
+import { ServerClient } from "postmark";
+import { randomUUID } from "crypto";
 import { log } from "./vite";
 import { storage } from "./storage";
 import { Device, NotificationContact } from "@shared/schema";

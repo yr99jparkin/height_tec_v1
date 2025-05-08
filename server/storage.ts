@@ -9,6 +9,7 @@ import type { User, InsertUser, Device, InsertDevice, DeviceStock, InsertDeviceS
   NotificationSnoozeStatus, InsertNotificationSnoozeStatus } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lte, gte, lt, gt, sql, max, avg, inArray, sum } from "drizzle-orm";
+import { randomUUID } from "crypto";
 import { WindStatsResponse, DeviceWithLatestData } from "@shared/types";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
@@ -573,7 +574,7 @@ export class DatabaseStorage implements IStorage {
   // Email notification operations
   async createNotificationToken(deviceId: string, notificationContactId: number, action: string): Promise<NotificationToken> {
     // Generate a UUID for the token ID
-    const id = require('uuid').v4();
+    const id = randomUUID();
     
     // Create a token that expires in 1 hour
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000);

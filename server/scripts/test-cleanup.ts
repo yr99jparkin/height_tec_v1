@@ -30,39 +30,39 @@ async function setupTestData() {
   log(`Using notification contact ${contactId} for cleanup test`, 'cleanup-test');
   
   // Create an expired token (1 hour ago)
+  const expiredToken = await storage.createNotificationToken(
+    deviceId,
+    contactId,
+    'test_expired'
+  );
+  
+  // Update the token to make it expired
   const expiredDate = new Date();
   expiredDate.setHours(expiredDate.getHours() - 1);
   
-  await storage.createNotificationToken({
-    id: randomUUID(),
-    deviceId,
-    notificationContactId: contactId,
-    action: 'test_expired',
-    expiresAt: expiredDate,
-    used: false
-  });
+  await db.update(notificationTokens)
+    .set({ expiresAt: expiredDate })
+    .where(eq(notificationTokens.id, expiredToken.id));
+  
   log('Created expired token', 'cleanup-test');
   
   // Create a used token
-  await storage.createNotificationToken({
-    id: randomUUID(),
+  const usedToken = await storage.createNotificationToken(
     deviceId,
-    notificationContactId: contactId,
-    action: 'test_used',
-    expiresAt: new Date(Date.now() + 3600 * 1000), // Valid for 1 hour
-    used: true
-  });
+    contactId,
+    'test_used'
+  );
+  
+  // Mark it as used
+  await storage.markTokenAsUsed(usedToken.id);
   log('Created used token', 'cleanup-test');
   
   // Create an active token (should not be deleted)
-  await storage.createNotificationToken({
-    id: randomUUID(),
+  await storage.createNotificationToken(
     deviceId,
-    notificationContactId: contactId,
-    action: 'test_active',
-    expiresAt: new Date(Date.now() + 3600 * 1000), // Valid for 1 hour
-    used: false
-  });
+    contactId,
+    'test_active'
+  );
   log('Created active token', 'cleanup-test');
   
   // Create an expired snooze
