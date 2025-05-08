@@ -6,7 +6,7 @@
 
 import { storage } from '../storage';
 import { log } from '../logger';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 async function setupTestData() {
   // Get a device ID for testing
@@ -34,7 +34,7 @@ async function setupTestData() {
   expiredDate.setHours(expiredDate.getHours() - 1);
   
   await storage.createNotificationToken({
-    id: uuidv4(),
+    id: randomUUID(),
     deviceId,
     notificationContactId: contactId,
     action: 'test_expired',
@@ -45,7 +45,7 @@ async function setupTestData() {
   
   // Create a used token
   await storage.createNotificationToken({
-    id: uuidv4(),
+    id: randomUUID(),
     deviceId,
     notificationContactId: contactId,
     action: 'test_used',
@@ -56,7 +56,7 @@ async function setupTestData() {
   
   // Create an active token (should not be deleted)
   await storage.createNotificationToken({
-    id: uuidv4(),
+    id: randomUUID(),
     deviceId,
     notificationContactId: contactId,
     action: 'test_active',
