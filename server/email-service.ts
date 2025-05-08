@@ -1,4 +1,5 @@
-import { ServerClient } from "postmark";
+import * as postmark from "postmark";
+const { ServerClient } = postmark;
 import { v4 as uuidv4 } from "uuid";
 import { log } from "./vite";
 import { storage } from "./storage";
