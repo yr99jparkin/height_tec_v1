@@ -78,3 +78,31 @@ export interface UpdateDeviceRequest {
   deviceName?: string;
   project?: string;
 }
+
+// Email notification types
+export interface EmailNotificationRequest {
+  deviceId: string;
+  windSpeed: number;
+  alertLevel: "amber" | "red";
+  timestamp: string;
+  notificationContactId: number;
+}
+
+export interface NotificationTokenInfo {
+  id: string;
+  deviceId: string;
+  notificationContactId: number;
+  action: "acknowledge" | "snooze_1h" | "snooze_today";
+  expiresAt: string;
+}
+
+export interface NotificationAcknowledgement {
+  tokenId: string;
+  action: "acknowledge" | "snooze_1h" | "snooze_today";
+}
+
+export interface NotificationSnoozeInfo {
+  deviceId: string;
+  notificationContactId: number;
+  snoozedUntil: string;
+}

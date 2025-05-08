@@ -1,10 +1,14 @@
-import { users, devices, deviceStock, windAlertThresholds, windData, windDataHistorical, notificationContacts } from "@shared/schema";
+import { users, devices, deviceStock, windAlertThresholds, windData, windDataHistorical, 
+  notificationContacts, notificationHistory, notificationTokens, notificationSnoozeStatus } from "@shared/schema";
 import type { User, InsertUser, Device, InsertDevice, DeviceStock, InsertDeviceStock, 
   WindAlertThreshold, InsertWindAlertThreshold, WindData, InsertWindData, 
   WindDataHistorical, InsertWindDataHistorical,
-  NotificationContact, InsertNotificationContact } from "@shared/schema";
+  NotificationContact, InsertNotificationContact,
+  NotificationHistory, InsertNotificationHistory,
+  NotificationToken, InsertNotificationToken,
+  NotificationSnoozeStatus, InsertNotificationSnoozeStatus } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, desc, lte, gte, lt, sql, max, avg, inArray, sum } from "drizzle-orm";
+import { eq, and, desc, lte, gte, lt, gt, sql, max, avg, inArray, sum } from "drizzle-orm";
 import { WindStatsResponse, DeviceWithLatestData } from "@shared/types";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
@@ -59,6 +63,20 @@ export interface IStorage {
   aggregateWindData(intervalMinutes: number): Promise<void>;
   purgeOldWindData(olderThanMinutes: number): Promise<void>;
   getLastProcessedInterval(): Promise<Date | null>;
+
+  // Email notification operations
+  createNotificationToken(deviceId: string, notificationContactId: number, action: string): Promise<NotificationToken>;
+  getNotificationToken(tokenId: string): Promise<NotificationToken | undefined>;
+  markTokenAsUsed(tokenId: string): Promise<void>;
+  createNotificationHistory(history: InsertNotificationHistory): Promise<NotificationHistory>;
+  getNotificationHistory(deviceId: string, notificationContactId: number, startTime: Date, endTime: Date): Promise<NotificationHistory[]>;
+  updateNotificationAcknowledgement(notificationId: number, action: string): Promise<void>;
+  getLatestNotificationByDeviceAndContact(deviceId: string, notificationContactId: number): Promise<NotificationHistory | undefined>;
+  
+  // Notification snooze operations
+  createNotificationSnooze(snooze: InsertNotificationSnoozeStatus): Promise<NotificationSnoozeStatus>;
+  getActiveSnoozeByDeviceAndContact(deviceId: string, notificationContactId: number): Promise<NotificationSnoozeStatus | undefined>;
+  deleteExpiredSnoozes(): Promise<void>;
 
   sessionStore: SessionStore;
 }
@@ -546,6 +564,124 @@ export class DatabaseStorage implements IStorage {
       .from(windDataHistorical);
     
     return result?.maxIntervalEnd || null;
+  }
+
+  // Email notification operations
+  async createNotificationToken(deviceId: string, notificationContactId: number, action: string): Promise<NotificationToken> {
+    // Create a token that expires in 1 hour
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+    
+    const [token] = await db.insert(notificationTokens).values({
+      id: action, // Will be replaced with actual UUID in the email service
+      deviceId,
+      notificationContactId,
+      action,
+      expiresAt,
+      used: false
+    }).returning();
+    
+    return token;
+  }
+  
+  async getNotificationToken(tokenId: string): Promise<NotificationToken | undefined> {
+    const [token] = await db.select().from(notificationTokens)
+      .where(eq(notificationTokens.id, tokenId));
+    return token;
+  }
+  
+  async markTokenAsUsed(tokenId: string): Promise<void> {
+    await db.update(notificationTokens)
+      .set({ used: true })
+      .where(eq(notificationTokens.id, tokenId));
+  }
+  
+  async createNotificationHistory(history: InsertNotificationHistory): Promise<NotificationHistory> {
+    const [newHistory] = await db.insert(notificationHistory)
+      .values(history)
+      .returning();
+    return newHistory;
+  }
+  
+  async getNotificationHistory(
+    deviceId: string,
+    notificationContactId: number, 
+    startTime: Date, 
+    endTime: Date
+  ): Promise<NotificationHistory[]> {
+    return await db.select().from(notificationHistory)
+      .where(
+        and(
+          eq(notificationHistory.deviceId, deviceId),
+          eq(notificationHistory.notificationContactId, notificationContactId),
+          gte(notificationHistory.sentAt, startTime),
+          lte(notificationHistory.sentAt, endTime)
+        )
+      )
+      .orderBy(desc(notificationHistory.sentAt));
+  }
+  
+  async updateNotificationAcknowledgement(notificationId: number, action: string): Promise<void> {
+    await db.update(notificationHistory)
+      .set({
+        acknowledged: true,
+        acknowledgedAt: new Date(),
+        acknowledgedAction: action
+      })
+      .where(eq(notificationHistory.id, notificationId));
+  }
+  
+  async getLatestNotificationByDeviceAndContact(
+    deviceId: string, 
+    notificationContactId: number
+  ): Promise<NotificationHistory | undefined> {
+    const [notification] = await db.select().from(notificationHistory)
+      .where(
+        and(
+          eq(notificationHistory.deviceId, deviceId),
+          eq(notificationHistory.notificationContactId, notificationContactId)
+        )
+      )
+      .orderBy(desc(notificationHistory.sentAt))
+      .limit(1);
+    
+    return notification;
+  }
+  
+  // Notification snooze operations
+  async createNotificationSnooze(snooze: InsertNotificationSnoozeStatus): Promise<NotificationSnoozeStatus> {
+    const [newSnooze] = await db.insert(notificationSnoozeStatus)
+      .values(snooze)
+      .returning();
+    return newSnooze;
+  }
+  
+  async getActiveSnoozeByDeviceAndContact(
+    deviceId: string, 
+    notificationContactId: number
+  ): Promise<NotificationSnoozeStatus | undefined> {
+    // Only get active snoozes (snoozedUntil > current time)
+    const now = new Date();
+    
+    const [snooze] = await db.select().from(notificationSnoozeStatus)
+      .where(
+        and(
+          eq(notificationSnoozeStatus.deviceId, deviceId),
+          eq(notificationSnoozeStatus.notificationContactId, notificationContactId),
+          gt(notificationSnoozeStatus.snoozedUntil, now)
+        )
+      )
+      .orderBy(desc(notificationSnoozeStatus.createdAt))
+      .limit(1);
+    
+    return snooze;
+  }
+  
+  async deleteExpiredSnoozes(): Promise<void> {
+    // Delete all snoozes that have expired
+    const now = new Date();
+    
+    await db.delete(notificationSnoozeStatus)
+      .where(lt(notificationSnoozeStatus.snoozedUntil, now));
   }
 }
 

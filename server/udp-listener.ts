@@ -5,6 +5,7 @@ import { AddressInfo } from "net";
 import { log } from "./vite";
 import { WindDataPacket, WindDataWithAlert } from "@shared/types";
 import axios from "axios";
+import { emailService } from "./email-service";
 
 // Default UDP port
 const DEFAULT_UDP_PORT = 8125;
