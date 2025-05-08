@@ -10,6 +10,7 @@ import { AddDeviceRequest, ExportDataParams, NotificationContactRequest, UpdateD
 import { z } from "zod";
 import { format } from "date-fns";
 import path from "path";
+import alertsRouter from "./routes/alerts";
 
 // Middleware to check if user is authenticated
 const isAuthenticated = (req: Request, res: Response, next: Function) => {
@@ -28,6 +29,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Setup UDP listener for device data
   setupUdpListener(httpServer);
+
+  // Register alert routes - these don't require authentication for token verification
+  app.use('/api/alerts', alertsRouter);
 
   // API Routes
   // Get latest wind data for a specific device
