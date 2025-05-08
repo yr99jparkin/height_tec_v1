@@ -76,7 +76,11 @@ export interface IStorage {
   // Notification snooze operations
   createNotificationSnooze(snooze: InsertNotificationSnoozeStatus): Promise<NotificationSnoozeStatus>;
   getActiveSnoozeByDeviceAndContact(deviceId: string, notificationContactId: number): Promise<NotificationSnoozeStatus | undefined>;
-  deleteExpiredSnoozes(): Promise<void>;
+  deleteExpiredSnoozes(): Promise<number>;
+  
+  // Cleanup operations
+  deleteExpiredAndUsedTokens(): Promise<number>;
+  archiveOldNotificationHistory?(days: number): Promise<number>; // Optional method for archiving old history
 
   sessionStore: SessionStore;
 }
