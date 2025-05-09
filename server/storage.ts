@@ -73,6 +73,7 @@ export interface IStorage {
   getNotificationHistory(deviceId: string, notificationContactId: number, startTime: Date, endTime: Date): Promise<NotificationHistory[]>;
   updateNotificationAcknowledgement(notificationId: number, action: string): Promise<void>;
   getLatestNotificationByDeviceAndContact(deviceId: string, notificationContactId: number): Promise<NotificationHistory | undefined>;
+  getRecentUnacknowledgedNotificationsCount(deviceId: string, notificationContactId: number, sinceTime: Date): Promise<number>;
   
   // Notification snooze operations
   createNotificationSnooze(snooze: InsertNotificationSnoozeStatus): Promise<NotificationSnoozeStatus>;
@@ -669,6 +670,28 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
     
     return notification;
+  }
+  
+  async getRecentUnacknowledgedNotificationsCount(
+    deviceId: string, 
+    notificationContactId: number,
+    sinceTime: Date
+  ): Promise<number> {
+    // Get unacknowledged notifications within the specified time period
+    const result = await db.select({
+      count: count()
+    })
+    .from(notificationHistory)
+    .where(
+      and(
+        eq(notificationHistory.deviceId, deviceId),
+        eq(notificationHistory.notificationContactId, notificationContactId),
+        eq(notificationHistory.acknowledged, false),
+        gte(notificationHistory.sentAt, sinceTime)
+      )
+    );
+    
+    return Number(result[0]?.count || 0);
   }
   
   // Notification snooze operations

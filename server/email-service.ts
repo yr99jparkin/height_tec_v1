@@ -122,7 +122,7 @@ export class EmailService {
   }
 
   /**
-   * Checks if a notification should be sent based on cooldown period and snooze settings
+   * Checks if a notification should be sent based on cooldown period, snooze settings, and unacknowledged notification count
    */
   async shouldSendNotification(deviceId: string, notificationContactId: number, currentAlertLevel: "amber" | "red"): Promise<boolean> {
     // Check if contact has an active snooze
@@ -153,6 +153,22 @@ export class EmailService {
       }
       
       log(`Notification skipped due to cooldown period (last sent: ${latestNotification.sentAt.toLocaleString()})`, "email");
+      return false;
+    }
+    
+    // Check for maximum notification limit (3 unacknowledged notifications)
+    const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    
+    // Get recent unacknowledged notifications within the past 24 hours
+    const recentUnacknowledgedCount = await storage.getRecentUnacknowledgedNotificationsCount(
+      deviceId, 
+      notificationContactId,
+      dayAgo
+    );
+    
+    // If 3 or more unacknowledged notifications, don't send another one
+    if (recentUnacknowledgedCount >= 3) {
+      log(`Notification skipped due to reaching maximum consecutive notifications (${recentUnacknowledgedCount}) for contact ${notificationContactId}`, "email");
       return false;
     }
     
