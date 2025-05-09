@@ -10,6 +10,9 @@ function log(message: string, category: string = 'alerts') {
 
 const router = Router();
 
+// Base URL for redirects
+const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
+
 // Schema for acknowledgment action
 const acknowledgeSchema = z.object({
   action: z.enum(['snooze_3h', 'snooze_today']),
@@ -153,6 +156,37 @@ router.post('/acknowledge/:tokenId', async (req: Request, res: Response) => {
   } catch (error) {
     log(`Error acknowledging alert: ${error}`, 'alerts');
     return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Unsubscribe route
+router.get('/unsubscribe/:contactId/:deviceId', async (req: Request, res: Response) => {
+  try {
+    const { contactId, deviceId } = req.params;
+    const contactIdNum = parseInt(contactId, 10);
+    
+    if (isNaN(contactIdNum)) {
+      return res.status(400).json({ error: 'Invalid contact ID' });
+    }
+    
+    // Verify the contact and device exist
+    const contact = await storage.getNotificationContactsByDeviceId(deviceId)
+      .then(contacts => contacts.find(c => c.id === contactIdNum));
+    
+    if (!contact) {
+      return res.status(404).json({ error: 'Contact not found for this device' });
+    }
+    
+    // Create a redirectUrl that opens the device detail modal with notifications tab
+    const redirectUrl = `${BASE_URL}/?deviceId=${deviceId}&tab=notifications&contactId=${contactIdNum}`;
+    
+    // Redirect to the main page with special parameters
+    res.redirect(redirectUrl);
+    
+    log(`Unsubscribe request for contact ${contactId} (${contact.email}) from device ${deviceId}`, 'alerts');
+  } catch (error) {
+    log(`Error processing unsubscribe request: ${error}`, 'alerts');
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

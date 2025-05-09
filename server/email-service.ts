@@ -47,6 +47,9 @@ export class EmailService {
 
     const locationText = device.location ? `${device.location}` : "Unknown Location";
 
+    // Create unsubscribe link
+    const unsubscribeUrl = `${BASE_URL}/unsubscribe/${contact.id}/${device.deviceId}`;
+    
     // Create HTML email content
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -92,6 +95,8 @@ export class EmailService {
           
           <p style="margin-top: 30px; font-size: 12px; color: #777;">
             This is an automated message. Please do not reply to this email.
+            <br/>
+            <a href="${unsubscribeUrl}" style="color: #777;">Unsubscribe</a> from notifications for this device.
           </p>
         </div>
       </div>
