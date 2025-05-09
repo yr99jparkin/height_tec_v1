@@ -12,10 +12,12 @@ import { AddDeviceModal } from "@/components/modals/add-device-modal";
 import { GoogleMap } from "@/components/ui/google-map";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 export default function DevicesPage() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -44,6 +46,13 @@ export default function DevicesPage() {
       
       if (contactIdParam) {
         setFocusedContactId(parseInt(contactIdParam, 10));
+        
+        // Show toast to let user know they're in unsubscribe flow
+        toast({
+          title: "Manage notification settings",
+          description: "You can update or unsubscribe from notifications for this device.",
+          duration: 5000
+        });
       }
       
       // Open the device detail modal
