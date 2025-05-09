@@ -18,7 +18,7 @@ const AcknowledgePage = () => {
 
   // Extract action from query string if present
   const searchParams = new URLSearchParams(window.location.search);
-  const action = searchParams.get('action') || "acknowledge";
+  const action = searchParams.get('action') || "snooze_1h";
 
   // Define interface for token details
   interface TokenDetails {
@@ -98,10 +98,8 @@ const AcknowledgePage = () => {
 
   // Show confirmation screen first
   if (!hasConfirmed) {
-    let actionText = "acknowledge this alert";
-    if (action === "snooze_1h") {
-      actionText = "acknowledge and snooze alerts for 1 hour";
-    } else if (action === "snooze_today") {
+    let actionText = "acknowledge and snooze alerts for 1 hour";
+    if (action === "snooze_today") {
       actionText = "acknowledge and snooze alerts for the rest of today";
     }
 
@@ -163,10 +161,8 @@ const AcknowledgePage = () => {
   }
 
   // Show success screen after confirmation
-  let successMessage = "Alert has been acknowledged successfully.";
-  if (action === "snooze_1h") {
-    successMessage = "Alerts have been snoozed for 1 hour.";
-  } else if (action === "snooze_today") {
+  let successMessage = "Alerts have been snoozed for 1 hour.";
+  if (action === "snooze_today") {
     successMessage = "Alerts have been snoozed for the rest of today.";
   }
 

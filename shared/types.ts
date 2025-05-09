@@ -92,13 +92,13 @@ export interface NotificationTokenInfo {
   id: string;
   deviceId: string;
   notificationContactId: number;
-  action: "acknowledge" | "snooze_1h" | "snooze_today";
+  action: "snooze_1h" | "snooze_today";
   expiresAt: string;
 }
 
 export interface NotificationAcknowledgement {
   tokenId: string;
-  action: "acknowledge" | "snooze_1h" | "snooze_today";
+  action: "snooze_1h" | "snooze_today";
 }
 
 export interface NotificationSnoozeInfo {
