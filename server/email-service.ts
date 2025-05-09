@@ -47,8 +47,8 @@ export class EmailService {
 
     const locationText = device.location ? `${device.location}` : "Unknown Location";
 
-    // Create unsubscribe link - direct link now handles deletion without authentication
-    const unsubscribeUrl = `${BASE_URL}/alert/unsubscribe/${contact.id}/${device.deviceId}`;
+    // Create unsubscribe link - using the API endpoint directly as it now handles both browser and API requests
+    const unsubscribeUrl = `${BASE_URL}/api/alerts/unsubscribe/${contact.id}/${device.deviceId}`;
     
     // Create HTML email content
     const htmlContent = `

@@ -159,7 +159,7 @@ router.post('/acknowledge/:tokenId', async (req: Request, res: Response) => {
   }
 });
 
-// Unsubscribe GET route (legacy) - redirects to the frontend unsubscribe page
+// Unsubscribe GET route (legacy) - redirects to the frontend unsubscribe page or handles direct unsubscribes
 router.get('/unsubscribe/:contactId/:deviceId', async (req: Request, res: Response) => {
   try {
     const { contactId, deviceId } = req.params;
@@ -177,22 +177,26 @@ router.get('/unsubscribe/:contactId/:deviceId', async (req: Request, res: Respon
       return res.status(404).json({ error: 'Contact not found for this device' });
     }
     
-    // CRITICAL: Check for potential redirect loops
+    // Check if this is an API request (not from a browser)
+    const acceptHeader = req.headers.accept || '';
+    const wantsJson = acceptHeader.includes('application/json');
     const isApiRequest = req.originalUrl?.includes('/api/') || req.path?.includes('/api/');
-    const hasRedirectLoopHeader = req.headers['x-redirected-from'] === 'server';
-    const redirectParam = req.query.redirected === 'true';
     
-    // If any of these conditions are true, don't redirect again
-    if (isApiRequest || hasRedirectLoopHeader || redirectParam) {
-      log(`Prevented redirect loop for unsubscribe request: ${contactId}/${deviceId}`, 'alerts');
+    // If client wants JSON and it's an API request, handle directly with a POST-like operation
+    if (wantsJson && isApiRequest) {
+      log(`Direct unsubscribe for API request: ${contactId}/${deviceId}`, 'alerts');
+      
+      // Delete the contact record
+      await storage.deleteNotificationContact(contactIdNum);
+      
+      // Return success response
       return res.status(200).json({ 
-        message: 'Use POST method to complete unsubscribe action',
-        contactId,
-        deviceId
+        success: true, 
+        message: 'Contact unsubscribed successfully' 
       });
     }
     
-    // Redirect to the frontend unsubscribe route with a parameter to prevent loops
+    // For browser requests, redirect to the frontend unsubscribe route
     const redirectUrl = `${BASE_URL}/alert/unsubscribe/${contactId}/${deviceId}?redirected=true`;
     log(`Redirecting to frontend: ${redirectUrl}`, 'alerts');
     
