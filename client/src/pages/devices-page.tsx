@@ -23,7 +23,7 @@ export default function DevicesPage() {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [addDeviceModalOpen, setAddDeviceModalOpen] = useState(false);
   const [openNotificationsTab, setOpenNotificationsTab] = useState(false);
-  const [focusedContactId, setFocusedContactId] = useState<number | null>(null);
+  // Removed focusedContactId state (was used for the old unsubscribe flow)
 
   // Fetch devices
   const { data: devices = [], isLoading } = useQuery<DeviceWithLatestData[]>({
@@ -152,7 +152,6 @@ export default function DevicesPage() {
         onOpenChange={setDetailModalOpen}
         deviceId={selectedDeviceId}
         openNotificationsTab={openNotificationsTab}
-        focusedContactId={focusedContactId}
       />
       
       <AddDeviceModal
