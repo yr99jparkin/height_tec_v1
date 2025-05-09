@@ -10,8 +10,23 @@ function log(message: string, category: string = 'alerts') {
 
 const router = Router();
 
+// Get the appropriate base URL depending on environment
+const getBaseUrl = () => {
+  if (process.env.BASE_URL) {
+    return process.env.BASE_URL;
+  }
+  
+  // For production environment, use the production domain
+  if (process.env.NODE_ENV === 'production') {
+    return "https://heighttec.app";
+  }
+  
+  // Default for development
+  return "http://localhost:5000";
+};
+
 // Base URL for redirects
-const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
+const BASE_URL = getBaseUrl();
 
 // Schema for acknowledgment action
 const acknowledgeSchema = z.object({
