@@ -150,15 +150,25 @@ export class DatabaseStorage implements IStorage {
     const device = await this.getDeviceById(id);
     if (!device) return;
 
-    // Delete related data first due to foreign key constraints
-    await db.delete(windAlertThresholds).where(eq(windAlertThresholds.deviceId, device.deviceId));
+    // Delete notification-related tables first
+    // 1. Delete notification tokens
+    await db.delete(notificationTokens).where(eq(notificationTokens.deviceId, device.deviceId));
+    
+    // 2. Delete notification snooze status
+    await db.delete(notificationSnoozeStatus).where(eq(notificationSnoozeStatus.deviceId, device.deviceId));
+    
+    // 3. Delete notification history
+    await db.delete(notificationHistory).where(eq(notificationHistory.deviceId, device.deviceId));
+    
+    // 4. Delete notification contacts
+    await db.delete(notificationContacts).where(eq(notificationContacts.deviceId, device.deviceId));
     
     // Delete wind data from both tables
     await db.delete(windData).where(eq(windData.deviceId, device.deviceId));
     await db.delete(windDataHistorical).where(eq(windDataHistorical.deviceId, device.deviceId));
     
-    // Delete notification contacts
-    await db.delete(notificationContacts).where(eq(notificationContacts.deviceId, device.deviceId));
+    // Delete threshold settings
+    await db.delete(windAlertThresholds).where(eq(windAlertThresholds.deviceId, device.deviceId));
     
     // Finally delete the device
     await db.delete(devices).where(eq(devices.id, id));
