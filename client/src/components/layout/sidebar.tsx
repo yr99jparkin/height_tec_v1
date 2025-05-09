@@ -1,14 +1,23 @@
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Wind, BarChart2, Bell, Settings } from "lucide-react";
+import { Wind, BarChart2, Bell, Settings, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 
 export function Sidebar() {
   const [location] = useLocation();
-
-  const navItems = [
-    { icon: Wind, label: "Devices", href: "/" }
+  const { user } = useAuth();
+  
+  // Base navigation items
+  const baseNavItems = [
+    { icon: Wind, label: "Devices", href: "/" },
+    { icon: BarChart2, label: "Reports", href: "/reports" }
   ];
+  
+  // Add admin link if user is an admin
+  const navItems = user?.isAdmin 
+    ? [...baseNavItems, { icon: ShieldAlert, label: "Admin", href: "/admin" }]
+    : baseNavItems;
 
   return (
     <aside className="w-16 md:w-64 bg-white border-r border-neutral-300 flex-shrink-0">

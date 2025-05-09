@@ -3,9 +3,10 @@ import dgram from "dgram";
 
 const client = dgram.createSocket("udp4");
 
-// Get server from command line or use default
-// Use heighttec.app when running in production mode
-const SERVER_HOST = process.env.SERVER_HOST || "0.0.0.0";
+// Get environment variables with production defaults
+const isProduction = process.env.NODE_ENV === "production";
+// In production, send to heighttec.app by default
+const SERVER_HOST = process.env.SERVER_HOST || (isProduction ? "heighttec.app" : "0.0.0.0");
 const UDP_PORT = parseInt(process.env.UDP_PORT || "8125");
 const DEVICE_ID = process.env.DEVICE_ID || "HT-ANEM-001";
 const WIND_SPEED = parseInt(process.env.WIND_SPEED || "35");

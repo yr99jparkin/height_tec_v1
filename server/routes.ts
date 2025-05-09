@@ -11,6 +11,7 @@ import { z } from "zod";
 import { format } from "date-fns";
 import path from "path";
 import alertsRouter from "./routes/alerts";
+import { runSimulation } from "./scripts/run-simulation";
 
 // Middleware to check if user is authenticated
 const isAuthenticated = (req: Request, res: Response, next: Function) => {
@@ -43,6 +44,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Also register alerts router at a client-accessible path matching the client-side routes
   app.use('/alert', alertsRouter);
+  
+  // Admin Routes
+  app.post("/api/admin/simulate-data", isAdmin, (req, res) => {
+    try {
+      const deviceId = req.body.deviceId;
+      const windSpeed = req.body.windSpeed ? parseInt(req.body.windSpeed) : undefined;
+      
+      // Run simulation
+      const result = runSimulation({
+        deviceId,
+        windSpeed
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error("[admin] Error running simulation:", error);
+      res.status(500).json({ 
+        message: "Error running simulation",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 
   // API Routes
   // Get latest wind data for a specific device
