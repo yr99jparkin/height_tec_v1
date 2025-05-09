@@ -93,11 +93,14 @@ export class EmailService {
             </a>
           </div>
           
-          <p style="margin-top: 30px; font-size: 12px; color: #777;">
-            This is an automated message. Please do not reply to this email.
-            <br/>
-            <a href="${unsubscribeUrl}" style="color: #777;">Unsubscribe</a> from notifications for this device.
-          </p>
+          <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 15px;">
+            <p style="font-size: 14px;">
+              <a href="${unsubscribeUrl}" style="color: #E53935; text-decoration: underline;">Click here to unsubscribe or manage your notification settings</a> for this device.
+            </p>
+            <p style="font-size: 12px; color: #777; margin-top: 10px;">
+              This is an automated message. Please do not reply to this email.
+            </p>
+          </div>
         </div>
       </div>
     `;
