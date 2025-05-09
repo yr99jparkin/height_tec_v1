@@ -46,7 +46,7 @@ export default function AdminPage() {
     onSuccess: (data) => {
       toast({
         title: "Simulation started",
-        description: `Successfully triggered ${data.count} data points for simulation.`,
+        description: `Successfully triggered ${data.processed} data points for simulation.`,
       });
       setIsSimulating(false);
       
@@ -208,8 +208,9 @@ export default function AdminPage() {
               <div className="space-y-2">
                 <h3 className="font-medium">Simulation Process</h3>
                 <p className="text-sm text-muted-foreground">
-                  When you trigger a simulation, the system will process 5 simulated data points with customizable intervals
-                  directly in the application. This bypasses the need for UDP ports and works in all environments.
+                  When you trigger a simulation, the system will process the specified number of simulated data points
+                  with customizable intervals directly in the application. This bypasses the need for UDP ports and
+                  works in all environments.
                 </p>
                 <h3 className="font-medium mt-4">Advanced Settings</h3>
                 <p className="text-sm text-muted-foreground">
