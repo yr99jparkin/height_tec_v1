@@ -46,7 +46,7 @@ export default function AdminPage() {
     onSuccess: (data) => {
       toast({
         title: "Simulation started",
-        description: `Successfully triggered ${data.processed} data points for simulation.`,
+        description: `Successfully triggered ${data.count} data points for simulation.`,
       });
       setIsSimulating(false);
       

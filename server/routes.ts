@@ -117,7 +117,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gpsCoordinates
       });
       
-      res.json(result);
+      // Ensure we send the count properly to the client
+      res.json({
+        ...result,
+        count: count || 5 // Use the requested count or default to 5
+      });
     } catch (error) {
       console.error("[admin] Error running simulation:", error);
       res.status(500).json({ 
