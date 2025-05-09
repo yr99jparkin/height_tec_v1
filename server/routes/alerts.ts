@@ -12,7 +12,7 @@ const router = Router();
 
 // Schema for acknowledgment action
 const acknowledgeSchema = z.object({
-  action: z.enum(['snooze_1h', 'snooze_today']),
+  action: z.enum(['snooze_3h', 'snooze_today']),
 });
 
 // Get token details
@@ -116,11 +116,11 @@ router.post('/acknowledge/:tokenId', async (req: Request, res: Response) => {
     await storage.updateNotificationAcknowledgement(notification.id, action);
     
     // If the action includes snoozing, create a snooze record
-    if (action === 'snooze_1h' || action === 'snooze_today') {
+    if (action === 'snooze_3h' || action === 'snooze_today') {
       // Calculate snooze end time
       let snoozedUntil: Date;
       
-      if (action === 'snooze_1h') {
+      if (action === 'snooze_3h') {
         // Snooze for 3 hours from now
         snoozedUntil = new Date(Date.now() + 3 * 60 * 60 * 1000);
       } else {

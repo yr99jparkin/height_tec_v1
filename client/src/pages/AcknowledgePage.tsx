@@ -18,7 +18,7 @@ const AcknowledgePage = () => {
 
   // Extract action from query string if present
   const searchParams = new URLSearchParams(window.location.search);
-  const action = searchParams.get('action') || "snooze_1h";
+  const action = searchParams.get('action') || "snooze_3h";
 
   // Define interface for token details
   interface TokenDetails {

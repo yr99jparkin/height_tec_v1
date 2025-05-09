@@ -240,7 +240,7 @@ export const notificationHistory = pgTable("notification_history", {
   sentAt: timestamp("sent_at").notNull(),
   acknowledged: boolean("acknowledged").default(false).notNull(),
   acknowledgedAt: timestamp("acknowledged_at"),
-  acknowledgedAction: text("acknowledged_action"), // "acknowledge", "snooze_1h", "snooze_today"
+  acknowledgedAction: text("acknowledged_action"), // "acknowledge", "snooze_3h", "snooze_today"
 });
 
 export const notificationHistoryRelations = relations(notificationHistory, ({ one }) => ({
@@ -259,7 +259,7 @@ export const notificationTokens = pgTable("notification_tokens", {
   id: text("id").primaryKey(), // UUID
   deviceId: text("device_id").notNull().references(() => devices.deviceId),
   notificationContactId: integer("notification_contact_id").notNull().references(() => notificationContacts.id),
-  action: text("action").notNull(), // "acknowledge", "snooze_1h", "snooze_today"
+  action: text("action").notNull(), // "acknowledge", "snooze_3h", "snooze_today"
   createdAt: timestamp("created_at").defaultNow().notNull(),
   expiresAt: timestamp("expires_at").notNull(),
   used: boolean("used").default(false).notNull(),
