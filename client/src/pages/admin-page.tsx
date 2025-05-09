@@ -108,7 +108,7 @@ export default function AdminPage() {
               
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor="wind-speed">Wind Speed (knots)</Label>
+                  <Label htmlFor="wind-speed">Wind Speed (km/h)</Label>
                   <span className="text-sm font-medium">{windSpeed}</span>
                 </div>
                 <Slider
