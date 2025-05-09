@@ -15,10 +15,27 @@ export function runSimulation(params: {
   if (serverHost) env.SERVER_HOST = serverHost;
   if (udpPort) env.UDP_PORT = udpPort.toString();
   if (deviceId) env.DEVICE_ID = deviceId;
-  if (windSpeed) env.WIND_SPEED = windSpeed.toString();
+  if (windSpeed !== undefined) env.WIND_SPEED = windSpeed.toString();
+  
+  // Use localhost when in development mode
+  if (!env.SERVER_HOST) {
+    env.SERVER_HOST = "0.0.0.0";  // Use 0.0.0.0 instead of localhost for better accessibility
+  }
+  
+  // Ensure UDP port is set
+  if (!env.UDP_PORT) {
+    env.UDP_PORT = "8125";
+  }
   
   const isProduction = process.env.NODE_ENV === 'production';
   const scriptPath = path.resolve(__dirname, 'simulate-production-data.ts');
+  
+  console.log(`[simulation] Environment variables: ${JSON.stringify({
+    SERVER_HOST: env.SERVER_HOST,
+    UDP_PORT: env.UDP_PORT,
+    DEVICE_ID: env.DEVICE_ID,
+    WIND_SPEED: env.WIND_SPEED
+  })}`);
   
   // Use tsx to run the TypeScript script
   const args = [scriptPath];

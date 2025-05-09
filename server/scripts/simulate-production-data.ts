@@ -9,9 +9,16 @@ const isProduction = process.env.NODE_ENV === "production";
 const SERVER_HOST = process.env.SERVER_HOST || (isProduction ? "heighttec.app" : "0.0.0.0");
 const UDP_PORT = parseInt(process.env.UDP_PORT || "8125");
 const DEVICE_ID = process.env.DEVICE_ID || "HT-ANEM-001";
-const WIND_SPEED = parseInt(process.env.WIND_SPEED || "35");
+let WIND_SPEED = 35; // Default value
+if (process.env.WIND_SPEED) {
+  WIND_SPEED = parseInt(process.env.WIND_SPEED);
+  if (isNaN(WIND_SPEED)) {
+    WIND_SPEED = 35; // Fallback if parsing fails
+    console.warn(`Invalid WIND_SPEED value: ${process.env.WIND_SPEED}, using default 35`);
+  }
+}
 
-console.log(`Sending data to ${SERVER_HOST}:${UDP_PORT} for device ${DEVICE_ID}`);
+console.log(`Sending data to ${SERVER_HOST}:${UDP_PORT} for device ${DEVICE_ID} with wind speed ${WIND_SPEED}`);
 
 async function sendPackets() {
   const device = {
