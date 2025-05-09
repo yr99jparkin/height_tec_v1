@@ -18,6 +18,8 @@ export default function AdminPage() {
   const [isSimulating, setIsSimulating] = useState(false);
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
   const [windSpeed, setWindSpeed] = useState(35); // Default 35 knots
+  const [dataPointCount, setDataPointCount] = useState(5); // Default 5 data points
+  const [delayMs, setDelayMs] = useState(1000); // Default 1 second delay
 
   // If the user is not an admin, redirect to home
   if (user && !user.isAdmin) {
@@ -36,6 +38,8 @@ export default function AdminPage() {
       const res = await apiRequest("POST", "/api/admin/simulate-data", {
         deviceId: selectedDeviceId || undefined,
         windSpeed,
+        count: dataPointCount,
+        delayMs,
       });
       return await res.json();
     },
@@ -82,7 +86,7 @@ export default function AdminPage() {
               <CardTitle>Data Simulation</CardTitle>
               <CardDescription>
                 Generate simulated wind data for testing purposes.
-                This will send UDP packets to port 8125 (heighttec.app in production).
+                This will directly inject data into the system for processing.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -128,6 +132,50 @@ export default function AdminPage() {
                   <span>Storm (50+)</span>
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="data-points">Data Points</Label>
+                  <span className="text-sm font-medium">{dataPointCount}</span>
+                </div>
+                <Slider
+                  id="data-points"
+                  min={1}
+                  max={20}
+                  step={1}
+                  value={[dataPointCount]}
+                  onValueChange={(value) => setDataPointCount(value[0])}
+                  disabled={isSimulating}
+                  className="py-2"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Single (1)</span>
+                  <span>Default (5)</span>
+                  <span>Maximum (20)</span>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="delay-ms">Delay Between Points (ms)</Label>
+                  <span className="text-sm font-medium">{delayMs}</span>
+                </div>
+                <Slider
+                  id="delay-ms"
+                  min={100}
+                  max={5000}
+                  step={100}
+                  value={[delayMs]}
+                  onValueChange={(value) => setDelayMs(value[0])}
+                  disabled={isSimulating}
+                  className="py-2"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Fast (100ms)</span>
+                  <span>Default (1000ms)</span>
+                  <span>Slow (5000ms)</span>
+                </div>
+              </div>
               
               <Button 
                 onClick={handleSimulateData} 
@@ -160,13 +208,13 @@ export default function AdminPage() {
               <div className="space-y-2">
                 <h3 className="font-medium">Simulation Process</h3>
                 <p className="text-sm text-muted-foreground">
-                  When you trigger a simulation, the system will send 5 UDP packets with 1-second intervals 
-                  to the server. In production, these will be sent to heighttec.app on port 8125.
+                  When you trigger a simulation, the system will process 5 simulated data points with customizable intervals
+                  directly in the application. This bypasses the need for UDP ports and works in all environments.
                 </p>
-                <h3 className="font-medium mt-4">Production Settings</h3>
+                <h3 className="font-medium mt-4">Advanced Settings</h3>
                 <p className="text-sm text-muted-foreground">
-                  This feature checks the environment (NODE_ENV) to determine if it's running in production.
-                  If so, it will direct UDP traffic to the production endpoint.
+                  You can customize the simulation by adjusting the device, wind speed, number of data points,
+                  and delay between points. This provides flexible testing for various scenarios.
                 </p>
               </div>
             </CardContent>
