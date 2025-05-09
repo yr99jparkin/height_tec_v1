@@ -189,8 +189,8 @@ router.get('/unsubscribe/:contactId/:deviceId', async (req: Request, res: Respon
       await storage.deleteNotificationContact(contactIdNum);
       log(`Successfully deleted contact ${contactId}`, 'alerts');
       
-      // Redirect to success page
-      const successUrl = `${BASE_URL}/alert/unsubscribe-success`;
+      // Redirect to success page (using relative URL to avoid cross-site navigation warnings)
+      const successUrl = `/alert/unsubscribe-success`;
       log(`Redirecting to success page: ${successUrl}`, 'alerts');
       return res.redirect(successUrl);
     } catch (error) {
