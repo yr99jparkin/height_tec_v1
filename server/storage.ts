@@ -696,18 +696,40 @@ export class DatabaseStorage implements IStorage {
   
   // Notification snooze operations
   async createNotificationSnooze(snooze: InsertNotificationSnoozeStatus): Promise<NotificationSnoozeStatus> {
-    // Using onConflictDoUpdate to handle the case where there's already a snooze for this device+contact
-    const [newSnooze] = await db.insert(notificationSnoozeStatus)
-      .values(snooze)
-      .onConflictDoUpdate({
-        target: [notificationSnoozeStatus.deviceId, notificationSnoozeStatus.notificationContactId],
-        set: { 
+    // First check if a snooze exists for this device+contact pair
+    const existingSnooze = await db.select()
+      .from(notificationSnoozeStatus)
+      .where(
+        and(
+          eq(notificationSnoozeStatus.deviceId, snooze.deviceId),
+          eq(notificationSnoozeStatus.notificationContactId, snooze.notificationContactId)
+        )
+      )
+      .limit(1);
+    
+    // If a snooze exists, update it
+    if (existingSnooze.length > 0) {
+      const [updatedSnooze] = await db.update(notificationSnoozeStatus)
+        .set({ 
           snoozedUntil: snooze.snoozedUntil,
-          createdAt: new Date() // Update creation time when updating an existing record
-        }
-      })
-      .returning();
-    return newSnooze;
+          createdAt: new Date() // Update creation time when updating
+        })
+        .where(
+          and(
+            eq(notificationSnoozeStatus.deviceId, snooze.deviceId),
+            eq(notificationSnoozeStatus.notificationContactId, snooze.notificationContactId)
+          )
+        )
+        .returning();
+      return updatedSnooze;
+    } 
+    // Otherwise, insert a new snooze
+    else {
+      const [newSnooze] = await db.insert(notificationSnoozeStatus)
+        .values(snooze)
+        .returning();
+      return newSnooze;
+    }
   }
   
   async getActiveSnoozeByDeviceAndContact(
