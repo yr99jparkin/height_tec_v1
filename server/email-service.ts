@@ -29,14 +29,14 @@ export class EmailService {
     alertLevel: "amber" | "red";
     timestamp: Date;
     tokens: {
-      snooze1h: NotificationTokenInfo;
+      snooze3h: NotificationTokenInfo;
       snoozeToday: NotificationTokenInfo;
     };
   }): Promise<boolean> {
     const { device, contact, windSpeed, alertLevel, timestamp, tokens } = params;
 
     // Generate links with tokens
-    const snooze1hUrl = `${BASE_URL}/alert/acknowledge/${tokens.snooze1h.id}?action=snooze_3h`;
+    const snooze3hUrl = `${BASE_URL}/alert/acknowledge/${tokens.snooze3h.id}?action=snooze_3h`;
     const snoozeTodayUrl = `${BASE_URL}/alert/acknowledge/${tokens.snoozeToday.id}?action=snooze_today`;
 
     // Format date for display
@@ -81,7 +81,7 @@ export class EmailService {
           </table>
           
           <div style="text-align: center; margin-top: 30px;">
-            <a href="${snooze1hUrl}" style="background-color: #2196F3; color: white; padding: 10px 20px; text-decoration: none; margin: 5px; display: inline-block; border-radius: 4px;">
+            <a href="${snooze3hUrl}" style="background-color: #2196F3; color: white; padding: 10px 20px; text-decoration: none; margin: 5px; display: inline-block; border-radius: 4px;">
               Acknowledge & Snooze for 3 hours
             </a>
             
@@ -179,7 +179,7 @@ export class EmailService {
    * Creates unique tokens for the notification acknowledgment actions
    */
   async createNotificationTokens(deviceId: string, notificationContactId: number): Promise<{
-    snooze1h: NotificationTokenInfo;
+    snooze3h: NotificationTokenInfo;
     snoozeToday: NotificationTokenInfo;
   }> {
     const createToken = async (action: "snooze_3h" | "snooze_today"): Promise<NotificationTokenInfo> => {
@@ -196,7 +196,7 @@ export class EmailService {
     };
     
     return {
-      snooze1h: await createToken("snooze_3h"),
+      snooze3h: await createToken("snooze_3h"),
       snoozeToday: await createToken("snooze_today")
     };
   }
@@ -245,7 +245,10 @@ export class EmailService {
           windSpeed,
           alertLevel,
           timestamp,
-          tokens
+          tokens: {
+            snooze3h: tokens.snooze3h,
+            snoozeToday: tokens.snoozeToday
+          }
         });
         
         if (emailSent) {
