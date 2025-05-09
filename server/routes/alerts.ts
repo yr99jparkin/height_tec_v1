@@ -177,9 +177,23 @@ router.get('/unsubscribe/:contactId/:deviceId', async (req: Request, res: Respon
       return res.status(404).json({ error: 'Contact not found for this device' });
     }
     
+    // Use absolute URL instead of relative URL to avoid redirect loops
+    // Check if the request is already coming from the frontend path
+    const requestPath = req.originalUrl || req.path;
+    if (requestPath.startsWith('/api/')) {
+      // Already on the API path, don't redirect again
+      return res.status(200).json({ 
+        message: 'Use POST method to complete unsubscribe action',
+        contactId,
+        deviceId
+      });
+    }
+    
     // Redirect to the frontend unsubscribe route
-    // The frontend will handle making the DELETE request
-    res.redirect(`${BASE_URL}/alert/unsubscribe/${contactId}/${deviceId}`);
+    // The frontend will handle making the POST request
+    const redirectUrl = `${BASE_URL}/alert/unsubscribe/${contactId}/${deviceId}`;
+    log(`Redirecting to frontend: ${redirectUrl}`, 'alerts');
+    res.redirect(redirectUrl);
     
     log(`Unsubscribe request initiated for contact ${contactId} (${contact.email}) from device ${deviceId}`, 'alerts');
   } catch (error) {

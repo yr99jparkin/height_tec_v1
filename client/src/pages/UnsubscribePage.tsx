@@ -13,18 +13,33 @@ interface UnsubscribePageProps {
 export default function UnsubscribePage({ params }: UnsubscribePageProps) {
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [attempts, setAttempts] = useState(0);
   const [, setLocation] = useLocation();
   
   // Get the parameters from the URL
   const { contactId, deviceId } = params;
   
   useEffect(() => {
+    // Prevent infinite loops by limiting attempts
+    if (attempts > 0) {
+      return;
+    }
+    
     const handleUnsubscribe = async () => {
       try {
-        // Process unsubscribe by directly removing the contact
-        await apiRequest(`/api/alerts/unsubscribe/${contactId}/${deviceId}`, "POST");
+        setAttempts(prev => prev + 1);
+        console.log(`Attempting to unsubscribe contact ${contactId} from device ${deviceId}`);
+        
+        // Process unsubscribe by directly removing the contact using POST
+        const response = await apiRequest("POST", `/api/alerts/unsubscribe/${contactId}/${deviceId}`);
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Unsubscribe request failed');
+        }
         
         // Redirect to success page
+        console.log('Unsubscribe successful, redirecting to success page');
         setLocation("/alert/unsubscribe-success");
       } catch (err) {
         console.error("Error unsubscribing:", err);
@@ -34,7 +49,7 @@ export default function UnsubscribePage({ params }: UnsubscribePageProps) {
     };
     
     handleUnsubscribe();
-  }, [contactId, deviceId, setLocation]);
+  }, [contactId, deviceId, setLocation, attempts]);
   
   if (error) {
     return (
