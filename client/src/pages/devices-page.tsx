@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/header";
 import { Sidebar } from "@/components/layout/sidebar";
 import { DeviceCard } from "@/components/ui/device-card";
@@ -20,13 +20,42 @@ export default function DevicesPage() {
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [addDeviceModalOpen, setAddDeviceModalOpen] = useState(false);
+  const [openNotificationsTab, setOpenNotificationsTab] = useState(false);
+  const [focusedContactId, setFocusedContactId] = useState<number | null>(null);
 
   // Fetch devices
   const { data: devices = [], isLoading } = useQuery<DeviceWithLatestData[]>({
     queryKey: ["/api/devices"],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
-
+  
+  // Check for unsubscribe parameters in URL
+  useEffect(() => {
+    // Parse URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const deviceIdParam = urlParams.get('deviceId');
+    const tabParam = urlParams.get('tab');
+    const contactIdParam = urlParams.get('contactId');
+    
+    // If we have the required parameters for unsubscribe flow
+    if (deviceIdParam && tabParam === 'notifications') {
+      setSelectedDeviceId(deviceIdParam);
+      setOpenNotificationsTab(true);
+      
+      if (contactIdParam) {
+        setFocusedContactId(parseInt(contactIdParam, 10));
+      }
+      
+      // Open the device detail modal
+      setDetailModalOpen(true);
+      
+      // Clean up the URL by removing the parameters
+      // This is better UX since the user can reload the page without triggering the flow again
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, [user]); // Only run when user is available
+  
   // Check if user exists and direct to auth page if not
   if (!user) {
     setLocation("/auth");
@@ -143,6 +172,8 @@ export default function DevicesPage() {
         open={detailModalOpen}
         onOpenChange={setDetailModalOpen}
         deviceId={selectedDeviceId}
+        openNotificationsTab={openNotificationsTab}
+        focusedContactId={focusedContactId}
       />
       
       <AddDeviceModal

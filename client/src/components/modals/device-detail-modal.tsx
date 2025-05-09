@@ -21,9 +21,17 @@ interface DeviceDetailModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   deviceId: string | null;
+  openNotificationsTab?: boolean;
+  focusedContactId?: number | null;
 }
 
-export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetailModalProps) {
+export function DeviceDetailModal({ 
+  open, 
+  onOpenChange, 
+  deviceId, 
+  openNotificationsTab = false, 
+  focusedContactId = null 
+}: DeviceDetailModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [timeRange, setTimeRange] = useState<string>("3h");
@@ -106,6 +114,13 @@ export function DeviceDetailModal({ open, onOpenChange, deviceId }: DeviceDetail
       console.log("Device detail modal - updated notificationContacts state:", contacts);
     }
   }, [contacts]);
+  
+  // Open notifications tab when specified via props
+  useEffect(() => {
+    if (openNotificationsTab && device) {
+      setNotificationsModalOpen(true);
+    }
+  }, [openNotificationsTab, device]);
   
   // Update device name/project mutation
   const updateDeviceMutation = useMutation({

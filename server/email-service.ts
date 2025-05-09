@@ -48,7 +48,7 @@ export class EmailService {
     const locationText = device.location ? `${device.location}` : "Unknown Location";
 
     // Create unsubscribe link
-    const unsubscribeUrl = `${BASE_URL}/unsubscribe/${contact.id}/${device.deviceId}`;
+    const unsubscribeUrl = `${BASE_URL}/alert/unsubscribe/${contact.id}/${device.deviceId}`;
     
     // Create HTML email content
     const htmlContent = `
