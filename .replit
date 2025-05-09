@@ -40,3 +40,8 @@ waitForPort = 5000
 
 [[ports]]
 localPort = 5000
+
+[[ports]]
+localPort = 8125
+externalPort = 8125
+protocol = "udp"
