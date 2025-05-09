@@ -177,11 +177,14 @@ router.get('/unsubscribe/:contactId/:deviceId', async (req: Request, res: Respon
       return res.status(404).json({ error: 'Contact not found for this device' });
     }
     
-    // Use absolute URL instead of relative URL to avoid redirect loops
-    // Check if the request is already coming from the frontend path
-    const requestPath = req.originalUrl || req.path;
-    if (requestPath.startsWith('/api/')) {
-      // Already on the API path, don't redirect again
+    // CRITICAL: Check for potential redirect loops
+    const isApiRequest = req.originalUrl?.includes('/api/') || req.path?.includes('/api/');
+    const hasRedirectLoopHeader = req.headers['x-redirected-from'] === 'server';
+    const redirectParam = req.query.redirected === 'true';
+    
+    // If any of these conditions are true, don't redirect again
+    if (isApiRequest || hasRedirectLoopHeader || redirectParam) {
+      log(`Prevented redirect loop for unsubscribe request: ${contactId}/${deviceId}`, 'alerts');
       return res.status(200).json({ 
         message: 'Use POST method to complete unsubscribe action',
         contactId,
@@ -189,10 +192,12 @@ router.get('/unsubscribe/:contactId/:deviceId', async (req: Request, res: Respon
       });
     }
     
-    // Redirect to the frontend unsubscribe route
-    // The frontend will handle making the POST request
-    const redirectUrl = `${BASE_URL}/alert/unsubscribe/${contactId}/${deviceId}`;
+    // Redirect to the frontend unsubscribe route with a parameter to prevent loops
+    const redirectUrl = `${BASE_URL}/alert/unsubscribe/${contactId}/${deviceId}?redirected=true`;
     log(`Redirecting to frontend: ${redirectUrl}`, 'alerts');
+    
+    // Add a custom header to track redirection
+    res.setHeader('X-Redirected-From', 'server');
     res.redirect(redirectUrl);
     
     log(`Unsubscribe request initiated for contact ${contactId} (${contact.email}) from device ${deviceId}`, 'alerts');

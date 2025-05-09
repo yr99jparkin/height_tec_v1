@@ -1,6 +1,7 @@
+
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle, CheckCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface UnsubscribePageProps {
@@ -11,53 +12,74 @@ interface UnsubscribePageProps {
 }
 
 export default function UnsubscribePage({ params }: UnsubscribePageProps) {
-  const [isProcessing, setIsProcessing] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [attempts, setAttempts] = useState(0);
+  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [hasProcessed, setHasProcessed] = useState(false);
   const [, setLocation] = useLocation();
   
   // Get the parameters from the URL
   const { contactId, deviceId } = params;
   
   useEffect(() => {
-    // Prevent infinite loops by limiting attempts
-    if (attempts > 0) {
+    // Skip if we've already tried to process this request
+    if (hasProcessed) {
       return;
     }
     
     const handleUnsubscribe = async () => {
       try {
-        setAttempts(prev => prev + 1);
-        console.log(`Attempting to unsubscribe contact ${contactId} from device ${deviceId}`);
+        console.log(`Processing unsubscribe for contact ${contactId} from device ${deviceId}`);
+        setHasProcessed(true);
         
-        // Process unsubscribe by directly removing the contact using POST
+        // Make the unsubscribe request
         const response = await apiRequest("POST", `/api/alerts/unsubscribe/${contactId}/${deviceId}`);
+        const data = await response.json();
         
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Unsubscribe request failed');
+          throw new Error(data.error || "Failed to unsubscribe. Please try again.");
         }
         
-        // Redirect to success page
-        console.log('Unsubscribe successful, redirecting to success page');
-        setLocation("/alert/unsubscribe-success");
-      } catch (err) {
-        console.error("Error unsubscribing:", err);
-        setError("Failed to process your unsubscribe request. Please try again later.");
-        setIsProcessing(false);
+        // Set status to success and redirect after a short delay to show a message
+        setStatus("success");
+        setTimeout(() => {
+          setLocation("/alert/unsubscribe-success");
+        }, 1500);
+        
+      } catch (error) {
+        console.error("Error unsubscribing:", error);
+        setStatus("error");
+        setErrorMessage(error instanceof Error ? error.message : "An unknown error occurred");
       }
     };
     
     handleUnsubscribe();
-  }, [contactId, deviceId, setLocation, attempts]);
+  }, [contactId, deviceId, setLocation, hasProcessed]);
   
-  if (error) {
+  if (status === "error") {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <div className="text-center max-w-md">
-          <div className="bg-red-100 text-red-700 p-4 rounded-md mb-4">
-            <h1 className="text-2xl font-bold mb-2">Error</h1>
-            <p>{error}</p>
+          <div className="bg-red-100 text-red-700 p-6 rounded-md mb-4">
+            <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold mb-2">Unsubscribe Failed</h1>
+            <p className="mb-4">{errorMessage}</p>
+            <p className="text-sm">
+              If you continue to experience issues, please contact support.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (status === "success") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <div className="text-center max-w-md">
+          <div className="bg-green-100 text-green-700 p-6 rounded-md mb-4">
+            <CheckCircle className="h-12 w-12 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold mb-2">Unsubscribed Successfully</h1>
+            <p>You have been successfully unsubscribed from notifications for this device.</p>
           </div>
         </div>
       </div>
@@ -67,9 +89,9 @@ export default function UnsubscribePage({ params }: UnsubscribePageProps) {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <div className="text-center max-w-md">
-        <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-        <h1 className="text-2xl font-bold mb-2">Processing Unsubscribe Request</h1>
-        <p className="text-neutral-500 mb-8">Please wait while we process your request...</p>
+        <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+        <h1 className="text-2xl font-bold mb-2">Processing Your Request</h1>
+        <p className="text-neutral-500 mb-8">Please wait while we unsubscribe you from notifications...</p>
       </div>
     </div>
   );
