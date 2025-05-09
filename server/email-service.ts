@@ -47,7 +47,7 @@ export class EmailService {
 
     const locationText = device.location ? `${device.location}` : "Unknown Location";
 
-    // Create unsubscribe link - using the API endpoint directly as it now handles both browser and API requests
+    // Create unsubscribe link - direct to GET endpoint which handles unsubscribe and redirects to success page
     const unsubscribeUrl = `${BASE_URL}/api/alerts/unsubscribe/${contact.id}/${device.deviceId}`;
     
     // Create HTML email content

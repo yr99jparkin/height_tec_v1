@@ -340,3 +340,33 @@ export type InsertNotificationToken = z.infer<typeof insertNotificationTokenSche
 
 export type NotificationSnoozeStatus = typeof notificationSnoozeStatus.$inferSelect;
 export type InsertNotificationSnoozeStatus = z.infer<typeof insertNotificationSnoozeStatusSchema>;
+
+// Notification History Archive table - copies of notification history for unsubscribed contacts
+export const notificationHistoryArchive = pgTable("notification_history_archive", {
+  id: serial("id").primaryKey(),
+  originalHistoryId: integer("original_history_id").notNull(), // Original ID from notification_history
+  deviceId: text("device_id").notNull(),
+  contactEmail: text("contact_email").notNull(), // Store email directly since contactId is gone
+  alertLevel: text("alert_level").notNull(),
+  windSpeed: doublePrecision("wind_speed").notNull(),
+  sentAt: timestamp("sent_at").notNull(),
+  acknowledged: boolean("acknowledged").default(false).notNull(),
+  acknowledgedAt: timestamp("acknowledged_at"),
+  acknowledgedAction: text("acknowledged_action"),
+  archivedAt: timestamp("archived_at").defaultNow().notNull(),
+});
+
+export const insertNotificationHistoryArchiveSchema = createInsertSchema(notificationHistoryArchive).pick({
+  originalHistoryId: true,
+  deviceId: true,
+  contactEmail: true,
+  alertLevel: true,
+  windSpeed: true,
+  sentAt: true,
+  acknowledged: true,
+  acknowledgedAt: true,
+  acknowledgedAction: true,
+});
+
+export type NotificationHistoryArchive = typeof notificationHistoryArchive.$inferSelect;
+export type InsertNotificationHistoryArchive = z.infer<typeof insertNotificationHistoryArchiveSchema>;

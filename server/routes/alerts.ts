@@ -162,53 +162,85 @@ router.post('/acknowledge/:tokenId', async (req: Request, res: Response) => {
 // Unsubscribe GET route - directly processes the unsubscribe action
 router.get('/unsubscribe/:contactId/:deviceId', async (req: Request, res: Response) => {
   try {
+    log(`Received unsubscribe request for contactId=${req.params.contactId}, deviceId=${req.params.deviceId}`, 'alerts');
     const { contactId, deviceId } = req.params;
     const contactIdNum = parseInt(contactId, 10);
-    const redirected = req.query.redirected === 'true';
     
     if (isNaN(contactIdNum)) {
-      return res.status(400).json({ error: 'Invalid contact ID' });
+      log(`Invalid contact ID: ${contactId}`, 'alerts');
+      return res.status(400).send('Invalid contact ID provided');
     }
     
     // Verify the contact and device exist
-    const contact = await storage.getNotificationContactsByDeviceId(deviceId)
-      .then(contacts => contacts.find(c => c.id === contactIdNum));
+    log(`Verifying contact exists...`, 'alerts');
+    const contacts = await storage.getNotificationContactsByDeviceId(deviceId);
+    log(`Found ${contacts.length} contacts for device ${deviceId}`, 'alerts');
+    
+    const contact = contacts.find(c => c.id === contactIdNum);
     
     if (!contact) {
-      return res.status(404).json({ error: 'Contact not found for this device' });
+      log(`Contact ${contactId} not found for device ${deviceId}`, 'alerts');
+      return res.status(404).send(`Contact not found for this device. Please contact support for assistance.`);
     }
     
-    // Check if this is coming from the frontend or directly from an email link
-    if (redirected) {
-      // This is already at the frontend - just return contact info for display
-      return res.status(200).json({
-        contact: {
-          id: contact.id,
-          email: contact.email,
-          phone: contact.phoneNumber // Include phone number for display
-        },
-        device: {
-          deviceId: deviceId
-        }
-      });
-    } else {
-      // Direct access from email - perform unsubscribe and redirect to success page
-      try {
-        // Delete the contact record
-        await storage.deleteNotificationContact(contactIdNum);
-        
-        // Redirect to success page
-        const successUrl = `${BASE_URL}/alert/unsubscribe-success`;
-        log(`Unsubscribe successful, redirecting to: ${successUrl}`, 'alerts');
-        return res.redirect(successUrl);
-      } catch (error) {
-        log(`Error during unsubscribe: ${error}`, 'alerts');
-        return res.status(500).json({ error: 'Failed to unsubscribe' });
-      }
+    // Delete the contact record
+    log(`Deleting notification contact ${contactId} (${contact.email}) from device ${deviceId}...`, 'alerts');
+    try {
+      await storage.deleteNotificationContact(contactIdNum);
+      log(`Successfully deleted contact ${contactId}`, 'alerts');
+      
+      // Redirect to success page
+      const successUrl = `${BASE_URL}/alert/unsubscribe-success`;
+      log(`Redirecting to success page: ${successUrl}`, 'alerts');
+      return res.redirect(successUrl);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      log(`Error deleting contact: ${errorMsg}`, 'alerts');
+      
+      // Provide a more user-friendly error message
+      return res.status(500).send(`
+        <html>
+          <head>
+            <title>Error Unsubscribing</title>
+            <style>
+              body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; }
+              .error { background-color: #ffebee; border: 1px solid #ffcdd2; padding: 15px; border-radius: 4px; }
+              h1 { color: #d32f2f; }
+            </style>
+          </head>
+          <body>
+            <div class="error">
+              <h1>Unsubscribe Error</h1>
+              <p>Sorry, we were unable to process your unsubscribe request due to a system error.</p>
+              <p>Please try again later or contact support for assistance.</p>
+            </div>
+          </body>
+        </html>
+      `);
     }
   } catch (error) {
-    log(`Error processing unsubscribe request: ${error}`, 'alerts');
-    res.status(500).json({ error: 'Server error' });
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    log(`Unexpected error in unsubscribe route: ${errorMsg}`, 'alerts');
+    
+    return res.status(500).send(`
+      <html>
+        <head>
+          <title>Error Unsubscribing</title>
+          <style>
+            body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; }
+            .error { background-color: #ffebee; border: 1px solid #ffcdd2; padding: 15px; border-radius: 4px; }
+            h1 { color: #d32f2f; }
+          </style>
+        </head>
+        <body>
+          <div class="error">
+            <h1>Unsubscribe Error</h1>
+            <p>Sorry, we were unable to process your unsubscribe request due to a system error.</p>
+            <p>Please try again later or contact support for assistance.</p>
+          </div>
+        </body>
+      </html>
+    `);
   }
 });
 
