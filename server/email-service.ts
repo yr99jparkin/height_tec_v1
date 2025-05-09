@@ -36,7 +36,7 @@ export class EmailService {
     const { device, contact, windSpeed, alertLevel, timestamp, tokens } = params;
 
     // Generate links with tokens
-    const snooze1hUrl = `${BASE_URL}/alert/acknowledge/${tokens.snooze1h.id}?action=snooze_1h`;
+    const snooze1hUrl = `${BASE_URL}/alert/acknowledge/${tokens.snooze1h.id}?action=snooze_3h`;
     const snoozeTodayUrl = `${BASE_URL}/alert/acknowledge/${tokens.snoozeToday.id}?action=snooze_today`;
 
     // Format date for display
@@ -182,7 +182,7 @@ export class EmailService {
     snooze1h: NotificationTokenInfo;
     snoozeToday: NotificationTokenInfo;
   }> {
-    const createToken = async (action: "snooze_1h" | "snooze_today"): Promise<NotificationTokenInfo> => {
+    const createToken = async (action: "snooze_3h" | "snooze_today"): Promise<NotificationTokenInfo> => {
       // Create the token and get the generated UUID
       const token = await storage.createNotificationToken(deviceId, notificationContactId, action);
       
@@ -196,7 +196,7 @@ export class EmailService {
     };
     
     return {
-      snooze1h: await createToken("snooze_1h"),
+      snooze1h: await createToken("snooze_3h"),
       snoozeToday: await createToken("snooze_today")
     };
   }
