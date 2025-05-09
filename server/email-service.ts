@@ -128,6 +128,15 @@ export class EmailService {
     // Check if contact has an active snooze
     const activeSnooze = await storage.getActiveSnoozeByDeviceAndContact(deviceId, notificationContactId);
     if (activeSnooze) {
+      // Get latest notification for this device and contact to check its alert level
+      const latestNotification = await storage.getLatestNotificationByDeviceAndContact(deviceId, notificationContactId);
+      
+      // Allow red alerts to override amber snoozes
+      if (currentAlertLevel === "red" && latestNotification && latestNotification.alertLevel === "amber") {
+        log(`Override snooze: Red alert overrides amber snooze for device ${deviceId}`, "email");
+        return true;
+      }
+      
       log(`Notification skipped due to active snooze until ${activeSnooze.snoozedUntil.toLocaleString()} for contact ${notificationContactId}`, "email");
       return false;
     }
