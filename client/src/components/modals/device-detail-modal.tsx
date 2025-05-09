@@ -22,15 +22,13 @@ interface DeviceDetailModalProps {
   onOpenChange: (open: boolean) => void;
   deviceId: string | null;
   openNotificationsTab?: boolean;
-  focusedContactId?: number | null;
 }
 
 export function DeviceDetailModal({ 
   open, 
   onOpenChange, 
   deviceId, 
-  openNotificationsTab = false, 
-  focusedContactId = null 
+  openNotificationsTab = false
 }: DeviceDetailModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -593,7 +591,6 @@ export function DeviceDetailModal({
             onOpenChange={setNotificationsModalOpen}
             deviceId={device.deviceId}
             contacts={notificationContacts}
-            focusedContactId={focusedContactId}
           />
         </>
       )}

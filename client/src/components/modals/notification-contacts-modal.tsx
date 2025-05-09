@@ -301,7 +301,7 @@ export function NotificationContactsModal({
                 {contacts.map(contact => (
                   <div 
                     key={contact.id} 
-                    className={`flex flex-col border ${contact.id === focusedContactId ? 'border-primary bg-primary/5' : 'border-neutral-200'} rounded p-3 ${contact.id === focusedContactId ? 'animate-pulse' : ''}`}
+                    className="flex flex-col border border-neutral-200 rounded p-3"
                   >
                     {editContactId === contact.id ? (
                       // Edit mode
