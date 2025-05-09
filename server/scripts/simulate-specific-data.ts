@@ -5,7 +5,7 @@ const client = dgram.createSocket("udp4");
 
 async function sendPackets() {
   const device = {
-    deviceId: "HT-ANEM-002",
+    deviceId: "HT-ANEM-001",
     location: { lat: -33.8688, lng: 151.2093 } // Sydney coordinates
   };
 
