@@ -31,8 +31,14 @@ export default function UnsubscribePage({ params }: UnsubscribePageProps) {
         console.log(`Processing unsubscribe for contact ${contactId} from device ${deviceId}`);
         setHasProcessed(true);
         
-        // Make the unsubscribe request
-        const response = await apiRequest("POST", `/api/alerts/unsubscribe/${contactId}/${deviceId}`);
+        // Make the unsubscribe request as a POST request with no body
+        const response = await fetch(`/api/alerts/unsubscribe/${contactId}/${deviceId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
         const data = await response.json();
         
         if (!response.ok) {
