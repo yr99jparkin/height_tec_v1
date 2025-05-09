@@ -35,15 +35,13 @@ interface NotificationContactsModalProps {
   onOpenChange: (open: boolean) => void;
   deviceId: string | null;
   contacts: NotificationContact[];
-  focusedContactId?: number | null;
 }
 
 export function NotificationContactsModal({ 
   open, 
   onOpenChange, 
   deviceId,
-  contacts: initialContacts,
-  focusedContactId = null
+  contacts: initialContacts
 }: NotificationContactsModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -63,22 +61,8 @@ export function NotificationContactsModal({
     }
   }, [initialContacts]);
   
-  // Handle focused contact (from unsubscribe link)
-  useEffect(() => {
-    if (focusedContactId && contacts.length > 0) {
-      // If there's a focused contact ID, automatically start editing that contact
-      const focusedContact = contacts.find(c => c.id === focusedContactId);
-      if (focusedContact) {
-        startEditing(focusedContact);
-        
-        // Show toast notification with unsubscribe guidance
-        toast({
-          title: "Manage notification settings",
-          description: "You can update or delete your contact details below.",
-        });
-      }
-    }
-  }, [focusedContactId, contacts]);
+  // The focused contact handling has been removed
+  // This was part of the old unsubscribe flow that required authentication
   
   // Fetch all user devices with their contacts
   const { data: devicesWithContacts = [] } = useQuery<DeviceWithContacts[]>({

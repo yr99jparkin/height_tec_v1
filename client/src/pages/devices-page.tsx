@@ -31,39 +31,9 @@ export default function DevicesPage() {
     refetchInterval: 30000, // Refresh every 30 seconds
   });
   
-  // Check for unsubscribe parameters in URL
-  useEffect(() => {
-    // Parse URL parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const deviceIdParam = urlParams.get('deviceId');
-    const tabParam = urlParams.get('tab');
-    const contactIdParam = urlParams.get('contactId');
-    
-    // If we have the required parameters for unsubscribe flow
-    if (deviceIdParam && tabParam === 'notifications') {
-      setSelectedDeviceId(deviceIdParam);
-      setOpenNotificationsTab(true);
-      
-      if (contactIdParam) {
-        setFocusedContactId(parseInt(contactIdParam, 10));
-        
-        // Show toast to let user know they're in unsubscribe flow
-        toast({
-          title: "Manage notification settings",
-          description: "You can update or unsubscribe from notifications for this device.",
-          duration: 5000
-        });
-      }
-      
-      // Open the device detail modal
-      setDetailModalOpen(true);
-      
-      // Clean up the URL by removing the parameters
-      // This is better UX since the user can reload the page without triggering the flow again
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, newUrl);
-    }
-  }, [user]); // Only run when user is available
+  // This effect previously handled the unsubscribe flow
+  // It's now replaced by a direct unsubscribe process that doesn't require authentication
+  // The code has been removed as part of simplifying the unsubscribe journey
   
   // Check if user exists and direct to auth page if not
   if (!user) {
