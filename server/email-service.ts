@@ -29,7 +29,6 @@ export class EmailService {
     alertLevel: "amber" | "red";
     timestamp: Date;
     tokens: {
-      acknowledge: NotificationTokenInfo;
       snooze1h: NotificationTokenInfo;
       snoozeToday: NotificationTokenInfo;
     };
@@ -37,7 +36,6 @@ export class EmailService {
     const { device, contact, windSpeed, alertLevel, timestamp, tokens } = params;
 
     // Generate links with tokens
-    const acknowledgeUrl = `${BASE_URL}/alert/acknowledge/${tokens.acknowledge.id}`;
     const snooze1hUrl = `${BASE_URL}/alert/acknowledge/${tokens.snooze1h.id}?action=snooze_1h`;
     const snoozeTodayUrl = `${BASE_URL}/alert/acknowledge/${tokens.snoozeToday.id}?action=snooze_today`;
 
@@ -83,16 +81,12 @@ export class EmailService {
           </table>
           
           <div style="text-align: center; margin-top: 30px;">
-            <a href="${acknowledgeUrl}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; margin: 5px; display: inline-block; border-radius: 4px;">
-              Acknowledge
-            </a>
-            
             <a href="${snooze1hUrl}" style="background-color: #2196F3; color: white; padding: 10px 20px; text-decoration: none; margin: 5px; display: inline-block; border-radius: 4px;">
-              Acknowledge & Snooze 1h
+              Acknowledge & Snooze for 1 hour
             </a>
             
             <a href="${snoozeTodayUrl}" style="background-color: #9C27B0; color: white; padding: 10px 20px; text-decoration: none; margin: 5px; display: inline-block; border-radius: 4px;">
-              Acknowledge & Snooze Today
+              Acknowledge & Snooze for the rest of the day
             </a>
           </div>
           
@@ -169,11 +163,10 @@ export class EmailService {
    * Creates unique tokens for the notification acknowledgment actions
    */
   async createNotificationTokens(deviceId: string, notificationContactId: number): Promise<{
-    acknowledge: NotificationTokenInfo;
     snooze1h: NotificationTokenInfo;
     snoozeToday: NotificationTokenInfo;
   }> {
-    const createToken = async (action: "acknowledge" | "snooze_1h" | "snooze_today"): Promise<NotificationTokenInfo> => {
+    const createToken = async (action: "snooze_1h" | "snooze_today"): Promise<NotificationTokenInfo> => {
       // Create the token and get the generated UUID
       const token = await storage.createNotificationToken(deviceId, notificationContactId, action);
       
@@ -187,7 +180,6 @@ export class EmailService {
     };
     
     return {
-      acknowledge: await createToken("acknowledge"),
       snooze1h: await createToken("snooze_1h"),
       snoozeToday: await createToken("snooze_today")
     };

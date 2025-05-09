@@ -12,7 +12,7 @@ const router = Router();
 
 // Schema for acknowledgment action
 const acknowledgeSchema = z.object({
-  action: z.enum(['acknowledge', 'snooze_1h', 'snooze_today']),
+  action: z.enum(['snooze_1h', 'snooze_today']),
 });
 
 // Get token details
@@ -148,7 +148,7 @@ router.post('/acknowledge/:tokenId', async (req: Request, res: Response) => {
     return res.json({
       success: true,
       action,
-      message: `Alert ${action === 'acknowledge' ? 'acknowledged' : 'snoozed'} successfully`
+      message: `Alert acknowledged and snoozed successfully`
     });
   } catch (error) {
     log(`Error acknowledging alert: ${error}`, 'alerts');
