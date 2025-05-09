@@ -8,6 +8,7 @@ import AuthPage from "@/pages/auth-page";
 import DevicesPage from "@/pages/devices-page";
 import ReportsPage from "@/pages/reports-page";
 import AcknowledgePage from "@/pages/AcknowledgePage";
+import UnsubscribePage from "@/pages/UnsubscribePage";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
 import { GoogleMapsProvider } from "@/hooks/use-google-maps";
@@ -22,6 +23,8 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       {/* Alert acknowledgement route - publicly accessible with valid token */}
       <Route path="/alert/acknowledge/:tokenId" component={AcknowledgePage} />
+      {/* Alert unsubscribe route - redirects to main page with params */}
+      <Route path="/alert/unsubscribe/:contactId/:deviceId" component={UnsubscribePage} />
       <Route component={NotFound} />
     </Switch>
   );
