@@ -159,7 +159,7 @@ router.post('/acknowledge/:tokenId', async (req: Request, res: Response) => {
   }
 });
 
-// Unsubscribe route
+// Unsubscribe GET route (legacy) - redirects to the frontend unsubscribe page
 router.get('/unsubscribe/:contactId/:deviceId', async (req: Request, res: Response) => {
   try {
     const { contactId, deviceId } = req.params;
@@ -177,16 +177,51 @@ router.get('/unsubscribe/:contactId/:deviceId', async (req: Request, res: Respon
       return res.status(404).json({ error: 'Contact not found for this device' });
     }
     
-    // Create a redirectUrl that opens the device detail modal with notifications tab
-    const redirectUrl = `${BASE_URL}/?deviceId=${deviceId}&tab=notifications&contactId=${contactIdNum}`;
+    // Redirect to the frontend unsubscribe route
+    // The frontend will handle making the DELETE request
+    res.redirect(`${BASE_URL}/alert/unsubscribe/${contactId}/${deviceId}`);
     
-    // Redirect to the main page with special parameters
-    res.redirect(redirectUrl);
-    
-    log(`Unsubscribe request for contact ${contactId} (${contact.email}) from device ${deviceId}`, 'alerts');
+    log(`Unsubscribe request initiated for contact ${contactId} (${contact.email}) from device ${deviceId}`, 'alerts');
   } catch (error) {
     log(`Error processing unsubscribe request: ${error}`, 'alerts');
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Unsubscribe POST route - handles actual unsubscribe actions
+router.post('/unsubscribe/:contactId/:deviceId', async (req: Request, res: Response) => {
+  try {
+    const { contactId, deviceId } = req.params;
+    const contactIdNum = parseInt(contactId, 10);
+    
+    if (isNaN(contactIdNum)) {
+      return res.status(400).json({ error: 'Invalid contact ID' });
+    }
+    
+    // Verify the contact and device exist
+    const contact = await storage.getNotificationContactsByDeviceId(deviceId)
+      .then(contacts => contacts.find(c => c.id === contactIdNum));
+    
+    if (!contact) {
+      return res.status(404).json({ error: 'Contact not found for this device' });
+    }
+    
+    // Delete the contact record
+    await storage.deleteNotificationContact(contactIdNum);
+    
+    // Return success response
+    res.status(200).json({ 
+      success: true, 
+      message: 'Contact unsubscribed successfully' 
+    });
+    
+    log(`Contact ${contactId} (${contact.email}) unsubscribed from device ${deviceId}`, 'alerts');
+  } catch (error) {
+    log(`Error processing unsubscribe action: ${error}`, 'alerts');
+    res.status(500).json({ 
+      success: false, 
+      error: 'Server error' 
+    });
   }
 });
 
