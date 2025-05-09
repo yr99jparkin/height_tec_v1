@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown, LogOut, ShieldAlert, User } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState } from "react";
 
@@ -48,6 +48,25 @@ export function Header() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setLocation("/")}>
+                <User className="mr-2 h-4 w-4" />
+                <span>My Devices</span>
+              </DropdownMenuItem>
+              
+              {user?.isAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => { 
+                    setUserMenuOpen(false);
+                    setLocation("/admin");
+                  }}>
+                    <ShieldAlert className="mr-2 h-4 w-4 text-amber-500" />
+                    <span className="text-amber-600 font-medium">Admin Console</span>
+                  </DropdownMenuItem>
+                </>
+              )}
+              
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4 text-destructive" />
                 <span className="text-destructive">Sign Out</span>

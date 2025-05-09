@@ -25,7 +25,7 @@ export default function AdminPage() {
   }
 
   // Get a list of devices for the dropdown
-  const { data: devices = [], isLoading: devicesLoading } = useQuery({
+  const { data: devices = [], isLoading: devicesLoading } = useQuery<any[]>({
     queryKey: ["/api/devices"],
     refetchOnWindowFocus: false,
   });
