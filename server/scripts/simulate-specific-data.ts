@@ -14,7 +14,7 @@ async function sendPackets() {
     const data = {
       deviceId: device.deviceId,
       timestamp: new Date().toISOString(),
-      windSpeed: 40,
+      windSpeed: 35,
       gps: `${device.location.lat},${device.location.lng}`
     };
 
