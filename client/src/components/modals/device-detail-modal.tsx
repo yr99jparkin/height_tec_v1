@@ -593,6 +593,7 @@ export function DeviceDetailModal({
             onOpenChange={setNotificationsModalOpen}
             deviceId={device.deviceId}
             contacts={notificationContacts}
+            focusedContactId={focusedContactId}
           />
         </>
       )}

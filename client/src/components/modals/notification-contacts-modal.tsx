@@ -35,13 +35,15 @@ interface NotificationContactsModalProps {
   onOpenChange: (open: boolean) => void;
   deviceId: string | null;
   contacts: NotificationContact[];
+  focusedContactId?: number | null;
 }
 
 export function NotificationContactsModal({ 
   open, 
   onOpenChange, 
   deviceId,
-  contacts: initialContacts
+  contacts: initialContacts,
+  focusedContactId = null
 }: NotificationContactsModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -60,6 +62,23 @@ export function NotificationContactsModal({
       setContacts(initialContacts);
     }
   }, [initialContacts]);
+  
+  // Handle focused contact (from unsubscribe link)
+  useEffect(() => {
+    if (focusedContactId && contacts.length > 0) {
+      // If there's a focused contact ID, automatically start editing that contact
+      const focusedContact = contacts.find(c => c.id === focusedContactId);
+      if (focusedContact) {
+        startEditing(focusedContact);
+        
+        // Show toast notification with unsubscribe guidance
+        toast({
+          title: "Manage notification settings",
+          description: "You can update or delete your contact details below.",
+        });
+      }
+    }
+  }, [focusedContactId, contacts]);
   
   // Fetch all user devices with their contacts
   const { data: devicesWithContacts = [] } = useQuery<DeviceWithContacts[]>({
@@ -298,7 +317,7 @@ export function NotificationContactsModal({
                 {contacts.map(contact => (
                   <div 
                     key={contact.id} 
-                    className="flex flex-col border border-neutral-200 rounded p-3"
+                    className={`flex flex-col border ${contact.id === focusedContactId ? 'border-primary bg-primary/5' : 'border-neutral-200'} rounded p-3 ${contact.id === focusedContactId ? 'animate-pulse' : ''}`}
                   >
                     {editContactId === contact.id ? (
                       // Edit mode
