@@ -159,11 +159,12 @@ router.post('/acknowledge/:tokenId', async (req: Request, res: Response) => {
   }
 });
 
-// Unsubscribe GET route (legacy) - redirects to the frontend unsubscribe page or handles direct unsubscribes
+// Unsubscribe GET route - directly processes the unsubscribe action
 router.get('/unsubscribe/:contactId/:deviceId', async (req: Request, res: Response) => {
   try {
     const { contactId, deviceId } = req.params;
     const contactIdNum = parseInt(contactId, 10);
+    const redirected = req.query.redirected === 'true';
     
     if (isNaN(contactIdNum)) {
       return res.status(400).json({ error: 'Invalid contact ID' });
@@ -177,34 +178,34 @@ router.get('/unsubscribe/:contactId/:deviceId', async (req: Request, res: Respon
       return res.status(404).json({ error: 'Contact not found for this device' });
     }
     
-    // Check if this is an API request (not from a browser)
-    const acceptHeader = req.headers.accept || '';
-    const wantsJson = acceptHeader.includes('application/json');
-    const isApiRequest = req.originalUrl?.includes('/api/') || req.path?.includes('/api/');
-    
-    // If client wants JSON and it's an API request, handle directly with a POST-like operation
-    if (wantsJson && isApiRequest) {
-      log(`Direct unsubscribe for API request: ${contactId}/${deviceId}`, 'alerts');
-      
-      // Delete the contact record
-      await storage.deleteNotificationContact(contactIdNum);
-      
-      // Return success response
-      return res.status(200).json({ 
-        success: true, 
-        message: 'Contact unsubscribed successfully' 
+    // Check if this is coming from the frontend or directly from an email link
+    if (redirected) {
+      // This is already at the frontend - just return contact info for display
+      return res.status(200).json({
+        contact: {
+          id: contact.id,
+          email: contact.email,
+          phone: contact.phoneNumber // Include phone number for display
+        },
+        device: {
+          deviceId: deviceId
+        }
       });
+    } else {
+      // Direct access from email - perform unsubscribe and redirect to success page
+      try {
+        // Delete the contact record
+        await storage.deleteNotificationContact(contactIdNum);
+        
+        // Redirect to success page
+        const successUrl = `${BASE_URL}/alert/unsubscribe-success`;
+        log(`Unsubscribe successful, redirecting to: ${successUrl}`, 'alerts');
+        return res.redirect(successUrl);
+      } catch (error) {
+        log(`Error during unsubscribe: ${error}`, 'alerts');
+        return res.status(500).json({ error: 'Failed to unsubscribe' });
+      }
     }
-    
-    // For browser requests, redirect to the frontend unsubscribe route
-    const redirectUrl = `${BASE_URL}/alert/unsubscribe/${contactId}/${deviceId}?redirected=true`;
-    log(`Redirecting to frontend: ${redirectUrl}`, 'alerts');
-    
-    // Add a custom header to track redirection
-    res.setHeader('X-Redirected-From', 'server');
-    res.redirect(redirectUrl);
-    
-    log(`Unsubscribe request initiated for contact ${contactId} (${contact.email}) from device ${deviceId}`, 'alerts');
   } catch (error) {
     log(`Error processing unsubscribe request: ${error}`, 'alerts');
     res.status(500).json({ error: 'Server error' });
