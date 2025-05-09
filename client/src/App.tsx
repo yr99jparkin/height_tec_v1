@@ -7,11 +7,13 @@ import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import DevicesPage from "@/pages/devices-page";
 import ReportsPage from "@/pages/reports-page";
+import AdminPage from "@/pages/admin-page";
 import AcknowledgePage from "@/pages/AcknowledgePage";
 import UnsubscribePage from "@/pages/UnsubscribePage";
 import UnsubscribeSuccessPage from "@/pages/UnsubscribeSuccessPage";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
+import { AdminProtectedRoute } from "./lib/admin-protected-route";
 import { GoogleMapsProvider } from "@/hooks/use-google-maps";
 // Sidebar components commented out for future use
 // import { SidebarProvider } from "@/components/ui/sidebar";
@@ -21,6 +23,7 @@ function Router() {
     <Switch>
       <ProtectedRoute path="/" component={DevicesPage} />
       <ProtectedRoute path="/reports" component={ReportsPage} />
+      <AdminProtectedRoute path="/admin" component={AdminPage} />
       <Route path="/auth" component={AuthPage} />
       {/* Alert acknowledgement route - publicly accessible with valid token */}
       <Route path="/alert/acknowledge/:tokenId" component={AcknowledgePage} />

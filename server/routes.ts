@@ -20,6 +20,14 @@ const isAuthenticated = (req: Request, res: Response, next: Function) => {
   res.status(401).json({ message: "Not authenticated" });
 };
 
+// Middleware to check if user is an admin
+const isAdmin = (req: Request, res: Response, next: Function) => {
+  if (req.isAuthenticated() && req.user.isAdmin) {
+    return next();
+  }
+  res.status(403).json({ message: "Access denied: Admin privileges required" });
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
