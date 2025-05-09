@@ -1,79 +1,84 @@
-import { spawn } from 'child_process';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { WindDataPacket } from '@shared/types';
+import { processWindData } from '../udp-listener';
+import { log } from '../vite';
 
-// Get directory path in ESM
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Function to run the simulation script with optional parameters
-export function runSimulation(params: {
-  serverHost?: string;
-  udpPort?: number;
+/**
+ * Directly injects data into the wind data processing system without using UDP
+ * @param params Simulation parameters
+ * @returns Result of the simulation
+ */
+export async function runSimulation(params: {
   deviceId?: string;
   windSpeed?: number;
+  count?: number;
+  delayMs?: number;
+  gpsCoordinates?: string;
 }) {
-  const { serverHost, udpPort, deviceId, windSpeed } = params;
+  // Extract parameters with defaults
+  const {
+    deviceId = "HT-ANEM-001",
+    windSpeed = 35,
+    count = 5,
+    delayMs = 1000,
+    gpsCoordinates = "-33.8688,151.2093" // Sydney coordinates by default
+  } = params;
 
-  // Set environment variables for the script
-  const env = { ...process.env };
-  if (serverHost) env.SERVER_HOST = serverHost;
-  if (udpPort) env.UDP_PORT = udpPort.toString();
-  if (deviceId) env.DEVICE_ID = deviceId;
-  if (windSpeed !== undefined) env.WIND_SPEED = windSpeed.toString();
+  log(`[simulation] Starting direct wind data simulation for device ${deviceId} with wind speed ${windSpeed}`, "simulation");
+  
+  // Track results
+  const results = [];
+  let successCount = 0;
+  let errorCount = 0;
 
-  // Use localhost when in development mode
-  if (!env.SERVER_HOST) {
-    env.SERVER_HOST = "0.0.0.0";  // Use 0.0.0.0 instead of localhost for better accessibility
+  // Send multiple data points with a delay between each
+  for (let i = 0; i < count; i++) {
+    try {
+      // Create wind data packet
+      const data: WindDataPacket = {
+        deviceId,
+        timestamp: new Date().toISOString(),
+        windSpeed,
+        gps: gpsCoordinates
+      };
+
+      log(`[simulation] Processing simulated wind data (${i+1}/${count}): ${JSON.stringify(data)}`, "simulation");
+      
+      // Process the data directly through the function (true = is simulated)
+      const result = await processWindData(data, true);
+      
+      // Track success/failure
+      if (result.success) {
+        successCount++;
+        log(`[simulation] Successfully processed data point ${i+1}/${count}`, "simulation");
+      } else {
+        errorCount++;
+        log(`[simulation] Failed to process data point ${i+1}/${count}: ${result.message}`, "simulation");
+      }
+      
+      results.push(result);
+      
+      // Add delay between data points if more to send
+      if (i < count - 1) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      log(`[simulation] Error during simulation: ${errorMessage}`, "simulation");
+      errorCount++;
+      results.push({
+        success: false,
+        message: `Error: ${errorMessage}`
+      });
+    }
   }
 
-  // Ensure UDP port is set
-  if (!env.UDP_PORT) {
-    env.UDP_PORT = "8125";
-  }
-
-  const isProduction = process.env.NODE_ENV === 'production';
-  const scriptPath = path.resolve(__dirname, 'simulate-production-data.ts');
-
-  console.log(`[simulation] Environment variables: ${JSON.stringify({
-    SERVER_HOST: env.SERVER_HOST,
-    UDP_PORT: env.UDP_PORT,
-    DEVICE_ID: env.DEVICE_ID,
-    WIND_SPEED: env.WIND_SPEED
-  })}`);
-
-  // Use tsx to run the TypeScript script
-  const args = [scriptPath];
-
-  console.log(`[simulation] Running simulation with: ${JSON.stringify({
-    serverHost: env.SERVER_HOST,
-    udpPort: env.UDP_PORT,
-    deviceId: env.DEVICE_ID,
-    windSpeed: env.WIND_SPEED
-  })}`);
-
-  // Run the script without waiting for it to complete
-  const child = spawn('tsx', args, {
-    env,
-    stdio: 'pipe', // Capture output
-    detached: true // Run in the background
-  });
-
-  // Log output without blocking
-  child.stdout.on('data', (data) => {
-    console.log(`[simulation] ${data.toString().trim()}`);
-  });
-
-  child.stderr.on('data', (data) => {
-    console.error(`[simulation-error] ${data.toString().trim()}`);
-  });
-
-  // Don't wait for the child to exit
-  child.unref();
-
+  // Return summary
   return {
-    success: true,
-    count: 5, // We know the script sends 5 data points
-    message: 'Simulation started in the background'
+    success: errorCount === 0,
+    processed: count,
+    successful: successCount,
+    failed: errorCount,
+    results,
+    message: `Wind data simulation completed: ${successCount} successful, ${errorCount} failed`
   };
 }

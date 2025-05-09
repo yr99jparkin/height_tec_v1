@@ -45,16 +45,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Also register alerts router at a client-accessible path matching the client-side routes
   app.use('/alert', alertsRouter);
   
+  // Development endpoint to test direct simulation
+  if (process.env.NODE_ENV === 'development') {
+    app.post("/api/dev/test-simulate", isAuthenticated, async (req, res) => {
+      try {
+        // Extract simulation parameters with stronger typing
+        const { 
+          deviceId, 
+          windSpeed: windSpeedRaw, 
+          count: countRaw,
+          delayMs: delayMsRaw,
+          gpsCoordinates 
+        } = req.body;
+        
+        // Parse numeric values
+        const windSpeed = windSpeedRaw ? parseInt(windSpeedRaw) : undefined;
+        const count = countRaw ? parseInt(countRaw) : undefined;
+        const delayMs = delayMsRaw ? parseInt(delayMsRaw) : undefined;
+        
+        // Check if device exists and belongs to user
+        if (deviceId) {
+          const device = await storage.getDeviceByDeviceId(deviceId);
+          if (!device || device.userId !== req.user.id) {
+            return res.status(404).json({ message: "Device not found or you don't have permission to access it" });
+          }
+        }
+        
+        // Run simulation with direct function call injection
+        const result = await runSimulation({
+          deviceId,
+          windSpeed,
+          count,
+          delayMs,
+          gpsCoordinates
+        });
+        
+        res.json(result);
+      } catch (error) {
+        console.error("[dev] Error testing simulation:", error);
+        res.status(500).json({ 
+          message: "Error testing simulation",
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    });
+  }
+  
   // Admin Routes
-  app.post("/api/admin/simulate-data", isAdmin, (req, res) => {
+  app.post("/api/admin/simulate-data", isAdmin, async (req, res) => {
     try {
-      const deviceId = req.body.deviceId;
-      const windSpeed = req.body.windSpeed ? parseInt(req.body.windSpeed) : undefined;
+      // Extract simulation parameters with stronger typing
+      const { 
+        deviceId, 
+        windSpeed: windSpeedRaw, 
+        count: countRaw,
+        delayMs: delayMsRaw,
+        gpsCoordinates 
+      } = req.body;
       
-      // Run simulation
-      const result = runSimulation({
+      // Parse numeric values
+      const windSpeed = windSpeedRaw ? parseInt(windSpeedRaw) : undefined;
+      const count = countRaw ? parseInt(countRaw) : undefined;
+      const delayMs = delayMsRaw ? parseInt(delayMsRaw) : undefined;
+      
+      // Run simulation with direct function call injection
+      const result = await runSimulation({
         deviceId,
-        windSpeed
+        windSpeed,
+        count,
+        delayMs,
+        gpsCoordinates
       });
       
       res.json(result);
