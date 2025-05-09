@@ -7,7 +7,7 @@ import { NotificationTokenInfo } from "@shared/types";
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
 const EMAIL_FROM = process.env.EMAIL_FROM || "no-reply@heighttec.app";
-const NOTIFICATION_COOLDOWN_MINUTES = 15; // 15 minutes between notifications for the same device
+const NOTIFICATION_COOLDOWN_MINUTES = 60; // 60 minutes (1 hour) between notifications for the same device
 
 export class EmailService {
   private client: ServerClient;
