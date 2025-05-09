@@ -1,5 +1,6 @@
 import { spawn } from 'child_process';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Function to run the simulation script with optional parameters
 export function runSimulation(params: {
@@ -28,6 +29,10 @@ export function runSimulation(params: {
   }
   
   const isProduction = process.env.NODE_ENV === 'production';
+  import { fileURLToPath } from 'url';
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  
   const scriptPath = path.resolve(__dirname, 'simulate-production-data.ts');
   
   console.log(`[simulation] Environment variables: ${JSON.stringify({
