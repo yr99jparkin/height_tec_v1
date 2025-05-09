@@ -121,8 +121,8 @@ router.post('/acknowledge/:tokenId', async (req: Request, res: Response) => {
       let snoozedUntil: Date;
       
       if (action === 'snooze_1h') {
-        // Snooze for 1 hour from now
-        snoozedUntil = new Date(Date.now() + 60 * 60 * 1000);
+        // Snooze for 3 hours from now
+        snoozedUntil = new Date(Date.now() + 3 * 60 * 60 * 1000);
       } else {
         // Snooze until the end of the day (11:59:59 PM)
         const today = new Date();

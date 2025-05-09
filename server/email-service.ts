@@ -82,7 +82,7 @@ export class EmailService {
           
           <div style="text-align: center; margin-top: 30px;">
             <a href="${snooze1hUrl}" style="background-color: #2196F3; color: white; padding: 10px 20px; text-decoration: none; margin: 5px; display: inline-block; border-radius: 4px;">
-              Acknowledge & Snooze for 1 hour
+              Acknowledge & Snooze for 3 hours
             </a>
             
             <a href="${snoozeTodayUrl}" style="background-color: #9C27B0; color: white; padding: 10px 20px; text-decoration: none; margin: 5px; display: inline-block; border-radius: 4px;">

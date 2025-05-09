@@ -98,7 +98,7 @@ const AcknowledgePage = () => {
 
   // Show confirmation screen first
   if (!hasConfirmed) {
-    let actionText = "acknowledge and snooze alerts for 1 hour";
+    let actionText = "acknowledge and snooze alerts for 3 hours";
     if (action === "snooze_today") {
       actionText = "acknowledge and snooze alerts for the rest of today";
     }
@@ -161,7 +161,7 @@ const AcknowledgePage = () => {
   }
 
   // Show success screen after confirmation
-  let successMessage = "Alerts have been snoozed for 1 hour.";
+  let successMessage = "Alerts have been snoozed for 3 hours.";
   if (action === "snooze_today") {
     successMessage = "Alerts have been snoozed for the rest of today.";
   }
