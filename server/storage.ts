@@ -1,12 +1,14 @@
 import { users, devices, deviceStock, windAlertThresholds, windData, windDataHistorical, 
-  notificationContacts, notificationHistory, notificationTokens, notificationSnoozeStatus } from "@shared/schema";
+  notificationContacts, notificationHistory, notificationTokens, notificationSnoozeStatus,
+  notificationHistoryArchive } from "@shared/schema";
 import type { User, InsertUser, Device, InsertDevice, DeviceStock, InsertDeviceStock, 
   WindAlertThreshold, InsertWindAlertThreshold, WindData, InsertWindData, 
   WindDataHistorical, InsertWindDataHistorical,
   NotificationContact, InsertNotificationContact,
   NotificationHistory, InsertNotificationHistory,
   NotificationToken, InsertNotificationToken,
-  NotificationSnoozeStatus, InsertNotificationSnoozeStatus } from "@shared/schema";
+  NotificationSnoozeStatus, InsertNotificationSnoozeStatus,
+  NotificationHistoryArchive, InsertNotificationHistoryArchive } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lte, gte, lt, gt, sql, max, avg, inArray, sum, count } from "drizzle-orm";
 import { randomUUID } from "crypto";
@@ -83,6 +85,9 @@ export interface IStorage {
   // Cleanup operations
   deleteExpiredAndUsedTokens(): Promise<number>;
   archiveOldNotificationHistory?(days: number): Promise<number>; // Optional method for archiving old history
+  
+  // Archive operations
+  getArchivedNotificationHistoryByDevice(deviceId: string, startTime: Date, endTime: Date): Promise<NotificationHistoryArchive[]>;
 
   sessionStore: SessionStore;
 }
@@ -151,28 +156,68 @@ export class DatabaseStorage implements IStorage {
     const device = await this.getDeviceById(id);
     if (!device) return;
 
-    // Delete notification-related tables first
-    // 1. Delete notification tokens
-    await db.delete(notificationTokens).where(eq(notificationTokens.deviceId, device.deviceId));
-    
-    // 2. Delete notification snooze status
-    await db.delete(notificationSnoozeStatus).where(eq(notificationSnoozeStatus.deviceId, device.deviceId));
-    
-    // 3. Delete notification history
-    await db.delete(notificationHistory).where(eq(notificationHistory.deviceId, device.deviceId));
-    
-    // 4. Delete notification contacts
-    await db.delete(notificationContacts).where(eq(notificationContacts.deviceId, device.deviceId));
-    
-    // Delete wind data from both tables
-    await db.delete(windData).where(eq(windData.deviceId, device.deviceId));
-    await db.delete(windDataHistorical).where(eq(windDataHistorical.deviceId, device.deviceId));
-    
-    // Delete threshold settings
-    await db.delete(windAlertThresholds).where(eq(windAlertThresholds.deviceId, device.deviceId));
-    
-    // Finally delete the device
-    await db.delete(devices).where(eq(devices.id, id));
+    try {
+      console.log(`[storage] Beginning deletion process for device ${id} (${device.deviceId})`);
+      
+      // Begin a transaction to ensure all related deletion operations are atomic
+      await db.transaction(async (tx) => {
+        // 1. Delete notification tokens
+        const tokensResult = await tx.delete(notificationTokens)
+          .where(eq(notificationTokens.deviceId, device.deviceId))
+          .returning({ id: notificationTokens.id });
+        console.log(`[storage] Deleted ${tokensResult.length} notification tokens for device ${device.deviceId}`);
+        
+        // 2. Delete notification snooze status
+        const snoozeResult = await tx.delete(notificationSnoozeStatus)
+          .where(eq(notificationSnoozeStatus.deviceId, device.deviceId))
+          .returning({ id: notificationSnoozeStatus.id });
+        console.log(`[storage] Deleted ${snoozeResult.length} notification snooze statuses for device ${device.deviceId}`);
+        
+        // 3. Delete notification history (original)
+        const historyResult = await tx.delete(notificationHistory)
+          .where(eq(notificationHistory.deviceId, device.deviceId))
+          .returning({ id: notificationHistory.id });
+        console.log(`[storage] Deleted ${historyResult.length} notification history records for device ${device.deviceId}`);
+        
+        // 3b. Delete notification history archives
+        const archiveResult = await tx.delete(notificationHistoryArchive)
+          .where(eq(notificationHistoryArchive.deviceId, device.deviceId))
+          .returning({ id: notificationHistoryArchive.id });
+        console.log(`[storage] Deleted ${archiveResult.length} archived notification history records for device ${device.deviceId}`);
+        
+        // 4. Delete notification contacts
+        const contactsResult = await tx.delete(notificationContacts)
+          .where(eq(notificationContacts.deviceId, device.deviceId))
+          .returning({ id: notificationContacts.id });
+        console.log(`[storage] Deleted ${contactsResult.length} notification contacts for device ${device.deviceId}`);
+        
+        // 5. Delete wind data from both tables
+        const windDataResult = await tx.delete(windData)
+          .where(eq(windData.deviceId, device.deviceId))
+          .returning({ id: windData.id });
+        console.log(`[storage] Deleted ${windDataResult.length} wind data records for device ${device.deviceId}`);
+        
+        const windDataHistoricalResult = await tx.delete(windDataHistorical)
+          .where(eq(windDataHistorical.deviceId, device.deviceId))
+          .returning({ id: windDataHistorical.id });
+        console.log(`[storage] Deleted ${windDataHistoricalResult.length} historical wind data records for device ${device.deviceId}`);
+        
+        // 6. Delete threshold settings
+        const thresholdResult = await tx.delete(windAlertThresholds)
+          .where(eq(windAlertThresholds.deviceId, device.deviceId))
+          .returning({ id: windAlertThresholds.id });
+        console.log(`[storage] Deleted threshold settings for device ${device.deviceId}`);
+        
+        // 7. Finally delete the device
+        await tx.delete(devices).where(eq(devices.id, id));
+        console.log(`[storage] Deleted device ${id} (${device.deviceId}) successfully`);
+      });
+      
+      console.log(`[storage] Successfully completed deletion for device ${id} (${device.deviceId})`);
+    } catch (error) {
+      console.error(`[storage] Error deleting device ${id}:`, error);
+      throw error; // Re-throw to be handled by the caller
+    }
   }
   
   // Notification contact operations
@@ -197,7 +242,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   /**
-   * Archives notification history for a contact and then deletes the contact
+   * Deletes a notification contact but preserves the notification history
    * @param id The ID of the contact to delete
    * @returns Promise resolving when the operation is complete
    */
@@ -205,7 +250,7 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log(`[storage] Beginning deletion process for notification contact ${id}`);
       
-      // First, get the contact to ensure it exists and to get the device ID and email
+      // First, get the contact to ensure it exists
       const contact = await db.select()
         .from(notificationContacts)
         .where(eq(notificationContacts.id, id))
@@ -219,57 +264,29 @@ export class DatabaseStorage implements IStorage {
       const { deviceId, email } = contact[0];
       console.log(`[storage] Found contact ${id} (${email}) for device ${deviceId}, proceeding with deletion`);
       
-      // Begin a transaction to ensure all related archiving and deletion operations are atomic
+      // Begin a transaction to ensure all related deletion operations are atomic
       await db.transaction(async (tx) => {
-        // 1. Fetch all notification history for this contact to archive it
-        const historyRecords = await tx.select()
-          .from(notificationHistory)
-          .where(eq(notificationHistory.notificationContactId, id));
-        
-        console.log(`[storage] Archiving ${historyRecords.length} notification history records for contact ${id}`);
-        
-        // 2. Create archive records for each history item
-        for (const record of historyRecords) {
-          await tx.insert(notificationHistoryArchive).values({
-            originalHistoryId: record.id,
-            deviceId: record.deviceId,
-            contactEmail: email,
-            alertLevel: record.alertLevel,
-            windSpeed: record.windSpeed,
-            sentAt: record.sentAt,
-            acknowledged: record.acknowledged,
-            acknowledgedAt: record.acknowledgedAt,
-            acknowledgedAction: record.acknowledgedAction
-          });
-        }
-        
-        // 3. Delete all notification history records now that they're archived
-        if (historyRecords.length > 0) {
-          const historyResult = await tx.delete(notificationHistory)
-            .where(eq(notificationHistory.notificationContactId, id));
-          console.log(`[storage] Deleted ${historyRecords.length} notification history records for contact ${id}`);
-        }
-        
-        // 4. Delete all notification tokens
+        // 1. Delete all notification tokens (they're one-time use anyway)
         const tokensResult = await tx.delete(notificationTokens)
           .where(eq(notificationTokens.notificationContactId, id))
           .returning({ id: notificationTokens.id });
         console.log(`[storage] Deleted ${tokensResult.length} notification tokens for contact ${id}`);
         
-        // 5. Delete all notification snooze statuses
+        // 2. Delete all notification snooze statuses
         const snoozeResult = await tx.delete(notificationSnoozeStatus)
           .where(eq(notificationSnoozeStatus.notificationContactId, id))
           .returning({ id: notificationSnoozeStatus.id });
         console.log(`[storage] Deleted ${snoozeResult.length} notification snooze statuses for contact ${id}`);
         
-        // 6. Finally, delete the contact
+        // 3. Finally, delete the contact
         const contactResult = await tx.delete(notificationContacts)
           .where(eq(notificationContacts.id, id))
           .returning({ id: notificationContacts.id });
         console.log(`[storage] Deleted contact ${id} successfully`);
       });
       
-      console.log(`[storage] Successfully completed deletion and archiving for contact ${id}`);
+      console.log(`[storage] Successfully completed deletion for contact ${id}`);
+      console.log(`[storage] Notification history for contact ${id} was preserved`);
     } catch (error) {
       console.error(`[storage] Error deleting notification contact ${id}:`, error);
       throw error; // Re-throw to be handled by the caller
@@ -869,6 +886,25 @@ export class DatabaseStorage implements IStorage {
       .where(lt(notificationHistory.sentAt, cutoffDate));
     
     return oldRecords[0]?.count || 0;
+  }
+  
+  /**
+   * Retrieves archived notification history for a device 
+   * @param deviceId The ID of the device to get archived notification history for
+   * @param startTime The start time of the range to query
+   * @param endTime The end time of the range to query
+   * @returns Promise resolving to the archived notification history records
+   */
+  async getArchivedNotificationHistoryByDevice(deviceId: string, startTime: Date, endTime: Date): Promise<NotificationHistoryArchive[]> {
+    return await db.select().from(notificationHistoryArchive)
+      .where(
+        and(
+          eq(notificationHistoryArchive.deviceId, deviceId),
+          gte(notificationHistoryArchive.sentAt, startTime),
+          lte(notificationHistoryArchive.sentAt, endTime)
+        )
+      )
+      .orderBy(desc(notificationHistoryArchive.sentAt));
   }
 }
 
