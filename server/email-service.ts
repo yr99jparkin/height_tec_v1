@@ -5,22 +5,7 @@ import { storage } from "./storage";
 import { Device, NotificationContact } from "@shared/schema";
 import { NotificationTokenInfo } from "@shared/types";
 
-// Get the appropriate base URL depending on environment
-const getBaseUrl = () => {
-  if (process.env.BASE_URL) {
-    return process.env.BASE_URL;
-  }
-  
-  // For production environment, use the production domain
-  if (process.env.NODE_ENV === 'production') {
-    return "https://heighttec.app";
-  }
-  
-  // Default for development
-  return "http://localhost:5000";
-};
-
-const BASE_URL = getBaseUrl();
+const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
 const EMAIL_FROM = process.env.EMAIL_FROM || "no-reply@heighttec.app";
 const NOTIFICATION_COOLDOWN_MINUTES = 60; // 60 minutes (1 hour) between notifications for the same device
 
