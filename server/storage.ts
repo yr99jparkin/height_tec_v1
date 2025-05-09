@@ -8,7 +8,7 @@ import type { User, InsertUser, Device, InsertDevice, DeviceStock, InsertDeviceS
   NotificationToken, InsertNotificationToken,
   NotificationSnoozeStatus, InsertNotificationSnoozeStatus } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, or, desc, lte, gte, lt, gt, sql, max, avg, inArray, sum } from "drizzle-orm";
+import { eq, and, or, desc, lte, gte, lt, gt, sql, max, avg, inArray, sum, count } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { WindStatsResponse, DeviceWithLatestData } from "@shared/types";
 import session from "express-session";
@@ -679,7 +679,7 @@ export class DatabaseStorage implements IStorage {
   ): Promise<number> {
     // Get unacknowledged notifications within the specified time period
     const result = await db.select({
-      count: count()
+      count: sql<number>`count(*)`
     })
     .from(notificationHistory)
     .where(
