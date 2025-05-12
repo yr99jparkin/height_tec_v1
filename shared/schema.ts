@@ -370,3 +370,52 @@ export const insertNotificationHistoryArchiveSchema = createInsertSchema(notific
 
 export type NotificationHistoryArchive = typeof notificationHistoryArchive.$inferSelect;
 export type InsertNotificationHistoryArchive = z.infer<typeof insertNotificationHistoryArchiveSchema>;
+
+// Email Bounce table to track bounces from Postmark
+export const emailBounces = pgTable("email_bounces", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull(),
+  type: text("type").notNull(), // Bounce type: "HardBounce", "Transient", etc.
+  description: text("description").notNull(),
+  details: text("details"),
+  notificationContactId: integer("notification_contact_id").references(() => notificationContacts.id),
+  bouncedAt: timestamp("bounced_at").notNull(),
+  dumpAvailable: boolean("dump_available").default(false),
+  inactive: boolean("inactive").default(false),
+  canActivate: boolean("can_activate").default(true),
+  messageId: text("message_id"),
+  subject: text("subject"),
+  tag: text("tag"),
+  messageStream: text("message_stream"),
+  serverId: integer("server_id"),
+  postmarkId: integer("postmark_id").unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const emailBouncesRelations = relations(emailBounces, ({ one }) => ({
+  notificationContact: one(notificationContacts, {
+    fields: [emailBounces.notificationContactId],
+    references: [notificationContacts.id],
+  }),
+}));
+
+export const insertEmailBounceSchema = createInsertSchema(emailBounces).pick({
+  email: true,
+  type: true,
+  description: true,
+  details: true,
+  notificationContactId: true,
+  bouncedAt: true,
+  dumpAvailable: true,
+  inactive: true,
+  canActivate: true,
+  messageId: true,
+  subject: true,
+  tag: true,
+  messageStream: true,
+  serverId: true,
+  postmarkId: true,
+});
+
+export type EmailBounce = typeof emailBounces.$inferSelect;
+export type InsertEmailBounce = z.infer<typeof insertEmailBounceSchema>;
