@@ -25,8 +25,11 @@ export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(userId: number, userData: Partial<InsertUser>): Promise<User>;
   updateUserPassword(userId: number, newPassword: string): Promise<void>;
+  deleteUser(userId: number): Promise<void>;
 
   // Device operations
   getDeviceById(id: number): Promise<Device | undefined>;
