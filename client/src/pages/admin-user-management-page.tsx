@@ -359,7 +359,7 @@ export default function AdminUserManagementPage() {
             <DialogHeader>
               <DialogTitle>Create New User</DialogTitle>
               <DialogDescription>
-                Add a new user to the system. They will receive email instructions to set up their account.
+                Add a new user to the system.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleCreateUser}>
