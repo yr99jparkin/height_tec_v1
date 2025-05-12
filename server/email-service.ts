@@ -68,55 +68,70 @@ export class EmailService {
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Wind Speed Notification</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
-  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-    <div style="background-color: ${alertLevel === 'red' ? '#FF4444' : '#FFAA00'}; padding: 15px; color: white; text-align: center;">
-      <h1 style="margin: 0;">${alertLevel.toUpperCase()} ALERT: High Wind Speed</h1>
+<body style="margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f0f0f0;">
+  <!-- Main Container -->
+  <div style="max-width: 600px; margin: 20px auto; background-color: #f0f0f0;">
+    <!-- Logo Header -->
+    <div style="text-align: center; padding: 20px 0;">
+      <img src="${BASE_URL}/height-tec-logo.png" alt="Height-Tec Logo" style="height: 40px;">
     </div>
     
-    <div style="padding: 20px; border: 1px solid #ddd; background-color: #f9f9f9;">
-      <p>A high wind speed alert has been triggered:</p>
-      
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-        <tr>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Device:</strong></td>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${deviceName}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Location:</strong></td>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${locationText}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Wind Speed:</strong></td>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${windSpeed.toFixed(1)} m/s</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Alert Level:</strong></td>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${alertLevel.toUpperCase()}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px;"><strong>Time:</strong></td>
-          <td style="padding: 8px;">${formattedDate}</td>
-        </tr>
-      </table>
-      
-      <div style="text-align: center; margin-top: 30px;">
-        <a href="${snooze3hUrl}" style="background-color: #2196F3; color: white; padding: 10px 20px; text-decoration: none; margin: 5px; display: inline-block; border-radius: 4px;">
-          Acknowledge & Snooze for 3 hours
-        </a>
-        
-        <a href="${snoozeTodayUrl}" style="background-color: #9C27B0; color: white; padding: 10px 20px; text-decoration: none; margin: 5px; display: inline-block; border-radius: 4px;">
-          Acknowledge & Snooze for the rest of the day
-        </a>
+    <!-- Content Card -->
+    <div style="background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+      <!-- Alert Header -->
+      <div style="background-color: ${alertLevel === 'red' ? '#FF4444' : '#FFAA00'}; padding: 15px; color: white; text-align: center;">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700;">${alertLevel.toUpperCase()} ALERT: High Wind Speed</h1>
       </div>
       
-      <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 15px;">
-        <p style="font-size: 14px;">
-          <a href="${unsubscribeUrl}" style="color: #E53935; text-decoration: underline;">Click here to unsubscribe or manage your notification settings</a> for this device.
+      <!-- Alert Content -->
+      <div style="padding: 25px;">
+        <p style="margin-top: 0; margin-bottom: 20px; font-size: 16px;">A high wind speed alert has been triggered:</p>
+        
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; border-radius: 8px; overflow: hidden; border: 1px solid #eaeaea;">
+          <tr style="background-color: #f9f9f9;">
+            <td style="padding: 12px; border-bottom: 1px solid #eaeaea; font-weight: 600;">Device:</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eaeaea;">${deviceName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #eaeaea; font-weight: 600;">Location:</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eaeaea;">${locationText}</td>
+          </tr>
+          <tr style="background-color: #f9f9f9;">
+            <td style="padding: 12px; border-bottom: 1px solid #eaeaea; font-weight: 600;">Wind Speed:</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eaeaea;">${windSpeed.toFixed(1)} m/s</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #eaeaea; font-weight: 600;">Alert Level:</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eaeaea;">${alertLevel.toUpperCase()}</td>
+          </tr>
+          <tr style="background-color: #f9f9f9;">
+            <td style="padding: 12px; font-weight: 600;">Time:</td>
+            <td style="padding: 12px;">${formattedDate}</td>
+          </tr>
+        </table>
+        
+        <!-- Action Buttons -->
+        <div style="text-align: center; margin-top: 30px;">
+          <a href="${snooze3hUrl}" style="background-color: #0d6efd; background-image: linear-gradient(to bottom, #0d8ffd, #0d6efd); color: white; padding: 12px 24px; text-decoration: none; margin: 5px; display: inline-block; border-radius: 6px; font-weight: 500; font-size: 14px; text-align: center;">
+            Acknowledge & Snooze for 3 hours
+          </a>
+          
+          <a href="${snoozeTodayUrl}" style="background-color: #0197c6; background-image: linear-gradient(to bottom, #0cacdd, #0197c6); color: white; padding: 12px 24px; text-decoration: none; margin: 5px; display: inline-block; border-radius: 6px; font-weight: 500; font-size: 14px; text-align: center;">
+            Acknowledge & Snooze for the rest of the day
+          </a>
+        </div>
+      </div>
+      
+      <!-- Footer -->
+      <div style="padding: 20px; background-color: #f9f9f9; border-top: 1px solid #eaeaea; text-align: center;">
+        <p style="font-size: 14px; color: #555; margin-bottom: 15px;">
+          <a href="${unsubscribeUrl}" style="color: #0d6efd; text-decoration: underline;">Click here to unsubscribe or manage your notification settings</a> for this device.
         </p>
-        <p style="font-size: 12px; color: #777; margin-top: 10px;">
+        <p style="font-size: 12px; color: #888; margin: 0;">
           This is an automated message. Please do not reply to this email.
         </p>
       </div>
