@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import path from "path";
 import alertsRouter from "./routes/alerts";
 import { runSimulation } from "./scripts/run-simulation";
+import { emailService } from "./email-service";
 
 // Middleware to check if user is authenticated
 const isAuthenticated = (req: Request, res: Response, next: Function) => {
@@ -92,6 +93,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   // Admin Routes
+  
+  // Email Templates - Get sample email template
+  app.get("/api/admin/email-template", isAdmin, async (req, res) => {
+    try {
+      // Use the email service to generate a sample template
+      const emailTemplate = emailService.generateSampleEmailTemplate();
+      res.json({ template: emailTemplate });
+    } catch (error) {
+      console.error("[admin] Error generating email template:", error);
+      res.status(500).json({ 
+        message: "Error generating email template",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
   
   // User Management - Get all users
   app.get("/api/admin/users", isAdmin, async (req, res) => {

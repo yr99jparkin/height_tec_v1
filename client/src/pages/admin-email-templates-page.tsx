@@ -1,92 +1,83 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Redirect } from "wouter";
 import { Header } from "@/components/layout/header";
-import { FileText, Mail } from "lucide-react";
-
-// Wind notification email template matching exactly what's in the email-service.ts
-const emailTemplate = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Wind Speed Notification</title>
-</head>
-<body>
-  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-    <div style="background-color: #FF4444; padding: 15px; color: white; text-align: center;">
-      <h1 style="margin: 0;">RED ALERT: High Wind Speed</h1>
-    </div>
-    
-    <div style="padding: 20px; border: 1px solid #ddd; background-color: #f9f9f9;">
-      <p>A high wind speed alert has been triggered:</p>
-      
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-        <tr>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Device:</strong></td>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;">Sample Tower (HT-ANEM-001)</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Location:</strong></td>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;">Site 1 - North Tower</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Wind Speed:</strong></td>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;">42.0 m/s</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Alert Level:</strong></td>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;">RED</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px;"><strong>Time:</strong></td>
-          <td style="padding: 8px;">May 12, 2025, 10:15:00 AM</td>
-        </tr>
-      </table>
-      
-      <div style="text-align: center; margin-top: 30px;">
-        <a href="#" style="background-color: #2196F3; color: white; padding: 10px 20px; text-decoration: none; margin: 5px; display: inline-block; border-radius: 4px;">
-          Acknowledge & Snooze for 3 hours
-        </a>
-        
-        <a href="#" style="background-color: #9C27B0; color: white; padding: 10px 20px; text-decoration: none; margin: 5px; display: inline-block; border-radius: 4px;">
-          Acknowledge & Snooze for the rest of the day
-        </a>
-      </div>
-      
-      <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 15px;">
-        <p style="font-size: 14px;">
-          <a href="#" style="color: #E53935; text-decoration: underline;">Click here to unsubscribe or manage your notification settings</a> for this device.
-        </p>
-        <p style="font-size: 12px; color: #777; margin-top: 10px;">
-          This is an automated message. Please do not reply to this email.
-        </p>
-      </div>
-    </div>
-  </div>
-</body>
-</html>
-`;
+import { AlertCircle, FileText, Loader2, Mail, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
 export default function AdminEmailTemplatesPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
 
   // If the user is not an admin, redirect to home
   if (user && !user.isAdmin) {
     return <Redirect to="/" />;
   }
+  
+  // Fetch email template from the server
+  const { 
+    data, 
+    isLoading, 
+    isError, 
+    error, 
+    refetch 
+  } = useQuery({
+    queryKey: ['/api/admin/email-template'],
+    refetchOnWindowFocus: false,
+  });
+  
+  const emailTemplate = data?.template || "";
+  
+  // Handle refresh button click
+  const handleRefresh = () => {
+    refetch();
+    toast({
+      title: "Refreshing template",
+      description: "Fetching the latest email template from the server",
+    });
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       
       <main className="flex-1 p-6">
-        <h1 className="text-2xl font-heading font-semibold text-neutral-800 mb-6 flex items-center">
-          <Mail className="mr-2 h-6 w-6" />
-          Email Template Preview
-        </h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-heading font-semibold text-neutral-800 flex items-center">
+            <Mail className="mr-2 h-6 w-6" />
+            Email Template Preview
+          </h1>
+          
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="flex items-center"
+          >
+            {isLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
+            Refresh Template
+          </Button>
+        </div>
+        
+        {isError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error loading template</AlertTitle>
+            <AlertDescription>
+              There was an error fetching the email template. Please try refreshing.
+            </AlertDescription>
+          </Alert>
+        )}
         
         <Card className="mb-6">
           <CardHeader>
@@ -105,7 +96,15 @@ export default function AdminEmailTemplatesPage() {
                   This template is sent when a device exceeds wind speed thresholds.
                 </p>
                 
-                <div className="border rounded-md overflow-hidden">
+                <div className="border rounded-md overflow-hidden relative">
+                  {isLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+                      <div className="text-center">
+                        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-primary" />
+                        <p className="text-sm text-muted-foreground">Loading template...</p>
+                      </div>
+                    </div>
+                  )}
                   <iframe 
                     srcDoc={emailTemplate}
                     className="w-full h-[600px] border-0"
