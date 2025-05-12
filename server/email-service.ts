@@ -77,7 +77,10 @@ export class EmailService {
   <div style="max-width: 600px; margin: 20px auto; background-color: #f0f0f0;">
     <!-- Logo Header -->
     <div style="text-align: center; padding: 20px 0;">
-      <img src="${BASE_URL}/height-tec-logo.png" alt="Height-Tec Logo" style="height: 40px;">
+      <div style="display: inline-block; font-size: 28px; font-weight: bold; font-family: 'Inter', sans-serif;">
+        <span style="color: #0d6efd;">height</span><span style="color: #333;">tec</span>
+        <span style="color: #999; font-size: 16px; vertical-align: super;">®</span>
+      </div>
     </div>
     
     <!-- Content Card -->
