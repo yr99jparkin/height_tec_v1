@@ -1,19 +1,18 @@
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { Card, CardContent } from "@/components/ui/card";
-import { Redirect, useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, Settings, ArrowRight } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Redirect } from "wouter";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import { Header } from "@/components/layout/header";
-import { 
-  Activity, 
-  BarChart, 
-  Database, 
-  FileText, 
-  Settings, 
-  Users, 
-  Wind,
-  AlertTriangle
-} from "lucide-react";
 
-export default function AdminPage() {
+export default function AdminSimulationPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSimulating, setIsSimulating] = useState(false);
@@ -79,7 +78,7 @@ export default function AdminPage() {
         <div className="flex-1 p-6">
           <h1 className="text-2xl font-heading font-semibold text-neutral-800 mb-6 flex items-center">
             <Settings className="mr-2 h-6 w-6" />
-            Admin Dashboard
+            Data Simulation
           </h1>
           
           <Card className="mb-6">
@@ -200,9 +199,9 @@ export default function AdminPage() {
           
           <Card>
             <CardHeader>
-              <CardTitle>Admin Information</CardTitle>
+              <CardTitle>Simulation Information</CardTitle>
               <CardDescription>
-                Reference information for admin users
+                Reference information for data simulation
               </CardDescription>
             </CardHeader>
             <CardContent>

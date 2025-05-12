@@ -8,6 +8,10 @@ import AuthPage from "@/pages/auth-page";
 import DevicesPage from "@/pages/devices-page";
 import ReportsPage from "@/pages/reports-page";
 import AdminPage from "@/pages/admin-page";
+import AdminSimulationPage from "@/pages/admin-simulation-page";
+import AdminSystemLogsPage from "@/pages/admin-system-logs-page";
+import AdminUserManagementPage from "@/pages/admin-user-management-page";
+import AdminSystemStatusPage from "@/pages/admin-system-status-page";
 import AcknowledgePage from "@/pages/AcknowledgePage";
 import UnsubscribePage from "@/pages/UnsubscribePage";
 import UnsubscribeSuccessPage from "@/pages/UnsubscribeSuccessPage";
@@ -24,6 +28,10 @@ function Router() {
       <ProtectedRoute path="/" component={DevicesPage} />
       <ProtectedRoute path="/reports" component={ReportsPage} />
       <AdminProtectedRoute path="/admin" component={AdminPage} />
+      <AdminProtectedRoute path="/admin/simulation" component={AdminSimulationPage} />
+      <AdminProtectedRoute path="/admin/system-logs" component={AdminSystemLogsPage} />
+      <AdminProtectedRoute path="/admin/user-management" component={AdminUserManagementPage} />
+      <AdminProtectedRoute path="/admin/system-status" component={AdminSystemStatusPage} />
       <Route path="/auth" component={AuthPage} />
       {/* Alert acknowledgement route - publicly accessible with valid token */}
       <Route path="/alert/acknowledge/:tokenId" component={AcknowledgePage} />
