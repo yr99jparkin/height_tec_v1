@@ -10,217 +10,129 @@ import {
   Settings, 
   Users, 
   Wind,
-  AlertTriangle
+  AlertTriangle,
+  ArrowRight
 } from "lucide-react";
+
+interface AdminAppCardProps {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  href: string;
+  color: string;
+}
+
+function AdminAppCard({ title, description, icon, href, color }: AdminAppCardProps) {
+  const [, setLocation] = useLocation();
+  
+  return (
+    <Card 
+      className="cursor-pointer transition-transform hover:translate-y-[-5px] hover:shadow-md"
+      onClick={() => setLocation(href)}
+    >
+      <CardContent className="p-6 flex flex-col items-center text-center">
+        <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${color}`}>
+          {icon}
+        </div>
+        <h3 className="text-lg font-semibold mb-2">{title}</h3>
+        <p className="text-sm text-muted-foreground mb-4">{description}</p>
+        <div className="mt-auto flex items-center text-sm font-medium">
+          <span>Open</span>
+          <ArrowRight className="h-4 w-4 ml-1" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function AdminPage() {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const [isSimulating, setIsSimulating] = useState(false);
-  const [selectedDeviceId, setSelectedDeviceId] = useState("");
-  const [windSpeed, setWindSpeed] = useState(35); // Default 35 knots
-  const [dataPointCount, setDataPointCount] = useState(5); // Default 5 data points
-  const [delayMs, setDelayMs] = useState(1000); // Default 1 second delay
 
   // If the user is not an admin, redirect to home
   if (user && !user.isAdmin) {
     return <Redirect to="/" />;
   }
 
-  // Get a list of devices for the dropdown
-  const { data: devices = [], isLoading: devicesLoading } = useQuery<any[]>({
-    queryKey: ["/api/devices"],
-    refetchOnWindowFocus: false,
-  });
-
-  // Mutation to trigger data simulation
-  const simulateDataMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/admin/simulate-data", {
-        deviceId: selectedDeviceId || undefined,
-        windSpeed,
-        count: dataPointCount,
-        delayMs,
-      });
-      return await res.json();
+  const adminApps = [
+    {
+      title: "Data Simulation",
+      description: "Generate simulated data for testing and demos",
+      icon: <Wind className="h-8 w-8 text-white" />,
+      href: "/admin/simulation",
+      color: "bg-blue-500"
     },
-    onSuccess: (data) => {
-      toast({
-        title: "Simulation started",
-        description: `Successfully triggered ${data.count} data points for simulation.`,
-      });
-      setIsSimulating(false);
-      
-      // Refresh devices data after simulation
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ["/api/devices"] });
-      }, 5000); // Give it a few seconds for the data to be processed
+    {
+      title: "System Logs",
+      description: "View and search application logs",
+      icon: <FileText className="h-8 w-8 text-white" />,
+      href: "/admin/system-logs",
+      color: "bg-green-500"
     },
-    onError: (error: Error) => {
-      toast({
-        title: "Simulation failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      setIsSimulating(false);
+    {
+      title: "User Management",
+      description: "Manage user accounts and permissions",
+      icon: <Users className="h-8 w-8 text-white" />,
+      href: "/admin/user-management",
+      color: "bg-purple-500"
     },
-  });
-
-  const handleSimulateData = () => {
-    setIsSimulating(true);
-    simulateDataMutation.mutate();
-  };
+    {
+      title: "System Status",
+      description: "Monitor system health and metrics",
+      icon: <Activity className="h-8 w-8 text-white" />,
+      href: "/admin/system-status",
+      color: "bg-amber-500"
+    },
+    {
+      title: "Database Management",
+      description: "View and manage database operations",
+      icon: <Database className="h-8 w-8 text-white" />,
+      href: "/admin/database",
+      color: "bg-red-500"
+    },
+    {
+      title: "Analytics Dashboard",
+      description: "View system analytics and reports",
+      icon: <BarChart className="h-8 w-8 text-white" />,
+      href: "/admin/analytics",
+      color: "bg-indigo-500"
+    },
+    {
+      title: "Alert Management",
+      description: "Configure and manage alert thresholds",
+      icon: <AlertTriangle className="h-8 w-8 text-white" />,
+      href: "/admin/alerts",
+      color: "bg-orange-500"
+    },
+    {
+      title: "System Settings",
+      description: "Configure global system settings",
+      icon: <Settings className="h-8 w-8 text-white" />,
+      href: "/admin/settings",
+      color: "bg-teal-500"
+    }
+  ];
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="flex-1 flex">
-        <div className="flex-1 p-6">
-          <h1 className="text-2xl font-heading font-semibold text-neutral-800 mb-6 flex items-center">
-            <Settings className="mr-2 h-6 w-6" />
-            Admin Dashboard
-          </h1>
-          
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Data Simulation</CardTitle>
-              <CardDescription>
-                Generate simulated wind data for testing purposes.
-                This will directly inject data into the system for processing.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="device-select">Device</Label>
-                <Select
-                  value={selectedDeviceId} 
-                  onValueChange={setSelectedDeviceId}
-                  disabled={devicesLoading || isSimulating}
-                >
-                  <SelectTrigger id="device-select" className="w-full">
-                    <SelectValue placeholder="Select a device (or leave empty for default)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {devices.map((device: any) => (
-                      <SelectItem key={device.deviceId} value={device.deviceId}>
-                        {device.deviceName} ({device.deviceId})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="wind-speed">Wind Speed (km/h)</Label>
-                  <span className="text-sm font-medium">{windSpeed}</span>
-                </div>
-                <Slider
-                  id="wind-speed"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={[windSpeed]}
-                  onValueChange={(value) => setWindSpeed(value[0])}
-                  disabled={isSimulating}
-                  className="py-2"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Calm (0)</span>
-                  <span>Amber Alert (20)</span>
-                  <span>Red Alert (30)</span>
-                  <span>Storm (50+)</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="data-points">Data Points</Label>
-                  <span className="text-sm font-medium">{dataPointCount}</span>
-                </div>
-                <Slider
-                  id="data-points"
-                  min={1}
-                  max={20}
-                  step={1}
-                  value={[dataPointCount]}
-                  onValueChange={(value) => setDataPointCount(value[0])}
-                  disabled={isSimulating}
-                  className="py-2"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Single (1)</span>
-                  <span>Default (5)</span>
-                  <span>Maximum (20)</span>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="delay-ms">Delay Between Points (ms)</Label>
-                  <span className="text-sm font-medium">{delayMs}</span>
-                </div>
-                <Slider
-                  id="delay-ms"
-                  min={100}
-                  max={5000}
-                  step={100}
-                  value={[delayMs]}
-                  onValueChange={(value) => setDelayMs(value[0])}
-                  disabled={isSimulating}
-                  className="py-2"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Fast (100ms)</span>
-                  <span>Default (1000ms)</span>
-                  <span>Slow (5000ms)</span>
-                </div>
-              </div>
-              
-              <Button 
-                onClick={handleSimulateData} 
-                disabled={isSimulating || (devicesLoading && selectedDeviceId !== "")}
-                className="w-full mt-4"
-              >
-                {isSimulating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Simulating...
-                  </>
-                ) : (
-                  <>
-                    Simulate Wind Data
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Admin Information</CardTitle>
-              <CardDescription>
-                Reference information for admin users
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <h3 className="font-medium">Simulation Process</h3>
-                <p className="text-sm text-muted-foreground">
-                  When you trigger a simulation, the system will process the specified number of simulated data points
-                  with customizable intervals directly in the application. This bypasses the need for UDP ports and
-                  works in all environments.
-                </p>
-                <h3 className="font-medium mt-4">Advanced Settings</h3>
-                <p className="text-sm text-muted-foreground">
-                  You can customize the simulation by adjusting the device, wind speed, number of data points,
-                  and delay between points. This provides flexible testing for various scenarios.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+      <main className="flex-1 p-6">
+        <h1 className="text-2xl font-heading font-semibold text-neutral-800 mb-6 flex items-center">
+          <Settings className="mr-2 h-6 w-6" />
+          Admin Dashboard
+        </h1>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {adminApps.map((app, index) => (
+            <AdminAppCard 
+              key={index}
+              title={app.title}
+              description={app.description}
+              icon={app.icon}
+              href={app.href}
+              color={app.color}
+            />
+          ))}
         </div>
       </main>
     </div>
