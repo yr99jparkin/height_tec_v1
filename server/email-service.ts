@@ -162,7 +162,14 @@ export class EmailService {
     const snoozeTodayUrl = `${BASE_URL}/alert/acknowledge/${tokens.snoozeToday.id}?action=snooze_today`;
 
     // Format date for display with dd/mm/yyyy format
-    const formattedDate = `${timestamp.getDate().toString().padStart(2, '0')}/${(timestamp.getMonth() + 1).toString().padStart(2, '0')}/${timestamp.getFullYear()}, ${timestamp.getHours().toString().padStart(2, '0')}:${timestamp.getMinutes().toString().padStart(2, '0')}:${timestamp.getSeconds().toString().padStart(2, '0')}`;
+    const formattedDate = timestamp.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    }).replace(',', '');
 
     // Set email subject based on alert level
     const subject = `${alertLevel.toUpperCase()} ALERT: High Wind Speed Detected at ${device.deviceName}`;
