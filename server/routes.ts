@@ -13,7 +13,6 @@ import path from "path";
 import alertsRouter from "./routes/alerts";
 import { runSimulation } from "./scripts/run-simulation";
 import { emailService } from "./email-service";
-import { bounceService } from "./bounce-service";
 
 // Middleware to check if user is authenticated
 const isAuthenticated = (req: Request, res: Response, next: Function) => {
@@ -94,82 +93,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   // Admin Routes
-  
-  // Email Bounces - Get all bounce data
-  app.get("/api/admin/bounces", isAdmin, async (req, res) => {
-    try {
-      const bounces = await storage.getAllEmailBounces();
-      res.json(bounces);
-    } catch (error) {
-      console.error("[admin] Error fetching email bounces:", error);
-      res.status(500).json({ 
-        message: "Error fetching email bounces",
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-  
-  // Email Bounces - Sync with Postmark
-  app.post("/api/admin/bounces/sync", isAdmin, async (req, res) => {
-    try {
-      const newBounceCount = await bounceService.syncBounces();
-      res.json({ 
-        success: true,
-        message: `Successfully synced with Postmark. Added ${newBounceCount} new bounces.`
-      });
-    } catch (error) {
-      console.error("[admin] Error syncing bounces with Postmark:", error);
-      res.status(500).json({ 
-        message: "Error syncing bounces with Postmark",
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-  
-  // Email Bounces - Get all notification contacts with bounce counts
-  app.get("/api/admin/bounces/contacts", isAdmin, async (req, res) => {
-    try {
-      const contactsWithBounces = await storage.getContactsWithBounceInfo();
-      res.json(contactsWithBounces);
-    } catch (error) {
-      console.error("[admin] Error fetching contacts with bounce info:", error);
-      res.status(500).json({ 
-        message: "Error fetching contacts with bounce info",
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-  
-  // Email Bounces - Reactivate a bounced email
-  app.post("/api/admin/bounces/reactivate", isAdmin, async (req, res) => {
-    try {
-      const { email } = req.body;
-      
-      if (!email || typeof email !== 'string') {
-        return res.status(400).json({ message: "Valid email address is required" });
-      }
-      
-      const success = await bounceService.reactivateEmail(email);
-      
-      if (success) {
-        res.json({ 
-          success: true,
-          message: `Successfully reactivated email: ${email}`
-        });
-      } else {
-        res.status(400).json({ 
-          success: false,
-          message: "Failed to reactivate email. It may not be eligible for reactivation."
-        });
-      }
-    } catch (error) {
-      console.error("[admin] Error reactivating email:", error);
-      res.status(500).json({ 
-        message: "Error reactivating email",
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
   
   // Email Templates - Get sample email template
   app.get("/api/admin/email-template", isAdmin, async (req, res) => {

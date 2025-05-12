@@ -11,8 +11,7 @@ import {
   Users, 
   Wind,
   AlertTriangle,
-  ArrowRight,
-  MailX
+  ArrowRight
 } from "lucide-react";
 
 interface AdminAppCardProps {
@@ -75,13 +74,6 @@ export default function AdminPage() {
       icon: <FileText className="h-8 w-8 text-white" />,
       href: "/admin/email-templates",
       color: "bg-green-500"
-    },
-    {
-      title: "Email Bounces",
-      description: "Manage bounced emails and contact issues",
-      icon: <MailX className="h-8 w-8 text-white" />,
-      href: "/admin/bounces",
-      color: "bg-red-500"
     }
   ];
 
