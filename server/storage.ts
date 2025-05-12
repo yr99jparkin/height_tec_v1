@@ -116,15 +116,52 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(users.id);
+  }
+
   async createUser(user: InsertUser): Promise<User> {
     const [newUser] = await db.insert(users).values(user).returning();
     return newUser;
+  }
+
+  async updateUser(userId: number, userData: Partial<InsertUser>): Promise<User> {
+    // Don't update password through this method, use updateUserPassword instead
+    const { password, ...dataWithoutPassword } = userData;
+    
+    // Only proceed if there's data to update
+    if (Object.keys(dataWithoutPassword).length === 0) {
+      const [existingUser] = await db.select().from(users).where(eq(users.id, userId));
+      return existingUser;
+    }
+    
+    const [updatedUser] = await db.update(users)
+      .set(dataWithoutPassword)
+      .where(eq(users.id, userId))
+      .returning();
+    
+    return updatedUser;
   }
 
   async updateUserPassword(userId: number, newPassword: string): Promise<void> {
     await db.update(users)
       .set({ password: newPassword })
       .where(eq(users.id, userId));
+  }
+  
+  async deleteUser(userId: number): Promise<void> {
+    // First check if user exists
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found`);
+    }
+    
+    // TODO: Consider additional clean-up like:
+    // - Reassigning or deleting devices
+    // - Handling associated data
+
+    // Delete the user
+    await db.delete(users).where(eq(users.id, userId));
   }
 
   // Device operations

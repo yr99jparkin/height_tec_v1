@@ -15,19 +15,12 @@ import { Users, Search, Plus, Pencil, Key, Trash2, Loader2 } from "lucide-react"
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
-// Mock user data to display while API endpoints are being created
-const mockUsers = [
-  { id: 1, username: "admin", email: "admin@example.com", isAdmin: true },
-  { id: 2, username: "yr99jparkin", email: "jamesphilipparker@gmail.com", isAdmin: true },
-  { id: 3, username: "site_manager1", email: "manager1@example.com", isAdmin: false },
-  { id: 4, username: "engineer1", email: "engineer1@example.com", isAdmin: false },
-  { id: 5, username: "supervisor", email: "supervisor@example.com", isAdmin: false },
-];
-
+// User type definitions
 type User = {
   id: number;
   username: string;
   email: string;
+  fullName?: string;
   isAdmin: boolean;
 };
 
@@ -35,6 +28,7 @@ type UserFormData = {
   username: string;
   email: string;
   password: string;
+  fullName?: string;
   isAdmin: boolean;
 };
 
@@ -59,15 +53,11 @@ export default function AdminUserManagementPage() {
     return <Redirect to="/" />;
   }
 
-  // Uncomment when the API endpoint is ready
-  // const { data: users = [], isLoading } = useQuery<User[]>({
-  //   queryKey: ["/api/admin/users"],
-  //   refetchOnWindowFocus: false,
-  // });
-  
-  // Using mock data for now
-  const users = mockUsers;
-  const isLoading = false;
+  // Fetch users from the API
+  const { data: users = [], isLoading } = useQuery<User[]>({
+    queryKey: ["/api/admin/users"],
+    refetchOnWindowFocus: false,
+  });
 
   // Filter users based on search term
   const filteredUsers = users.filter(
@@ -135,12 +125,8 @@ export default function AdminUserManagementPage() {
   // Create user mutation
   const createUserMutation = useMutation({
     mutationFn: async () => {
-      // Uncomment when API endpoint is ready
-      // const res = await apiRequest("POST", "/api/admin/users", formData);
-      // return await res.json();
-      
-      // Mock success response for now
-      return { ...formData, id: Math.floor(Math.random() * 1000) };
+      const res = await apiRequest("POST", "/api/admin/users", formData);
+      return await res.json();
     },
     onSuccess: () => {
       toast({
@@ -148,8 +134,7 @@ export default function AdminUserManagementPage() {
         description: `User ${formData.username} was created successfully.`,
       });
       setIsCreatingUser(false);
-      // Uncomment when API endpoint is ready
-      // queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
     },
     onError: (error: Error) => {
       toast({
@@ -164,16 +149,13 @@ export default function AdminUserManagementPage() {
   const updateUserMutation = useMutation({
     mutationFn: async () => {
       if (!selectedUser) return null;
-      // Uncomment when API endpoint is ready
-      // const res = await apiRequest("PUT", `/api/admin/users/${selectedUser.id}`, {
-      //   username: formData.username,
-      //   email: formData.email,
-      //   isAdmin: formData.isAdmin,
-      // });
-      // return await res.json();
-      
-      // Mock success response for now
-      return { ...selectedUser, ...formData };
+      const res = await apiRequest("PUT", `/api/admin/users/${selectedUser.id}`, {
+        username: formData.username,
+        email: formData.email,
+        fullName: formData.fullName,
+        isAdmin: formData.isAdmin,
+      });
+      return await res.json();
     },
     onSuccess: () => {
       toast({
@@ -181,8 +163,7 @@ export default function AdminUserManagementPage() {
         description: `User ${formData.username} was updated successfully.`,
       });
       setIsEditingUser(false);
-      // Uncomment when API endpoint is ready
-      // queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
     },
     onError: (error: Error) => {
       toast({
@@ -197,14 +178,10 @@ export default function AdminUserManagementPage() {
   const resetPasswordMutation = useMutation({
     mutationFn: async () => {
       if (!selectedUser) return null;
-      // Uncomment when API endpoint is ready
-      // const res = await apiRequest("PUT", `/api/admin/users/${selectedUser.id}/reset-password`, {
-      //   password: formData.password,
-      // });
-      // return await res.json();
-      
-      // Mock success response for now
-      return { success: true };
+      const res = await apiRequest("PUT", `/api/admin/users/${selectedUser.id}/reset-password`, {
+        password: formData.password,
+      });
+      return await res.json();
     },
     onSuccess: () => {
       toast({
@@ -226,11 +203,7 @@ export default function AdminUserManagementPage() {
   const deleteUserMutation = useMutation({
     mutationFn: async () => {
       if (!selectedUser) return null;
-      // Uncomment when API endpoint is ready
-      // const res = await apiRequest("DELETE", `/api/admin/users/${selectedUser.id}`);
-      // return await res.json();
-      
-      // Mock success response for now
+      await apiRequest("DELETE", `/api/admin/users/${selectedUser.id}`);
       return { success: true };
     },
     onSuccess: () => {
@@ -239,8 +212,7 @@ export default function AdminUserManagementPage() {
         description: `User ${selectedUser?.username} was deleted successfully.`,
       });
       setIsConfirmingDelete(false);
-      // Uncomment when API endpoint is ready
-      // queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
     },
     onError: (error: Error) => {
       toast({

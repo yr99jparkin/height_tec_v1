@@ -1,11 +1,11 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth } from "./auth";
+import { setupAuth, hashPassword, comparePasswords } from "./auth";
 import { setupUdpListener } from "./udp-listener";
 import { and, eq } from "drizzle-orm";
 import { db } from "./db";
-import { devices, notificationContacts, windDataHistorical } from "@shared/schema";
+import { devices, notificationContacts, windDataHistorical, users, insertUserSchema } from "@shared/schema";
 import { AddDeviceRequest, ExportDataParams, NotificationContactRequest, UpdateDeviceRequest, UpdateThresholdsRequest } from "@shared/types";
 import { z } from "zod";
 import { format } from "date-fns";
@@ -92,6 +92,194 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   // Admin Routes
+  
+  // User Management - Get all users
+  app.get("/api/admin/users", isAdmin, async (req, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      
+      // For security, don't return password hashes
+      const usersWithoutPasswords = allUsers.map(user => {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+      });
+      
+      res.json(usersWithoutPasswords);
+    } catch (error) {
+      console.error("[admin] Error fetching users:", error);
+      res.status(500).json({ 
+        message: "Error fetching users",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // User Management - Create user
+  app.post("/api/admin/users", isAdmin, async (req, res) => {
+    try {
+      // Validate request body
+      const createUserSchema = insertUserSchema.extend({
+        password: z.string().min(8, "Password must be at least 8 characters")
+      });
+      
+      const validatedData = createUserSchema.parse(req.body);
+      
+      // Check if username or email already exists
+      const existingUserByUsername = await storage.getUserByUsername(validatedData.username);
+      if (existingUserByUsername) {
+        return res.status(400).json({ message: "Username already taken" });
+      }
+      
+      // Hash the password
+      const hashedPassword = await hashPassword(validatedData.password);
+      
+      // Create the user with the hashed password
+      const newUser = await storage.createUser({
+        ...validatedData,
+        password: hashedPassword
+      });
+      
+      // Return the user without the password hash
+      const { password, ...userWithoutPassword } = newUser;
+      res.status(201).json(userWithoutPassword);
+    } catch (error) {
+      console.error("[admin] Error creating user:", error);
+      
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid user data", 
+          errors: error.errors 
+        });
+      }
+      
+      res.status(500).json({ 
+        message: "Error creating user",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // User Management - Update user
+  app.put("/api/admin/users/:userId", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      // Validate that the user exists
+      const existingUser = await storage.getUser(userId);
+      if (!existingUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Validate request body
+      const updateUserSchema = insertUserSchema
+        .omit({ password: true })
+        .partial();
+      
+      const validatedData = updateUserSchema.parse(req.body);
+      
+      // Check username uniqueness if it's being changed
+      if (validatedData.username && validatedData.username !== existingUser.username) {
+        const userWithSameUsername = await storage.getUserByUsername(validatedData.username);
+        if (userWithSameUsername) {
+          return res.status(400).json({ message: "Username already taken" });
+        }
+      }
+      
+      // Update the user
+      const updatedUser = await storage.updateUser(userId, validatedData);
+      
+      // Return the user without the password hash
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("[admin] Error updating user:", error);
+      
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid user data", 
+          errors: error.errors 
+        });
+      }
+      
+      res.status(500).json({ 
+        message: "Error updating user",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // User Management - Reset user password
+  app.put("/api/admin/users/:userId/reset-password", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      // Validate that the user exists
+      const existingUser = await storage.getUser(userId);
+      if (!existingUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Validate request body
+      const resetPasswordSchema = z.object({
+        password: z.string().min(8, "Password must be at least 8 characters")
+      });
+      
+      const { password } = resetPasswordSchema.parse(req.body);
+      
+      // Hash the new password
+      const hashedPassword = await hashPassword(password);
+      
+      // Update the password
+      await storage.updateUserPassword(userId, hashedPassword);
+      
+      res.json({ message: "Password updated successfully" });
+    } catch (error) {
+      console.error("[admin] Error resetting password:", error);
+      
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid password", 
+          errors: error.errors 
+        });
+      }
+      
+      res.status(500).json({ 
+        message: "Error resetting password",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // User Management - Delete user
+  app.delete("/api/admin/users/:userId", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      // Validate that the user exists
+      const existingUser = await storage.getUser(userId);
+      if (!existingUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Check if trying to delete self
+      if (userId === req.user.id) {
+        return res.status(400).json({ message: "Cannot delete your own account" });
+      }
+      
+      // Delete the user
+      await storage.deleteUser(userId);
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("[admin] Error deleting user:", error);
+      res.status(500).json({ 
+        message: "Error deleting user",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Data Simulation
   app.post("/api/admin/simulate-data", isAdmin, async (req, res) => {
     try {
       // Extract simulation parameters with stronger typing
