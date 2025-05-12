@@ -1,6 +1,6 @@
 import { users, devices, deviceStock, windAlertThresholds, windData, windDataHistorical, 
   notificationContacts, notificationHistory, notificationTokens, notificationSnoozeStatus,
-  notificationHistoryArchive } from "@shared/schema";
+  notificationHistoryArchive, emailBounces } from "@shared/schema";
 import type { User, InsertUser, Device, InsertDevice, DeviceStock, InsertDeviceStock, 
   WindAlertThreshold, InsertWindAlertThreshold, WindData, InsertWindData, 
   WindDataHistorical, InsertWindDataHistorical,
@@ -8,7 +8,8 @@ import type { User, InsertUser, Device, InsertDevice, DeviceStock, InsertDeviceS
   NotificationHistory, InsertNotificationHistory,
   NotificationToken, InsertNotificationToken,
   NotificationSnoozeStatus, InsertNotificationSnoozeStatus,
-  NotificationHistoryArchive, InsertNotificationHistoryArchive } from "@shared/schema";
+  NotificationHistoryArchive, InsertNotificationHistoryArchive,
+  EmailBounce, InsertEmailBounce } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lte, gte, lt, gt, sql, max, avg, inArray, sum, count } from "drizzle-orm";
 import { randomUUID } from "crypto";
@@ -91,6 +92,15 @@ export interface IStorage {
   
   // Archive operations
   getArchivedNotificationHistoryByDevice(deviceId: string, startTime: Date, endTime: Date): Promise<NotificationHistoryArchive[]>;
+  
+  // Email bounce operations
+  createEmailBounce(bounce: InsertEmailBounce): Promise<EmailBounce>;
+  getEmailBounceByPostmarkId(postmarkId: number): Promise<EmailBounce | undefined>;
+  getEmailBouncesByEmail(email: string): Promise<EmailBounce[]>;
+  getEmailBouncesByContactId(contactId: number): Promise<EmailBounce[]>;
+  getAllEmailBounces(): Promise<EmailBounce[]>;
+  markEmailBounceInactive(id: number): Promise<void>;
+  getContactsWithBounceInfo(): Promise<(NotificationContact & { bounceCount: number })[]>;
 
   sessionStore: SessionStore;
 }
@@ -973,6 +983,71 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(desc(notificationHistoryArchive.sentAt));
+  }
+
+  // Email bounce operations implementation
+  async createEmailBounce(bounce: InsertEmailBounce): Promise<EmailBounce> {
+    const [newBounce] = await db.insert(emailBounces)
+      .values(bounce)
+      .returning();
+    return newBounce;
+  }
+
+  async getEmailBounceByPostmarkId(postmarkId: number): Promise<EmailBounce | undefined> {
+    const [bounce] = await db.select()
+      .from(emailBounces)
+      .where(eq(emailBounces.postmarkId, postmarkId));
+    return bounce;
+  }
+
+  async getEmailBouncesByEmail(email: string): Promise<EmailBounce[]> {
+    return db.select()
+      .from(emailBounces)
+      .where(eq(emailBounces.email, email))
+      .orderBy(desc(emailBounces.bouncedAt));
+  }
+
+  async getEmailBouncesByContactId(contactId: number): Promise<EmailBounce[]> {
+    return db.select()
+      .from(emailBounces)
+      .where(eq(emailBounces.notificationContactId, contactId))
+      .orderBy(desc(emailBounces.bouncedAt));
+  }
+
+  async getAllEmailBounces(): Promise<EmailBounce[]> {
+    return db.select()
+      .from(emailBounces)
+      .orderBy(desc(emailBounces.bouncedAt));
+  }
+
+  async markEmailBounceInactive(id: number): Promise<void> {
+    await db.update(emailBounces)
+      .set({ inactive: true })
+      .where(eq(emailBounces.id, id));
+  }
+
+  async getContactsWithBounceInfo(): Promise<(NotificationContact & { bounceCount: number })[]> {
+    // This query joins notification_contacts with email_bounces and counts bounces per contact
+    const result = await db.execute(sql`
+      SELECT 
+        nc.id, 
+        nc.device_id AS "deviceId", 
+        nc.email, 
+        nc.phone_number AS "phoneNumber", 
+        nc.created_at AS "createdAt",
+        COUNT(eb.id) AS "bounceCount"
+      FROM 
+        notification_contacts nc
+      LEFT JOIN 
+        email_bounces eb ON nc.id = eb.notification_contact_id
+      GROUP BY 
+        nc.id
+      ORDER BY 
+        "bounceCount" DESC, 
+        nc.email
+    `);
+    
+    return result.rows as (NotificationContact & { bounceCount: number })[];
   }
 }
 
