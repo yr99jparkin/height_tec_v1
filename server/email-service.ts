@@ -36,7 +36,15 @@ export class EmailService {
       locationText: sampleDevice.location || "Unknown Location",
       windSpeed: 42.0,
       alertLevel: "red" as "red" | "amber",
-      formattedDate: new Date().toLocaleString(),
+      formattedDate: new Date().toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      }),
       snooze3hUrl: "#sample-snooze-3h-link",
       snoozeTodayUrl: "#sample-snooze-today-link",
       unsubscribeUrl: "#sample-unsubscribe-link",
