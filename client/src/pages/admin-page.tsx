@@ -62,53 +62,18 @@ export default function AdminPage() {
       color: "bg-blue-500"
     },
     {
-      title: "System Logs",
-      description: "View and search application logs",
-      icon: <FileText className="h-8 w-8 text-white" />,
-      href: "/admin/system-logs",
-      color: "bg-green-500"
-    },
-    {
       title: "User Management",
-      description: "Manage user accounts and permissions",
+      description: "Manage users, roles and permissions",
       icon: <Users className="h-8 w-8 text-white" />,
       href: "/admin/user-management",
       color: "bg-purple-500"
     },
     {
-      title: "System Status",
-      description: "Monitor system health and metrics",
-      icon: <Activity className="h-8 w-8 text-white" />,
-      href: "/admin/system-status",
-      color: "bg-amber-500"
-    },
-    {
-      title: "Database Management",
-      description: "View and manage database operations",
-      icon: <Database className="h-8 w-8 text-white" />,
-      href: "/admin/database",
-      color: "bg-red-500"
-    },
-    {
-      title: "Analytics Dashboard",
-      description: "View system analytics and reports",
-      icon: <BarChart className="h-8 w-8 text-white" />,
-      href: "/admin/analytics",
-      color: "bg-indigo-500"
-    },
-    {
-      title: "Alert Management",
-      description: "Configure and manage alert thresholds",
-      icon: <AlertTriangle className="h-8 w-8 text-white" />,
-      href: "/admin/alerts",
-      color: "bg-orange-500"
-    },
-    {
-      title: "System Settings",
-      description: "Configure global system settings",
-      icon: <Settings className="h-8 w-8 text-white" />,
-      href: "/admin/settings",
-      color: "bg-teal-500"
+      title: "Email Templates",
+      description: "Preview notification email templates",
+      icon: <FileText className="h-8 w-8 text-white" />,
+      href: "/admin/email-templates",
+      color: "bg-green-500"
     }
   ];
 
