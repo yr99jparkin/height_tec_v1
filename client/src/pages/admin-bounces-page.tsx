@@ -100,11 +100,16 @@ export default function AdminBouncesPage() {
   // Sync bounces with Postmark
   const syncBouncesMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('/api/admin/bounces/sync', {
-        method: 'POST'
+      const response = await fetch('/api/admin/bounces/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
       });
+      if (!response.ok) {
+        throw new Error('Failed to sync with Postmark API');
+      }
+      return response.json();
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data) => {
       toast({
         title: "Sync Complete",
         description: data.message || "Successfully synced with Postmark",
@@ -125,12 +130,17 @@ export default function AdminBouncesPage() {
   // Reactivate email
   const reactivateEmailMutation = useMutation({
     mutationFn: async (email: string) => {
-      return apiRequest('/api/admin/bounces/reactivate', {
+      const response = await fetch('/api/admin/bounces/reactivate', {
         method: 'POST',
-        body: { email }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
       });
+      if (!response.ok) {
+        throw new Error('Failed to reactivate email');
+      }
+      return response.json();
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data) => {
       toast({
         title: "Reactivation Complete",
         description: data.message || "Successfully reactivated email",
