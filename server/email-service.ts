@@ -20,25 +20,51 @@ export class EmailService {
   }
   
   /**
-   * Generates a sample email template for preview purposes
-   * Uses the same template format as the actual alert emails
+   * Generates a sample email template for preview purposes using the actual email template
    * @returns HTML string of the email template
    */
   generateSampleEmailTemplate(): string {
-    // Sample data for preview
-    const sampleData = {
-      alertLevel: "red",
+    // Create sample data for the template to match what would be in a real alert
+    const sampleDevice = {
+      deviceId: "HT-ANEM-001",
       deviceName: "Sample Tower (HT-ANEM-001)",
-      locationText: "Site 1 - North Tower",
+      location: "Site 1 - North Tower",
+    } as Device;
+    
+    const sampleParameters = {
+      deviceName: sampleDevice.deviceName,
+      locationText: sampleDevice.location || "Unknown Location",
       windSpeed: 42.0,
+      alertLevel: "red" as "red" | "amber",
       formattedDate: new Date().toLocaleString(),
-      snooze3hUrl: "#",
-      snoozeTodayUrl: "#",
-      unsubscribeUrl: "#"
+      snooze3hUrl: "#sample-snooze-3h-link",
+      snoozeTodayUrl: "#sample-snooze-today-link",
+      unsubscribeUrl: "#sample-unsubscribe-link",
     };
     
-    // Generate the HTML template using the same format as in sendAlertEmail
-    const htmlContent = `<!DOCTYPE html>
+    // Use the actual email template with sample data
+    return this.generateEmailTemplate(sampleParameters);
+  }
+  
+  /**
+   * Shared method to generate the email HTML template
+   * Used by both the sample template generator and the actual email sender
+   */
+  private generateEmailTemplate(params: {
+    deviceName: string;
+    locationText: string;
+    windSpeed: number;
+    alertLevel: "amber" | "red";
+    formattedDate: string;
+    snooze3hUrl: string;
+    snoozeTodayUrl: string;
+    unsubscribeUrl: string;
+  }): string {
+    const { deviceName, locationText, windSpeed, alertLevel, formattedDate, 
+           snooze3hUrl, snoozeTodayUrl, unsubscribeUrl } = params;
+    
+    // This is the actual email template used for all wind notifications
+    return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -46,8 +72,8 @@ export class EmailService {
 </head>
 <body>
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-    <div style="background-color: ${sampleData.alertLevel === 'red' ? '#FF4444' : '#FFAA00'}; padding: 15px; color: white; text-align: center;">
-      <h1 style="margin: 0;">${sampleData.alertLevel.toUpperCase()} ALERT: High Wind Speed</h1>
+    <div style="background-color: ${alertLevel === 'red' ? '#FF4444' : '#FFAA00'}; padding: 15px; color: white; text-align: center;">
+      <h1 style="margin: 0;">${alertLevel.toUpperCase()} ALERT: High Wind Speed</h1>
     </div>
     
     <div style="padding: 20px; border: 1px solid #ddd; background-color: #f9f9f9;">
@@ -56,39 +82,39 @@ export class EmailService {
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
         <tr>
           <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Device:</strong></td>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${sampleData.deviceName}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${deviceName}</td>
         </tr>
         <tr>
           <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Location:</strong></td>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${sampleData.locationText}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${locationText}</td>
         </tr>
         <tr>
           <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Wind Speed:</strong></td>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${sampleData.windSpeed.toFixed(1)} m/s</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${windSpeed.toFixed(1)} m/s</td>
         </tr>
         <tr>
           <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Alert Level:</strong></td>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${sampleData.alertLevel.toUpperCase()}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${alertLevel.toUpperCase()}</td>
         </tr>
         <tr>
           <td style="padding: 8px;"><strong>Time:</strong></td>
-          <td style="padding: 8px;">${sampleData.formattedDate}</td>
+          <td style="padding: 8px;">${formattedDate}</td>
         </tr>
       </table>
       
       <div style="text-align: center; margin-top: 30px;">
-        <a href="${sampleData.snooze3hUrl}" style="background-color: #2196F3; color: white; padding: 10px 20px; text-decoration: none; margin: 5px; display: inline-block; border-radius: 4px;">
+        <a href="${snooze3hUrl}" style="background-color: #2196F3; color: white; padding: 10px 20px; text-decoration: none; margin: 5px; display: inline-block; border-radius: 4px;">
           Acknowledge & Snooze for 3 hours
         </a>
         
-        <a href="${sampleData.snoozeTodayUrl}" style="background-color: #9C27B0; color: white; padding: 10px 20px; text-decoration: none; margin: 5px; display: inline-block; border-radius: 4px;">
+        <a href="${snoozeTodayUrl}" style="background-color: #9C27B0; color: white; padding: 10px 20px; text-decoration: none; margin: 5px; display: inline-block; border-radius: 4px;">
           Acknowledge & Snooze for the rest of the day
         </a>
       </div>
       
       <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 15px;">
         <p style="font-size: 14px;">
-          <a href="${sampleData.unsubscribeUrl}" style="color: #E53935; text-decoration: underline;">Click here to unsubscribe or manage your notification settings</a> for this device.
+          <a href="${unsubscribeUrl}" style="color: #E53935; text-decoration: underline;">Click here to unsubscribe or manage your notification settings</a> for this device.
         </p>
         <p style="font-size: 12px; color: #777; margin-top: 10px;">
           This is an automated message. Please do not reply to this email.
@@ -98,8 +124,6 @@ export class EmailService {
   </div>
 </body>
 </html>`;
-    
-    return htmlContent;
   }
 
   /**
@@ -133,60 +157,17 @@ export class EmailService {
     // Create unsubscribe link - direct to GET endpoint which handles unsubscribe and redirects to success page
     const unsubscribeUrl = `${BASE_URL}/api/alerts/unsubscribe/${contact.id}/${device.deviceId}`;
     
-    // Create HTML email content
-    const htmlContent = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background-color: ${alertLevel === 'red' ? '#FF4444' : '#FFAA00'}; padding: 15px; color: white; text-align: center;">
-          <h1 style="margin: 0;">${alertLevel.toUpperCase()} ALERT: High Wind Speed</h1>
-        </div>
-        
-        <div style="padding: 20px; border: 1px solid #ddd; background-color: #f9f9f9;">
-          <p>A high wind speed alert has been triggered:</p>
-          
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Device:</strong></td>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${device.deviceName}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Location:</strong></td>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${locationText}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Wind Speed:</strong></td>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${windSpeed.toFixed(1)} m/s</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Alert Level:</strong></td>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${alertLevel.toUpperCase()}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px;"><strong>Time:</strong></td>
-              <td style="padding: 8px;">${formattedDate}</td>
-            </tr>
-          </table>
-          
-          <div style="text-align: center; margin-top: 30px;">
-            <a href="${snooze3hUrl}" style="background-color: #2196F3; color: white; padding: 10px 20px; text-decoration: none; margin: 5px; display: inline-block; border-radius: 4px;">
-              Acknowledge & Snooze for 3 hours
-            </a>
-            
-            <a href="${snoozeTodayUrl}" style="background-color: #9C27B0; color: white; padding: 10px 20px; text-decoration: none; margin: 5px; display: inline-block; border-radius: 4px;">
-              Acknowledge & Snooze for the rest of the day
-            </a>
-          </div>
-          
-          <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 15px;">
-            <p style="font-size: 14px;">
-              <a href="${unsubscribeUrl}" style="color: #E53935; text-decoration: underline;">Click here to unsubscribe or manage your notification settings</a> for this device.
-            </p>
-            <p style="font-size: 12px; color: #777; margin-top: 10px;">
-              This is an automated message. Please do not reply to this email.
-            </p>
-          </div>
-        </div>
-      </div>
-    `;
+    // Create HTML email content using the shared template generator
+    const htmlContent = this.generateEmailTemplate({
+      deviceName: device.deviceName,
+      locationText,
+      windSpeed,
+      alertLevel,
+      formattedDate,
+      snooze3hUrl,
+      snoozeTodayUrl,
+      unsubscribeUrl
+    });
 
     try {
       // Check if Postmark API key is set
