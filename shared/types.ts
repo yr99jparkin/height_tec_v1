@@ -106,3 +106,42 @@ export interface NotificationSnoozeInfo {
   notificationContactId: number;
   snoozedUntil: string;
 }
+
+// Email bounce types
+export interface EmailBounceInfo {
+  id: number;
+  email: string;
+  type: string;
+  description: string;
+  details?: string;
+  notificationContactId?: number;
+  bouncedAt: string;
+  dumpAvailable: boolean;
+  inactive: boolean;
+  canActivate: boolean;
+  messageId?: string;
+  subject?: string;
+  tag?: string;
+  messageStream?: string;
+  serverId?: number;
+  postmarkId: number;
+  createdAt: string;
+}
+
+export interface ContactWithBounceInfo {
+  id: number;
+  deviceId: string;
+  email: string;
+  phoneNumber: string;
+  createdAt: string;
+  bounceCount: number;
+}
+
+export interface ReactivateEmailRequest {
+  email: string;
+}
+
+export interface BounceApiResponse {
+  success: boolean;
+  message: string;
+}
