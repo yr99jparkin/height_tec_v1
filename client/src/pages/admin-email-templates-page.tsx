@@ -10,6 +10,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 
+// Define the type for the email template response
+interface EmailTemplateResponse {
+  template: string;
+}
+
 export default function AdminEmailTemplatesPage() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -26,12 +31,13 @@ export default function AdminEmailTemplatesPage() {
     isError, 
     error, 
     refetch 
-  } = useQuery({
+  } = useQuery<EmailTemplateResponse>({
     queryKey: ['/api/admin/email-template'],
     refetchOnWindowFocus: false,
   });
   
-  const emailTemplate = data?.template || "";
+  // Use optional chaining with a fallback empty string for the template
+  const emailTemplate = data && 'template' in data ? data.template : "";
   
   // Handle refresh button click
   const handleRefresh = () => {
