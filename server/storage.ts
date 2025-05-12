@@ -46,6 +46,7 @@ export interface IStorage {
 
   // Notification contacts operations
   getNotificationContactsByDeviceId(deviceId: string): Promise<NotificationContact[]>;
+  getNotificationContactsByEmail(email: string): Promise<NotificationContact[]>;
   createNotificationContact(contact: InsertNotificationContact): Promise<NotificationContact>;
   updateNotificationContact(id: number, contact: Partial<InsertNotificationContact>): Promise<NotificationContact>;
   deleteNotificationContact(id: number): Promise<void>;
@@ -274,6 +275,11 @@ export class DatabaseStorage implements IStorage {
   async getNotificationContactsByDeviceId(deviceId: string): Promise<NotificationContact[]> {
     return await db.select().from(notificationContacts)
       .where(eq(notificationContacts.deviceId, deviceId));
+  }
+  
+  async getNotificationContactsByEmail(email: string): Promise<NotificationContact[]> {
+    return await db.select().from(notificationContacts)
+      .where(eq(notificationContacts.email, email));
   }
 
   async createNotificationContact(contact: InsertNotificationContact): Promise<NotificationContact> {

@@ -67,7 +67,8 @@ export class BounceService {
         if (!existingBounce) {
           // Find notification contact that matches the email
           // This is a simple way to match contacts, could be improved with filtering or fuzzy matching
-          const [contact] = await storage.getNotificationContactsByEmail(bounce.Email);
+          const contacts = await storage.getNotificationContactsByEmail(bounce.Email);
+          const contact = contacts.length > 0 ? contacts[0] : null;
           
           // Create new bounce record
           const newBounce: InsertEmailBounce = {
@@ -111,8 +112,29 @@ export class BounceService {
         return false;
       }
       
-      const result = await this.client.activateBounce(email);
-      log(`Reactivated bounced email: ${email}`, "email");
+      // Postmark's activateBounce method works with a specific bounce ID,
+      // But we're allowing reactivation by email address, so we need to handle this specially
+      try {
+        // Try to activate by email (this works if the email only has one bounce)
+        await this.client.activateBounce(email);
+        log(`Reactivated bounced email: ${email}`, "email");
+      } catch (err) {
+        // If that fails, we need to get all bounces for this email and activate them individually
+        log(`Could not directly reactivate email: ${email}, attempting per-bounce activation`, "email");
+        const bounces = await storage.getEmailBouncesByEmail(email);
+        
+        for (const bounce of bounces) {
+          if (bounce.canActivate && !bounce.inactive) {
+            try {
+              // Try to activate this specific bounce using its Postmark ID
+              await this.client.activateBounce(bounce.postmarkId.toString());
+              log(`Reactivated bounce ID ${bounce.postmarkId} for email: ${email}`, "email");
+            } catch (bounceErr) {
+              log(`Failed to reactivate bounce ID ${bounce.postmarkId}: ${bounceErr}`, "email");
+            }
+          }
+        }
+      }
       
       // Update our database to reflect the change
       const bounces = await storage.getEmailBouncesByEmail(email);
