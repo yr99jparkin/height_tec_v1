@@ -262,7 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if trying to delete self
-      if (userId === req.user.id) {
+      if (req.user && userId === req.user.id) {
         return res.status(400).json({ message: "Cannot delete your own account" });
       }
       

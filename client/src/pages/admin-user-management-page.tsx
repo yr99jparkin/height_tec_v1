@@ -125,7 +125,12 @@ export default function AdminUserManagementPage() {
   // Create user mutation
   const createUserMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/admin/users", formData);
+      // Make sure fullName is set (it's required in the schema)
+      const userData = {
+        ...formData,
+        fullName: formData.fullName || formData.username // Use username as fullName if not provided
+      };
+      const res = await apiRequest("POST", "/api/admin/users", userData);
       return await res.json();
     },
     onSuccess: () => {
