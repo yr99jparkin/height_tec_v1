@@ -113,7 +113,7 @@ export default function AdminEmailTemplatesPage() {
                   )}
                   <iframe 
                     srcDoc={emailTemplate}
-                    className="w-full h-[1200px] border-0"
+                    className="w-full h-[900px] border-0"
                     title="Email Template Preview"
                   />
                 </div>
