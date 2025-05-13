@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Header } from "@/components/layout/header";
 import { useLocation } from "wouter";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { DeviceWithLatestData } from "@shared/types";
@@ -20,6 +20,8 @@ import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
 import { TimeInput } from "@/components/ui/time-input";
+import { exportToPdf } from "@/lib/pdf-export";
+import { useToast } from "@/hooks/use-toast";
 
 // Define the aggregation level type
 type AggregationLevel = "10min" | "1hour" | "1day" | "1week";
