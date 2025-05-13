@@ -4,8 +4,8 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import puppeteer from 'puppeteer-core';
-// @ts-ignore - Import chromium with the dynamic import
-import * as chromium from '@sparticuz/chromium';
+// Import default puppeteer as fallback
+import puppeteerOriginal from 'puppeteer';
 
 /**
  * Generate a PDF from HTML content using Puppeteer
@@ -31,23 +31,30 @@ export async function generatePdf(req: Request, res: Response) {
     
     log(`Generating PDF from HTML in ${tempHtmlPath}`, 'pdf');
     
-    log('Launching browser for PDF generation using @sparticuz/chromium', 'pdf');
+    log('Launching browser for PDF generation using regular puppeteer', 'pdf');
     
-    // Use @sparticuz/chromium which is better suited for serverless environments like Replit
+    // Use regular puppeteer for Replit environment
     let browser;
     try {
-      // Launch browser with appropriate options - no font loading needed
-      browser = await puppeteer.launch({
-        executablePath: await chromium.executablePath(),
-        args: await chromium.args,
+      // Launch browser with appropriate options for Replit environment
+      browser = await puppeteerOriginal.launch({
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-software-rasterizer',
+          '--disable-extensions',
+          '--single-process'
+        ],
         defaultViewport: {
           width: 1280,
           height: 1024
-        },
-        headless: true
+        }
       });
       
-      log('Successfully launched browser using @sparticuz/chromium', 'pdf');
+      log('Successfully launched browser using regular puppeteer', 'pdf');
     } catch (error) {
       const browserError = error as Error;
       log(`Error launching browser: ${browserError}`, 'pdf');
