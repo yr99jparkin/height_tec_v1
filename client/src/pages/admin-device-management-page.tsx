@@ -101,8 +101,19 @@ function DeviceStockTab() {
 
   // Mutation to add a device to stock
   const addDeviceMutation = useMutation({
-    mutationFn: (deviceId: string) => {
-      return apiRequest("/api/admin/device-stock", "POST", { deviceId });
+    mutationFn: async (deviceId: string) => {
+      const response = await fetch("/api/admin/device-stock", {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to add device");
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -125,8 +136,17 @@ function DeviceStockTab() {
 
   // Mutation to delete a device from stock
   const deleteDeviceMutation = useMutation({
-    mutationFn: (deviceId: string) => {
-      return apiRequest(`/api/admin/device-stock/${deviceId}`, "DELETE");
+    mutationFn: async (deviceId: string) => {
+      const response = await fetch(`/api/admin/device-stock/${deviceId}`, {
+        method: "DELETE"
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to delete device");
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -325,14 +345,31 @@ function UserDevicesTab() {
   // Query devices for specific user if selected
   const { data: userDevices = [], isLoading: isLoadingUserDevices } = useQuery<Device[]>({
     queryKey: ["/api/admin/devices/user", selectedUserId],
+    queryFn: async () => {
+      if (!selectedUserId || selectedUserId === "all") return [];
+      const response = await fetch(`/api/admin/devices/user/${selectedUserId}`);
+      if (!response.ok) throw new Error('Failed to fetch user devices');
+      return response.json();
+    },
     enabled: !!selectedUserId && selectedUserId !== "all",
     retry: 1
   });
 
   // Mutation to update device
   const updateDeviceMutation = useMutation({
-    mutationFn: (data: {deviceId: string, updates: Partial<Device>}) => {
-      return apiRequest(`/api/admin/devices/${data.deviceId}`, "PATCH", data.updates);
+    mutationFn: async (data: {deviceId: string, updates: Partial<Device>}) => {
+      const response = await fetch(`/api/admin/devices/${data.deviceId}`, {
+        method: "PATCH",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data.updates)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update device");
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -426,16 +463,65 @@ function UserDevicesTab() {
                 )}
               </TableCell>
               <TableCell className="text-right">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    setSelectedDevice(device);
-                    setIsEditDialogOpen(true);
-                  }}
-                >
-                  Edit
-                </Button>
+                <div className="flex justify-end gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setSelectedDevice(device);
+                      setIsEditDialogOpen(true);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm">
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Device</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete {device.deviceName}?
+                          This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => {
+                            fetch(`/api/devices/${device.id}`, { method: 'DELETE' })
+                              .then(response => {
+                                if (!response.ok) throw new Error("Failed to delete device");
+                                toast({
+                                  title: "Device deleted",
+                                  description: "The device has been deleted successfully.",
+                                });
+                                queryClient.invalidateQueries({ queryKey: ['/api/admin/devices'] });
+                                if (selectedUserId && selectedUserId !== "all") {
+                                  queryClient.invalidateQueries({ 
+                                    queryKey: ['/api/admin/devices/user', selectedUserId] 
+                                  });
+                                }
+                              })
+                              .catch(error => {
+                                toast({
+                                  title: "Error",
+                                  description: error.message,
+                                  variant: "destructive"
+                                });
+                              });
+                          }}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </TableCell>
             </TableRow>
           ))}
@@ -507,28 +593,6 @@ function UserDevicesTab() {
                   defaultValue={selectedDevice.project || ""}
                 />
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
-                <Input
-                  id="location"
-                  name="location"
-                  defaultValue={selectedDevice.location || ""}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="active">Status</Label>
-                <Select defaultValue={selectedDevice.active ? "true" : "false"} name="active">
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="true">Active</SelectItem>
-                    <SelectItem value="false">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
             <DialogFooter>
@@ -541,17 +605,12 @@ function UserDevicesTab() {
                 onClick={() => {
                   const deviceName = (document.getElementById('deviceName') as HTMLInputElement).value;
                   const project = (document.getElementById('project') as HTMLInputElement).value;
-                  const location = (document.getElementById('location') as HTMLInputElement).value;
-                  const activeSelect = document.querySelector('select[name="active"]') as HTMLSelectElement;
-                  const active = activeSelect ? activeSelect.value === 'true' : selectedDevice.active;
                   
                   updateDeviceMutation.mutate({
                     deviceId: selectedDevice.deviceId,
                     updates: {
                       deviceName,
-                      project,
-                      location,
-                      active
+                      project
                     }
                   });
                 }}
