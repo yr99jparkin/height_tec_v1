@@ -495,6 +495,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Admin - Delete device (regardless of owner)
+  app.delete("/api/admin/devices/:deviceId", isAdmin, async (req, res) => {
+    try {
+      const deviceId = req.params.deviceId;
+      const device = await storage.getDeviceByDeviceId(deviceId);
+      
+      if (!device) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+      
+      // Update device stock status to Available
+      await storage.updateDeviceStockStatus(deviceId, "Available");
+      
+      // Delete the device
+      await storage.deleteDevice(device.id);
+      
+      res.status(200).json({ message: "Device deleted successfully" });
+    } catch (error) {
+      console.error("[admin] Error deleting device:", error);
+      res.status(500).json({ 
+        message: "Error deleting device",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   // API Routes
   // Get latest wind data for a specific device
   app.get("/api/wind/latest/:deviceId", isAuthenticated, async (req, res) => {
