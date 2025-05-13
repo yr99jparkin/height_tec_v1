@@ -20,15 +20,12 @@ import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
 import { TimeInput } from "@/components/ui/time-input";
-import { generateWindReportPDF } from "@/lib/pdf-generator";
-import { useToast } from "@/hooks/use-toast";
 
 // Define the aggregation level type
 type AggregationLevel = "10min" | "1hour" | "1day" | "1week";
 
 export default function ReportsPage() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
   const [dateRange, setDateRange] = useState<{
@@ -44,8 +41,6 @@ export default function ReportsPage() {
   const [aggregationLevel, setAggregationLevel] = useState<AggregationLevel>("10min");
   // Expanded sections for aggregated data
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
-  // Loading state for PDF export
-  const [isPdfExporting, setIsPdfExporting] = useState(false);
 
   // Update the report generation time when the report is updated
   useEffect(() => {
@@ -113,44 +108,6 @@ export default function ReportsPage() {
   const handleUpdateReport = () => {
     setReportGenTime(new Date());
     // The queries will automatically refresh when their dependencies change
-  };
-  
-  // Handle PDF export
-  const handleExportPDF = async () => {
-    if (!selectedDevice || windData.length === 0) {
-      return;
-    }
-    
-    try {
-      setIsPdfExporting(true);
-      toast({
-        title: "Generating PDF",
-        description: "Please wait while we generate your report...",
-      });
-      
-      const fileName = await generateWindReportPDF({
-        device: selectedDevice,
-        windData,
-        dateRange,
-        stats,
-        thresholds,
-        reportGenTime
-      });
-      
-      toast({
-        title: "PDF Generated",
-        description: `Your report has been downloaded as ${fileName}`,
-      });
-    } catch (error) {
-      console.error("PDF generation error:", error);
-      toast({
-        title: "Export Failed",
-        description: "There was an error generating your PDF report.",
-
-      });
-    } finally {
-      setIsPdfExporting(false);
-    }
   };
 
   // Calculate statistics
@@ -432,12 +389,11 @@ export default function ReportsPage() {
             <h1 className="text-2xl font-heading font-semibold text-neutral-800">Wind Reports</h1>
             <Button 
               variant="outline"
-              disabled={!selectedDeviceId || windData.length === 0 || isPdfExporting}
+              disabled={!selectedDeviceId || windData.length === 0}
               className="flex items-center gap-2"
-              onClick={handleExportPDF}
             >
               <FileDown className="h-4 w-4" />
-              {isPdfExporting ? "Generating..." : "Export PDF"}
+              Export PDF
             </Button>
           </div>
           
