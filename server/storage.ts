@@ -40,8 +40,12 @@ export interface IStorage {
   deleteDevice(id: number): Promise<void>;
 
   // Device stock operations
+  getAllDeviceStock(): Promise<DeviceStock[]>;
   getDeviceStockByDeviceId(deviceId: string): Promise<DeviceStock | undefined>;
+  createDeviceStock(device: InsertDeviceStock): Promise<DeviceStock>;
   updateDeviceStockStatus(deviceId: string, status: string, username?: string): Promise<void>;
+  deleteDeviceStock(deviceId: string): Promise<void>;
+  getAllDevices(): Promise<Device[]>;
 
   // Notification contacts operations
   getNotificationContactsByDeviceId(deviceId: string): Promise<NotificationContact[]>;
@@ -362,9 +366,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Device stock operations
+  async getAllDeviceStock(): Promise<DeviceStock[]> {
+    return await db.select().from(deviceStock).orderBy(deviceStock.deviceId);
+  }
+
   async getDeviceStockByDeviceId(deviceId: string): Promise<DeviceStock | undefined> {
     const [stock] = await db.select().from(deviceStock).where(eq(deviceStock.deviceId, deviceId));
     return stock;
+  }
+
+  async createDeviceStock(device: InsertDeviceStock): Promise<DeviceStock> {
+    const [newDevice] = await db.insert(deviceStock).values(device).returning();
+    return newDevice;
   }
 
   async updateDeviceStockStatus(deviceId: string, status: string, username?: string): Promise<void> {
@@ -377,6 +390,24 @@ export class DatabaseStorage implements IStorage {
     await db.update(deviceStock)
       .set(updateData)
       .where(eq(deviceStock.deviceId, deviceId));
+  }
+
+  async deleteDeviceStock(deviceId: string): Promise<void> {
+    const stock = await this.getDeviceStockByDeviceId(deviceId);
+    
+    if (!stock) {
+      throw new Error("Device not found in inventory");
+    }
+    
+    if (stock.status !== "Available") {
+      throw new Error("Cannot delete allocated device from inventory");
+    }
+    
+    await db.delete(deviceStock).where(eq(deviceStock.deviceId, deviceId));
+  }
+
+  async getAllDevices(): Promise<Device[]> {
+    return await db.select().from(devices).orderBy(devices.deviceId);
   }
 
   // Wind alert threshold operations
