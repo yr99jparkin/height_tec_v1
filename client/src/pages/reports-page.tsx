@@ -20,6 +20,8 @@ import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
 import { TimeInput } from "@/components/ui/time-input";
+import { generateWindReportPDF } from "@/lib/pdf-generator";
+import { useToast } from "@/hooks/use-toast";
 
 // Define the aggregation level type
 type AggregationLevel = "10min" | "1hour" | "1day" | "1week";
