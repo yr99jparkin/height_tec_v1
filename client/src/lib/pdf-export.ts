@@ -1,7 +1,8 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { format } from 'date-fns';
-import { DeviceWithLatestData, WindDataHistorical } from '@shared/schema';
+import { DeviceWithLatestData } from '@shared/types';
+import { WindDataHistorical } from '@shared/schema';
 
 interface ExportToPdfOptions {
   reportElement: HTMLElement;

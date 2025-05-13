@@ -28,6 +28,7 @@ type AggregationLevel = "10min" | "1hour" | "1day" | "1week";
 
 export default function ReportsPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
   const [dateRange, setDateRange] = useState<{
@@ -43,6 +44,8 @@ export default function ReportsPage() {
   const [aggregationLevel, setAggregationLevel] = useState<AggregationLevel>("10min");
   // Expanded sections for aggregated data
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  // Reference to the report content element for PDF export
+  const reportContentRef = useRef<HTMLDivElement>(null);
 
   // Update the report generation time when the report is updated
   useEffect(() => {
@@ -110,6 +113,46 @@ export default function ReportsPage() {
   const handleUpdateReport = () => {
     setReportGenTime(new Date());
     // The queries will automatically refresh when their dependencies change
+  };
+  
+  // Handle the export to PDF button click
+  const handleExportPdf = async () => {
+    if (!selectedDevice || !reportContentRef.current) {
+      toast({
+        title: "Export Failed",
+        description: "Unable to export the report. Please make sure a device is selected and data is loaded.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      toast({
+        title: "Preparing PDF",
+        description: "Please wait while we generate your PDF...",
+      });
+      
+      await exportToPdf({
+        reportElement: reportContentRef.current,
+        device: selectedDevice,
+        dateRange,
+        reportGenTime,
+        stats,
+        thresholds
+      });
+      
+      toast({
+        title: "Export Complete",
+        description: "Your PDF report has been downloaded successfully.",
+      });
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      toast({
+        title: "Export Failed",
+        description: "An error occurred while generating the PDF. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Calculate statistics
@@ -393,6 +436,7 @@ export default function ReportsPage() {
               variant="outline"
               disabled={!selectedDeviceId || windData.length === 0}
               className="flex items-center gap-2"
+              onClick={handleExportPdf}
             >
               <FileDown className="h-4 w-4" />
               Export PDF
@@ -614,7 +658,7 @@ export default function ReportsPage() {
               </div>
 
               {/* Report Content */}
-              <div className="p-6">
+              <div className="p-6" ref={reportContentRef}>
                 {isLoadingWindData ? (
                   <>
                     <Skeleton className="h-[250px] w-full mb-6" />
