@@ -1,7 +1,8 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import { format } from 'date-fns';
-import { WindDataHistorical, Device, WindAlertThreshold } from '@shared/schema';
+import { WindDataHistorical, WindAlertThreshold } from '@shared/schema';
+import { DeviceWithLatestData } from '@shared/types';
 
 interface ReportStats {
   maxWindSpeed: number;
@@ -24,7 +25,7 @@ export async function generateWindReportPDF({
   thresholds,
   reportGenTime
 }: {
-  device: Device;
+  device: DeviceWithLatestData;
   windData: WindDataHistorical[];
   dateRange: { from: Date | undefined; to: Date | undefined };
   stats: ReportStats;
