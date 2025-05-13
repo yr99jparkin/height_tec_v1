@@ -47,6 +47,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Also register alerts router at a client-accessible path matching the client-side routes
   app.use('/alert', alertsRouter);
   
+  // PDF Generation endpoint
+  app.post('/api/generate-pdf', isAuthenticated, handlePdfGeneration);
+  
   // Development endpoint to test direct simulation
   if (process.env.NODE_ENV === 'development') {
     app.post("/api/dev/test-simulate", isAuthenticated, async (req, res) => {
