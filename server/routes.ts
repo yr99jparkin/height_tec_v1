@@ -565,6 +565,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Admin - Update notification contact (regardless of owner)
+  app.patch("/api/admin/contacts/:contactId", isAdmin, async (req, res) => {
+    try {
+      const contactId = parseInt(req.params.contactId);
+      
+      if (isNaN(contactId)) {
+        return res.status(400).json({ message: "Invalid contact ID" });
+      }
+      
+      // Verify contact exists
+      const contact = await storage.getNotificationContactById(contactId);
+      if (!contact) {
+        return res.status(404).json({ message: "Contact not found" });
+      }
+      
+      const schema = z.object({
+        email: z.string().email().optional(),
+        phoneNumber: z.string().min(5).optional()
+      });
+      
+      const data = schema.parse(req.body);
+      
+      // Update only the fields that were provided
+      const updatedContact = await storage.updateNotificationContact(contactId, data);
+      
+      res.status(200).json(updatedContact);
+    } catch (error) {
+      console.error("[admin] Error updating notification contact:", error);
+      
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      
+      res.status(500).json({ 
+        message: "Error updating notification contact",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Admin - Delete notification contact (regardless of owner)
+  app.delete("/api/admin/contacts/:contactId", isAdmin, async (req, res) => {
+    try {
+      const contactId = parseInt(req.params.contactId);
+      
+      if (isNaN(contactId)) {
+        return res.status(400).json({ message: "Invalid contact ID" });
+      }
+      
+      // Verify contact exists
+      const contact = await storage.getNotificationContactById(contactId);
+      if (!contact) {
+        return res.status(404).json({ message: "Contact not found" });
+      }
+      
+      await storage.deleteNotificationContact(contactId);
+      
+      res.status(200).json({ message: "Contact deleted successfully" });
+    } catch (error) {
+      console.error("[admin] Error deleting notification contact:", error);
+      res.status(500).json({ 
+        message: "Error deleting notification contact",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   // Admin - Update thresholds for a device (regardless of owner)
   app.put("/api/admin/thresholds/:deviceId", isAdmin, async (req, res) => {
     try {

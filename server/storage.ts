@@ -49,6 +49,7 @@ export interface IStorage {
 
   // Notification contacts operations
   getNotificationContactsByDeviceId(deviceId: string): Promise<NotificationContact[]>;
+  getNotificationContactById(id: number): Promise<NotificationContact | null>;
   createNotificationContact(contact: InsertNotificationContact): Promise<NotificationContact>;
   updateNotificationContact(id: number, contact: Partial<InsertNotificationContact>): Promise<NotificationContact>;
   deleteNotificationContact(id: number): Promise<void>;
@@ -268,6 +269,14 @@ export class DatabaseStorage implements IStorage {
   async getNotificationContactsByDeviceId(deviceId: string): Promise<NotificationContact[]> {
     return await db.select().from(notificationContacts)
       .where(eq(notificationContacts.deviceId, deviceId));
+  }
+  
+  async getNotificationContactById(id: number): Promise<NotificationContact | null> {
+    const contact = await db.select().from(notificationContacts)
+      .where(eq(notificationContacts.id, id))
+      .limit(1);
+    
+    return contact.length > 0 ? contact[0] : null;
   }
 
   async createNotificationContact(contact: InsertNotificationContact): Promise<NotificationContact> {

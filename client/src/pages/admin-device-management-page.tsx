@@ -930,14 +930,111 @@ function UserDevicesTab() {
                 {contacts.length > 0 ? (
                   <div className="mb-4">
                     <h4 className="text-sm font-medium mb-2">Existing Contacts:</h4>
-                    <ul className="text-sm space-y-1">
+                    <div className="space-y-3">
                       {contacts.map(contact => (
-                        <li key={contact.id} className="flex justify-between">
-                          <span className="text-muted-foreground">{contact.email}</span>
-                          <span>{contact.phoneNumber || "-"}</span>
-                        </li>
+                        <div key={contact.id} className="flex flex-col space-y-2 p-3 border rounded-md">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">{contact.email}</span>
+                            <div className="flex space-x-1">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => {
+                                  // Open a dialog to edit the contact
+                                  const newEmail = prompt("Edit email address", contact.email);
+                                  if (newEmail !== null) {
+                                    const newPhone = prompt("Edit phone number", contact.phoneNumber || "");
+                                    if (newPhone !== null) {
+                                      // Validate inputs
+                                      if (!newEmail.includes('@')) {
+                                        toast({
+                                          title: "Invalid email",
+                                          description: "Please enter a valid email address",
+                                          variant: "destructive"
+                                        });
+                                        return;
+                                      }
+                                      
+                                      fetch(`/api/admin/contacts/${contact.id}`, {
+                                        method: 'PATCH',
+                                        headers: {
+                                          'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify({
+                                          email: newEmail,
+                                          phoneNumber: newPhone
+                                        })
+                                      })
+                                      .then(response => {
+                                        if (!response.ok) throw new Error("Failed to update contact");
+                                        return response.json();
+                                      })
+                                      .then(() => {
+                                        toast({
+                                          title: "Contact updated",
+                                          description: "The contact has been updated successfully."
+                                        });
+                                        // Refresh contacts
+                                        fetch(`/api/devices/${selectedDevice?.deviceId}/contacts`)
+                                          .then(response => response.ok ? response.json() : [])
+                                          .then(data => setContacts(data || []));
+                                      })
+                                      .catch(error => {
+                                        toast({
+                                          title: "Error",
+                                          description: error.message,
+                                          variant: "destructive"
+                                        });
+                                      });
+                                    }
+                                  }
+                                }}
+                              >
+                                <Pencil className="h-4 w-4 text-blue-500" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => {
+                                  // Delete the contact
+                                  fetch(`/api/admin/contacts/${contact.id}`, {
+                                    method: 'DELETE'
+                                  })
+                                  .then(response => {
+                                    if (!response.ok) throw new Error("Failed to delete contact");
+                                    return response.json();
+                                  })
+                                  .then(() => {
+                                    toast({
+                                      title: "Contact deleted",
+                                      description: "The contact has been deleted successfully."
+                                    });
+                                    // Refresh contacts
+                                    fetch(`/api/devices/${selectedDevice?.deviceId}/contacts`)
+                                      .then(response => response.ok ? response.json() : [])
+                                      .then(data => setContacts(data || []));
+                                  })
+                                  .catch(error => {
+                                    toast({
+                                      title: "Error",
+                                      description: error.message,
+                                      variant: "destructive"
+                                    });
+                                  });
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">{contact.phoneNumber || "-"}</span>
+                          </div>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground mb-3">No notification contacts configured.</p>
