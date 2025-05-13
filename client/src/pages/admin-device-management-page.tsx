@@ -443,8 +443,8 @@ function UserDevicesTab() {
 
   // Notification contacts state
   const [contacts, setContacts] = useState<NotificationContact[]>([]);
-  const [newContactName, setNewContactName] = useState("");
   const [newContactEmail, setNewContactEmail] = useState("");
+  const [newContactPhone, setNewContactPhone] = useState("");
 
   // Query all users for dropdown
   const { data: users = [], isLoading: isLoadingUsers } = useQuery<User[]>({
@@ -517,7 +517,7 @@ function UserDevicesTab() {
       deviceId: string, 
       updates: Partial<Device>,
       thresholds?: { amberThreshold: number, redThreshold: number },
-      contacts?: { name: string, email: string }[]
+      contacts?: { email: string, phoneNumber: string }[]
     }) => {
       // Update device basic info
       const response = await fetch(`/api/admin/devices/${data.deviceId}`, {
@@ -638,8 +638,8 @@ function UserDevicesTab() {
         amberThreshold,
         redThreshold
       },
-      contacts: newContactName && newContactEmail ? [
-        { name: newContactName, email: newContactEmail }
+      contacts: newContactEmail && newContactPhone ? [
+        { email: newContactEmail, phoneNumber: newContactPhone }
       ] : undefined
     };
 
@@ -924,8 +924,8 @@ function UserDevicesTab() {
                     <ul className="text-sm space-y-1">
                       {contacts.map(contact => (
                         <li key={contact.id} className="flex justify-between">
-                          <span>{contact.name}</span>
                           <span className="text-muted-foreground">{contact.email}</span>
+                          <span>{contact.phoneNumber || "-"}</span>
                         </li>
                       ))}
                     </ul>
@@ -935,20 +935,7 @@ function UserDevicesTab() {
                 )}
                 
                 <div className="space-y-2">
-                  <h4 className="text-sm font-medium">Add New Contact:</h4>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="contact-name" className="text-right">
-                      Name
-                    </Label>
-                    <Input
-                      id="contact-name"
-                      value={newContactName}
-                      onChange={(e) => setNewContactName(e.target.value)}
-                      className="col-span-3"
-                      placeholder="Contact name"
-                    />
-                  </div>
-                  
+                  <h4 className="text-sm font-medium">Add New Contact:</h4>                  
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="contact-email" className="text-right">
                       Email
@@ -960,6 +947,20 @@ function UserDevicesTab() {
                       onChange={(e) => setNewContactEmail(e.target.value)}
                       className="col-span-3"
                       placeholder="contact@example.com"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="contact-phone" className="text-right">
+                      Phone
+                    </Label>
+                    <Input
+                      id="contact-phone"
+                      type="tel"
+                      value={newContactPhone}
+                      onChange={(e) => setNewContactPhone(e.target.value)}
+                      className="col-span-3"
+                      placeholder="+44 123 456 7890"
                     />
                   </div>
                 </div>
