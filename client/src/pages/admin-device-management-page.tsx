@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Redirect } from "wouter";
 import { Header } from "@/components/layout/header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Server, Package, Users, Plus, RefreshCw, AlertTriangle, Trash2, Filter } from "lucide-react";
+import { Server, Package, Users, Plus, RefreshCw, AlertTriangle, Trash2, Filter, Pencil } from "lucide-react";
 import { 
   Card, 
   CardContent, 
