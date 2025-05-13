@@ -44,8 +44,7 @@ export default function ReportsPage() {
   const [aggregationLevel, setAggregationLevel] = useState<AggregationLevel>("10min");
   // Expanded sections for aggregated data
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
-  // Reference to the report content element for PDF export
-  const reportContentRef = useRef<HTMLDivElement>(null);
+  // We don't need a reference to the content element anymore since we're using server-side rendering
 
   // Update the report generation time when the report is updated
   useEffect(() => {
@@ -117,7 +116,7 @@ export default function ReportsPage() {
   
   // Handle the export to PDF button click
   const handleExportPdf = async () => {
-    if (!selectedDevice || !reportContentRef.current) {
+    if (!selectedDevice) {
       toast({
         title: "Export Failed",
         description: "Unable to export the report. Please make sure a device is selected and data is loaded.",
@@ -133,7 +132,6 @@ export default function ReportsPage() {
       });
       
       await exportToPdf({
-        reportElement: reportContentRef.current,
         device: selectedDevice,
         dateRange,
         reportGenTime,
@@ -658,7 +656,7 @@ export default function ReportsPage() {
               </div>
 
               {/* Report Content */}
-              <div className="p-6" ref={reportContentRef}>
+              <div className="p-6">
                 {isLoadingWindData ? (
                   <>
                     <Skeleton className="h-[250px] w-full mb-6" />
