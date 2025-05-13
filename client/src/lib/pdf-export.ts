@@ -1,11 +1,8 @@
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { format } from 'date-fns';
 import { DeviceWithLatestData } from '@shared/types';
 import { WindDataHistorical } from '@shared/schema';
 
 interface ExportToPdfOptions {
-  reportElement: HTMLElement;
   device: DeviceWithLatestData;
   dateRange: {
     from: Date | undefined;
@@ -28,168 +25,241 @@ interface ExportToPdfOptions {
 }
 
 /**
- * Exports the wind report to PDF format
+ * Creates the HTML content for the PDF report
  */
-export async function exportToPdf({
-  reportElement,
+function createReportHtml({
   device,
   dateRange,
   reportGenTime,
   stats,
   thresholds
-}: ExportToPdfOptions): Promise<void> {
-  try {
-    // Create a new PDF document - A4 size with portrait orientation
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
-    
-    // Set font
-    pdf.setFont('helvetica');
-    
-    // Add header
-    const title = `Wind Report - ${device.deviceName}`;
-    pdf.setFontSize(20);
-    pdf.text(title, 20, 20);
-    
-    // Add report metadata
-    pdf.setFontSize(10);
-    pdf.text(`Generated: ${format(reportGenTime, 'PPp')}`, 20, 30);
-    
-    if (dateRange.from && dateRange.to) {
-      pdf.text(`Period: ${format(dateRange.from, 'PPP p')} - ${format(dateRange.to, 'PPP p')}`, 20, 35);
-    }
-    
-    // Add device information
-    pdf.text(`Device ID: ${device.deviceId}`, 20, 45);
-    pdf.text(`Location: ${device.longitude ? `${device.latitude}, ${device.longitude}` : 'Not specified'}`, 20, 50);
-    
-    // Add thresholds information
-    if (thresholds) {
-      pdf.text(`Amber Alert Threshold: ${thresholds.amberThreshold} km/h`, 20, 55);
-      pdf.text(`Red Alert Threshold: ${thresholds.redThreshold} km/h`, 20, 60);
-    }
-    
-    // Add summary statistics
-    pdf.setFontSize(12);
-    pdf.text('Summary Statistics', 20, 70);
-    pdf.setFontSize(10);
-    pdf.text(`Maximum Wind Speed: ${stats.maxWindSpeed.toFixed(1)} km/h`, 25, 75);
-    if (stats.maxWindSpeedTime) {
-      pdf.text(`at ${format(stats.maxWindSpeedTime, 'PPp')}`, 25, 80);
-    }
-    pdf.text(`Average Wind Speed: ${stats.avgWindSpeed.toFixed(1)} km/h`, 25, 85);
-    
-    const hours = Math.floor(stats.totalDowntime / 3600);
-    const minutes = Math.floor((stats.totalDowntime % 3600) / 60);
-    pdf.text(`Total Downtime: ${hours}h ${minutes}m`, 25, 90);
-    
-    pdf.text(`Alert Distribution:`, 25, 95);
-    pdf.text(`Green: ${stats.greenPercentage.toFixed(1)}%`, 30, 100);
-    pdf.text(`Amber: ${stats.amberPercentage.toFixed(1)}%`, 30, 105);
-    pdf.text(`Red: ${stats.redPercentage.toFixed(1)}%`, 30, 110);
-    
-    // Convert the report element to an image
-    const canvas = await html2canvas(reportElement, {
-      scale: 2, // Higher scale for better quality
-      logging: false,
-      useCORS: true,
-      allowTaint: true
-    });
-    
-    // Calculate the available height for the content on A4 page in mm
-    const contentStartY = 120; // Where the charts and tables should start after the header and stats
-    const pageHeight = 297 - 20; // A4 height minus margin
-    
-    // Calculate the required height for the content
-    const contentHeightRatio = canvas.height / canvas.width;
-    const availableWidth = 210 - 40; // A4 width minus margins
-    const requiredHeight = availableWidth * contentHeightRatio;
-    
-    // If the content is too large, split it into multiple images
-    const maxImageHeight = pageHeight - contentStartY;
-    
-    if (requiredHeight <= maxImageHeight) {
-      // Content fits on first page after the header
-      const imgData = canvas.toDataURL('image/png');
-      pdf.addImage(imgData, 'PNG', 20, contentStartY, availableWidth, requiredHeight);
-    } else {
-      // Content is too large, split into multiple parts
-      const scaleFactor = canvas.width / availableWidth;
-      const pixelsPerPage = Math.floor(maxImageHeight * scaleFactor);
-      let srcY = 0;
-      let destY = contentStartY;
-      let page = 1;
+}: ExportToPdfOptions): string {
+  const title = `Wind Report - ${device.deviceName}`;
+  const generatedText = `Generated: ${format(reportGenTime, 'PPp')}`;
+  const periodText = dateRange.from && dateRange.to
+    ? `Period: ${format(dateRange.from, 'PPP p')} - ${format(dateRange.to, 'PPP p')}`
+    : '';
+  
+  const hours = Math.floor(stats.totalDowntime / 3600);
+  const minutes = Math.floor((stats.totalDowntime % 3600) / 60);
+  
+  // Create PDF styling with CSS
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>${title}</title>
+      <style>
+        body {
+          font-family: Arial, Helvetica, sans-serif;
+          margin: 0;
+          padding: 20px;
+          color: #333;
+        }
+        .header {
+          margin-bottom: 20px;
+        }
+        h1 {
+          font-size: 24px;
+          margin-bottom: 10px;
+          color: #1a1a1a;
+        }
+        .metadata {
+          font-size: 12px;
+          color: #666;
+          margin-bottom: 5px;
+        }
+        .device-info {
+          margin: 20px 0;
+          padding: 15px;
+          background-color: #f8f8f8;
+          border-radius: 5px;
+        }
+        .device-info p {
+          margin: 5px 0;
+          font-size: 12px;
+        }
+        .section-title {
+          font-size: 16px;
+          font-weight: bold;
+          margin: 15px 0 10px 0;
+          padding-bottom: 5px;
+          border-bottom: 1px solid #ddd;
+        }
+        .stat-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 15px;
+          margin-bottom: 20px;
+        }
+        .stat-box {
+          background-color: #f0f0f0;
+          padding: 10px;
+          border-radius: 5px;
+        }
+        .stat-label {
+          font-size: 11px;
+          color: #666;
+          text-transform: uppercase;
+          margin-bottom: 5px;
+        }
+        .stat-value {
+          font-size: 18px;
+          font-weight: bold;
+          margin-bottom: 2px;
+        }
+        .stat-subtext {
+          font-size: 10px;
+          color: #888;
+        }
+        .thresholds {
+          margin: 10px 0;
+          font-size: 12px;
+        }
+        .alert-distribution {
+          margin-top: 15px;
+        }
+        .percentage-bar {
+          height: 20px;
+          width: 100%;
+          background-color: #eee;
+          margin-top: 5px;
+          border-radius: 10px;
+          overflow: hidden;
+          display: flex;
+        }
+        .green-segment {
+          height: 100%;
+          background-color: #4caf50;
+        }
+        .amber-segment {
+          height: 100%;
+          background-color: #ff9800;
+        }
+        .red-segment {
+          height: 100%;
+          background-color: #f44336;
+        }
+        .footer {
+          margin-top: 30px;
+          font-size: 10px;
+          color: #888;
+          text-align: center;
+        }
+        @page {
+          margin: 15mm;
+          size: A4;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>${title}</h1>
+        <div class="metadata">${generatedText}</div>
+        ${periodText ? `<div class="metadata">${periodText}</div>` : ''}
+      </div>
       
-      while (srcY < canvas.height) {
-        // If not the first page, start from the top
-        if (srcY > 0) {
-          pdf.addPage();
-          destY = 20; // Start from the top of the new page with a small margin
-          
-          // Add page number
-          pdf.setFontSize(8);
-          pdf.text(`Page ${page}`, 190, 287);
-        }
+      <div class="device-info">
+        <p><strong>Device ID:</strong> ${device.deviceId}</p>
+        <p><strong>Location:</strong> ${device.location || 'Not specified'}</p>
+        ${device.longitude ? `<p><strong>Coordinates:</strong> ${device.latitude}, ${device.longitude}</p>` : ''}
+        ${thresholds ? `
+          <div class="thresholds">
+            <p><strong>Alert Thresholds:</strong></p>
+            <p>Amber Alert: ≥ ${thresholds.amberThreshold} km/h</p>
+            <p>Red Alert: ≥ ${thresholds.redThreshold} km/h</p>
+          </div>
+        ` : ''}
+      </div>
+      
+      <div class="section-title">Summary Statistics</div>
+      
+      <div class="stat-grid">
+        <div class="stat-box">
+          <div class="stat-label">Maximum Wind Speed</div>
+          <div class="stat-value">${stats.maxWindSpeed.toFixed(1)} km/h</div>
+          ${stats.maxWindSpeedTime ? 
+            `<div class="stat-subtext">at ${format(stats.maxWindSpeedTime, 'PPp')}</div>` : ''}
+        </div>
         
-        const remainingHeight = canvas.height - srcY;
-        const currentPageHeight = Math.min(pixelsPerPage, remainingHeight);
-        const currentDestHeight = currentPageHeight / scaleFactor;
+        <div class="stat-box">
+          <div class="stat-label">Average Wind Speed</div>
+          <div class="stat-value">${stats.avgWindSpeed.toFixed(1)} km/h</div>
+        </div>
         
-        // Create a temporary canvas for this segment
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = canvas.width;
-        tempCanvas.height = currentPageHeight;
-        const tempCtx = tempCanvas.getContext('2d');
-        
-        if (tempCtx) {
-          tempCtx.drawImage(
-            canvas, 
-            0, srcY, canvas.width, currentPageHeight, 
-            0, 0, tempCanvas.width, tempCanvas.height
-          );
-          
-          const imgData = tempCanvas.toDataURL('image/png');
-          pdf.addImage(imgData, 'PNG', 20, destY, availableWidth, currentDestHeight);
-        }
-        
-        srcY += currentPageHeight;
-        page++;
-      }
+        <div class="stat-box">
+          <div class="stat-label">Total Downtime</div>
+          <div class="stat-value">${hours}h ${minutes}m</div>
+        </div>
+      </div>
+      
+      <div class="alert-distribution">
+        <div class="stat-label">Alert Distribution</div>
+        <div class="percentage-bar">
+          <div class="green-segment" style="width: ${stats.greenPercentage}%;"></div>
+          <div class="amber-segment" style="width: ${stats.amberPercentage}%;"></div>
+          <div class="red-segment" style="width: ${stats.redPercentage}%;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 11px;">
+          <div>Green: ${stats.greenPercentage.toFixed(1)}%</div>
+          <div>Amber: ${stats.amberPercentage.toFixed(1)}%</div>
+          <div>Red: ${stats.redPercentage.toFixed(1)}%</div>
+        </div>
+      </div>
+      
+      <div class="footer">
+        Generated on ${format(new Date(), 'PPpp')} | Wind Monitoring System Report
+      </div>
+    </body>
+    </html>
+  `;
+  
+  return html;
+}
+
+/**
+ * Exports the wind report to PDF format using Puppeteer on the server side
+ */
+export async function exportToPdf(options: ExportToPdfOptions): Promise<void> {
+  try {
+    const { device } = options;
+    const filename = `wind-report-${device.deviceName}-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`;
+    
+    // Create the HTML content for the report
+    const reportHtml = createReportHtml(options);
+    
+    // Create a FormData object to send to the server
+    const formData = new FormData();
+    formData.append('html', reportHtml);
+    formData.append('filename', filename);
+    
+    // Send request to the server to generate PDF
+    const response = await fetch('/api/generate-pdf', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to generate PDF: ${errorText}`);
     }
     
-    // Add footer with timestamp on all pages
-    const totalPages = pdf.getNumberOfPages();
-    for (let i = 1; i <= totalPages; i++) {
-      pdf.setPage(i);
-      pdf.setFontSize(8);
-      pdf.text(`Generated on ${format(new Date(), 'PPpp')}`, 20, 287);
-      pdf.text(`Page ${i} of ${totalPages}`, 180, 287);
-    }
+    // Get the PDF as a blob
+    const pdfBlob = await response.blob();
     
-    // Save the PDF
-    pdf.save(`wind-report-${device.deviceName}-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`);
+    // Create download link
+    const url = window.URL.createObjectURL(pdfBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    
+    // Cleanup
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   } catch (error) {
     console.error('Error generating PDF:', error);
-    console.error('Error details:', {
-      errorName: error instanceof Error ? error.name : 'Unknown',
-      errorMessage: error instanceof Error ? error.message : String(error),
-      errorStack: error instanceof Error ? error.stack : 'No stack trace available'
-    });
-    
-    // Log the state that was being processed
-    console.error('PDF generation state:', {
-      deviceName: device.deviceName,
-      dateRange: dateRange,
-      statsAvailable: Boolean(stats),
-      elementDimensions: reportElement ? {
-        width: reportElement.offsetWidth,
-        height: reportElement.offsetHeight
-      } : 'Element not available'
-    });
-    
     throw error;
   }
 }

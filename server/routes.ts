@@ -13,6 +13,7 @@ import path from "path";
 import alertsRouter from "./routes/alerts";
 import { runSimulation } from "./scripts/run-simulation";
 import { emailService } from "./email-service";
+import { handlePdfGeneration } from "./pdf-generator";
 
 // Middleware to check if user is authenticated
 const isAuthenticated = (req: Request, res: Response, next: Function) => {
