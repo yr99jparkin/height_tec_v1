@@ -94,7 +94,7 @@ function DeviceStockTab() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   // Query device stock data
-  const { data: deviceStock, isLoading, isError } = useQuery({
+  const { data: deviceStock = [], isLoading, isError } = useQuery<DeviceStock[]>({
     queryKey: ["/api/admin/device-stock"],
     retry: 1
   });
@@ -311,19 +311,19 @@ function UserDevicesTab() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   // Query all users for dropdown
-  const { data: users, isLoading: isLoadingUsers } = useQuery({
+  const { data: users = [], isLoading: isLoadingUsers } = useQuery<User[]>({
     queryKey: ["/api/admin/users"],
     retry: 1
   });
 
   // Query all devices
-  const { data: allDevices, isLoading: isLoadingDevices, isError: isErrorDevices } = useQuery({
+  const { data: allDevices = [], isLoading: isLoadingDevices, isError: isErrorDevices } = useQuery<Device[]>({
     queryKey: ["/api/admin/devices"],
     retry: 1
   });
 
   // Query devices for specific user if selected
-  const { data: userDevices, isLoading: isLoadingUserDevices } = useQuery({
+  const { data: userDevices = [], isLoading: isLoadingUserDevices } = useQuery<Device[]>({
     queryKey: ["/api/admin/devices/user", selectedUserId],
     enabled: !!selectedUserId && selectedUserId !== "all",
     retry: 1
@@ -355,20 +355,9 @@ function UserDevicesTab() {
     }
   });
 
-  const handleUpdateDevice = (formData: FormData) => {
-    if (!selectedDevice) return;
-
-    const updates: Partial<Device> = {
-      deviceName: formData.get("deviceName") as string,
-      project: formData.get("project") as string,
-      location: formData.get("location") as string,
-      active: formData.get("active") === "true"
-    };
-
-    updateDeviceMutation.mutate({
-      deviceId: selectedDevice.deviceId,
-      updates
-    });
+  // This function is no longer used - kept for reference
+  const handleUpdateDevice = () => {
+    // We're now using inline handler in the Button onClick
   };
 
   // Display logic based on loading/error states and user selection
