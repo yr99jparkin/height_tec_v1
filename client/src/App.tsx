@@ -11,6 +11,7 @@ import AdminPage from "@/pages/admin-page";
 import AdminSimulationPage from "@/pages/admin-simulation-page";
 import AdminUserManagementPage from "@/pages/admin-user-management-page";
 import AdminEmailTemplatesPage from "@/pages/admin-email-templates-page";
+import AdminDeviceManagementPage from "@/pages/admin-device-management-page";
 import AcknowledgePage from "@/pages/AcknowledgePage";
 import UnsubscribePage from "@/pages/UnsubscribePage";
 import UnsubscribeSuccessPage from "@/pages/UnsubscribeSuccessPage";
@@ -29,6 +30,7 @@ function Router() {
       <AdminProtectedRoute path="/admin" component={AdminPage} />
       <AdminProtectedRoute path="/admin/simulation" component={AdminSimulationPage} />
       <AdminProtectedRoute path="/admin/user-management" component={AdminUserManagementPage} />
+      <AdminProtectedRoute path="/admin/device-management" component={AdminDeviceManagementPage} />
       <AdminProtectedRoute path="/admin/email-templates" component={AdminEmailTemplatesPage} />
       <Route path="/auth" component={AuthPage} />
       {/* Alert acknowledgement route - publicly accessible with valid token */}

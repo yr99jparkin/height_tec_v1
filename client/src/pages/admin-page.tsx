@@ -11,7 +11,8 @@ import {
   Users, 
   Wind,
   AlertTriangle,
-  ArrowRight
+  ArrowRight,
+  Server
 } from "lucide-react";
 
 interface AdminAppCardProps {
@@ -67,6 +68,13 @@ export default function AdminPage() {
       icon: <Users className="h-8 w-8 text-white" />,
       href: "/admin/user-management",
       color: "bg-purple-500"
+    },
+    {
+      title: "Device Management",
+      description: "Manage devices and device inventory",
+      icon: <Server className="h-8 w-8 text-white" />,
+      href: "/admin/device-management",
+      color: "bg-amber-500"
     },
     {
       title: "Email Templates",
