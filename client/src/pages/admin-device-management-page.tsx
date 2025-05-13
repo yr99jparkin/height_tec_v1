@@ -99,9 +99,8 @@ interface ThresholdValues {
 interface NotificationContact {
   id: number;
   deviceId: string;
-  name: string;
   email: string;
-  phone: string | null;
+  phoneNumber: string;
   createdAt: string;
 }
 
@@ -533,7 +532,7 @@ function UserDevicesTab() {
 
       // Update thresholds if provided
       if (data.thresholds) {
-        const thresholdResponse = await fetch(`/api/thresholds/${data.deviceId}`, {
+        const thresholdResponse = await fetch(`/api/admin/thresholds/${data.deviceId}`, {
           method: "PUT",
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data.thresholds)
@@ -548,9 +547,9 @@ function UserDevicesTab() {
       if (data.contacts && data.contacts.length > 0) {
         // For demo purposes only adding contacts, not removing existing ones
         for (const contact of data.contacts) {
-          if (!contact.name || !contact.email) continue;
+          if (!contact.email || !contact.phoneNumber) continue;
           
-          await fetch(`/api/devices/${data.deviceId}/contacts`, {
+          await fetch(`/api/admin/devices/${data.deviceId}/contacts`, {
             method: "POST",
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(contact)
@@ -566,10 +565,20 @@ function UserDevicesTab() {
         description: "The device has been updated successfully.",
         variant: "default"
       });
+      // Clear form fields
+      setNewContactEmail("");
+      setNewContactPhone("");
+      // Close dialog
       setIsEditDialogOpen(false);
+      // Refresh data
       queryClient.invalidateQueries({ queryKey: ["/api/admin/devices"] });
       if (selectedUserId && selectedUserId !== "all") {
         queryClient.invalidateQueries({ queryKey: ["/api/admin/devices/user", selectedUserId] });
+      }
+      // Invalidate thresholds and contacts to make sure they refresh
+      if (selectedDevice) {
+        queryClient.invalidateQueries({ queryKey: [`/api/thresholds/${selectedDevice.deviceId}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/devices/${selectedDevice.deviceId}/contacts`] });
       }
     },
     onError: (error: any) => {

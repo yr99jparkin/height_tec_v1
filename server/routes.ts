@@ -520,6 +520,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Admin - Add notification contact to a device (regardless of owner)
+  app.post("/api/admin/devices/:deviceId/contacts", isAdmin, async (req, res) => {
+    try {
+      const deviceId = req.params.deviceId;
+      const device = await storage.getDeviceByDeviceId(deviceId);
+      
+      if (!device) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+      
+      // Check if maximum of 5 contacts already reached
+      const existingContacts = await storage.getNotificationContactsByDeviceId(deviceId);
+      if (existingContacts.length >= 5) {
+        return res.status(400).json({ message: "Maximum of 5 notification contacts allowed per device" });
+      }
+      
+      const schema = z.object({
+        email: z.string().email(),
+        phoneNumber: z.string().min(5)
+      });
+      
+      const data = schema.parse(req.body);
+      
+      const contact = await storage.createNotificationContact({
+        deviceId,
+        email: data.email,
+        phoneNumber: data.phoneNumber
+      });
+      
+      res.status(201).json(contact);
+    } catch (error) {
+      console.error("[admin] Error adding notification contact:", error);
+      
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      
+      res.status(500).json({ 
+        message: "Error adding notification contact",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Admin - Update thresholds for a device (regardless of owner)
+  app.put("/api/admin/thresholds/:deviceId", isAdmin, async (req, res) => {
+    try {
+      const deviceId = req.params.deviceId;
+      const device = await storage.getDeviceByDeviceId(deviceId);
+      
+      if (!device) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+      
+      const schema = z.object({
+        amberThreshold: z.number().min(0),
+        redThreshold: z.number().min(0)
+      });
+      
+      const data = schema.parse(req.body);
+      
+      // Ensure red threshold is higher than amber
+      if (data.redThreshold <= data.amberThreshold) {
+        return res.status(400).json({ 
+          message: "Red threshold must be higher than amber threshold"
+        });
+      }
+      
+      const thresholds = await storage.getThresholdsByDeviceId(deviceId);
+      
+      if (thresholds) {
+        await storage.updateThresholds(deviceId, data);
+      } else {
+        await storage.createThresholds({
+          deviceId,
+          amberThreshold: data.amberThreshold,
+          redThreshold: data.redThreshold
+        });
+      }
+      
+      res.status(200).send();
+    } catch (error) {
+      console.error("[admin] Error updating thresholds:", error);
+      
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid thresholds", errors: error.errors });
+      }
+      
+      res.status(500).json({ 
+        message: "Error updating thresholds",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
   
   // API Routes
   // Get latest wind data for a specific device
