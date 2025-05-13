@@ -13,7 +13,6 @@ import path from "path";
 import alertsRouter from "./routes/alerts";
 import { runSimulation } from "./scripts/run-simulation";
 import { emailService } from "./email-service";
-import { handlePdfGeneration } from "./pdf-generator";
 
 // Middleware to check if user is authenticated
 const isAuthenticated = (req: Request, res: Response, next: Function) => {
@@ -46,9 +45,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Also register alerts router at a client-accessible path matching the client-side routes
   app.use('/alert', alertsRouter);
-  
-  // PDF Generation endpoint
-  app.post('/api/generate-pdf', isAuthenticated, handlePdfGeneration);
   
   // Development endpoint to test direct simulation
   if (process.env.NODE_ENV === 'development') {
@@ -869,9 +865,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error fetching downtime data" });
     }
   });
-  
-  // PDF Generation endpoint for reports
-  app.post("/api/generate-pdf", isAuthenticated, handlePdfGeneration);
 
   // Get all devices for the logged-in user with latest data
   app.get("/api/devices", isAuthenticated, async (req, res) => {

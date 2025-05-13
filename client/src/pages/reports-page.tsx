@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Header } from "@/components/layout/header";
 import { useLocation } from "wouter";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { DeviceWithLatestData } from "@shared/types";
@@ -20,15 +20,12 @@ import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
 import { TimeInput } from "@/components/ui/time-input";
-import { exportToPdf } from "@/lib/pdf-export";
-import { useToast } from "@/hooks/use-toast";
 
 // Define the aggregation level type
 type AggregationLevel = "10min" | "1hour" | "1day" | "1week";
 
 export default function ReportsPage() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
   const [dateRange, setDateRange] = useState<{
@@ -44,7 +41,6 @@ export default function ReportsPage() {
   const [aggregationLevel, setAggregationLevel] = useState<AggregationLevel>("10min");
   // Expanded sections for aggregated data
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
-  // We don't need a reference to the content element anymore since we're using server-side rendering
 
   // Update the report generation time when the report is updated
   useEffect(() => {
@@ -112,45 +108,6 @@ export default function ReportsPage() {
   const handleUpdateReport = () => {
     setReportGenTime(new Date());
     // The queries will automatically refresh when their dependencies change
-  };
-  
-  // Handle the export to PDF button click
-  const handleExportPdf = async () => {
-    if (!selectedDevice) {
-      toast({
-        title: "Export Failed",
-        description: "Unable to export the report. Please make sure a device is selected and data is loaded.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    try {
-      toast({
-        title: "Preparing PDF",
-        description: "Please wait while we generate your PDF...",
-      });
-      
-      await exportToPdf({
-        device: selectedDevice,
-        dateRange,
-        reportGenTime,
-        stats,
-        thresholds
-      });
-      
-      toast({
-        title: "Export Complete",
-        description: "Your PDF report has been downloaded successfully.",
-      });
-    } catch (error) {
-      console.error("Error exporting PDF:", error);
-      toast({
-        title: "Export Failed",
-        description: "An error occurred while generating the PDF. Please try again.",
-        variant: "destructive"
-      });
-    }
   };
 
   // Calculate statistics
@@ -434,7 +391,6 @@ export default function ReportsPage() {
               variant="outline"
               disabled={!selectedDeviceId || windData.length === 0}
               className="flex items-center gap-2"
-              onClick={handleExportPdf}
             >
               <FileDown className="h-4 w-4" />
               Export PDF
