@@ -335,6 +335,166 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin Device Management Routes
+  // Admin - Get all device stock
+  app.get("/api/admin/device-stock", isAdmin, async (req, res) => {
+    try {
+      const deviceStockList = await storage.getAllDeviceStock();
+      res.json(deviceStockList);
+    } catch (error) {
+      console.error("[admin] Error fetching device stock:", error);
+      res.status(500).json({ 
+        message: "Error fetching device stock",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Admin - Add device to stock
+  app.post("/api/admin/device-stock", isAdmin, async (req, res) => {
+    try {
+      const schema = z.object({
+        deviceId: z.string().min(1)
+      });
+      
+      const data = schema.parse(req.body);
+      
+      // Check if device already exists in stock
+      const existingDevice = await storage.getDeviceStockByDeviceId(data.deviceId);
+      if (existingDevice) {
+        return res.status(400).json({ message: "Device already exists in inventory" });
+      }
+      
+      // Create new device in stock
+      const newDeviceStock = await storage.createDeviceStock({
+        deviceId: data.deviceId,
+        status: "Available"
+      });
+      
+      res.status(201).json(newDeviceStock);
+    } catch (error) {
+      console.error("[admin] Error adding device to stock:", error);
+      
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid device data", 
+          errors: error.errors 
+        });
+      }
+      
+      res.status(500).json({ 
+        message: "Error adding device to stock",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Admin - Delete device from stock
+  app.delete("/api/admin/device-stock/:deviceId", isAdmin, async (req, res) => {
+    try {
+      const deviceId = req.params.deviceId;
+      
+      await storage.deleteDeviceStock(deviceId);
+      
+      res.json({ message: "Device removed from inventory successfully" });
+    } catch (error) {
+      console.error("[admin] Error deleting device from stock:", error);
+      
+      // Return a more specific error for our known error cases
+      if (error instanceof Error) {
+        if (error.message === "Device not found in inventory") {
+          return res.status(404).json({ message: error.message });
+        }
+        if (error.message === "Cannot delete allocated device from inventory") {
+          return res.status(400).json({ message: error.message });
+        }
+      }
+      
+      res.status(500).json({ 
+        message: "Error deleting device from stock",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Admin - Get all devices across all users
+  app.get("/api/admin/devices", isAdmin, async (req, res) => {
+    try {
+      const allDevices = await storage.getAllDevices();
+      res.json(allDevices);
+    } catch (error) {
+      console.error("[admin] Error fetching all devices:", error);
+      res.status(500).json({ 
+        message: "Error fetching all devices",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Admin - Get devices for specific user
+  app.get("/api/admin/devices/user/:userId", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      // Validate that the user exists
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const userDevices = await storage.getDevicesByUserId(userId);
+      res.json(userDevices);
+    } catch (error) {
+      console.error("[admin] Error fetching user devices:", error);
+      res.status(500).json({ 
+        message: "Error fetching user devices",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Admin - Update device (regardless of owner)
+  app.patch("/api/admin/devices/:deviceId", isAdmin, async (req, res) => {
+    try {
+      const deviceId = req.params.deviceId;
+      const device = await storage.getDeviceByDeviceId(deviceId);
+      
+      if (!device) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+      
+      const schema = z.object({
+        deviceName: z.string().min(1).optional(),
+        project: z.string().optional(),
+        location: z.string().optional(),
+        latitude: z.number().optional(),
+        longitude: z.number().optional(),
+        active: z.boolean().optional()
+      });
+      
+      const data = schema.parse(req.body);
+      
+      // Update device
+      const updatedDevice = await storage.updateDevice(device.id, data);
+      
+      res.json(updatedDevice);
+    } catch (error) {
+      console.error("[admin] Error updating device:", error);
+      
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid device data", 
+          errors: error.errors 
+        });
+      }
+      
+      res.status(500).json({ 
+        message: "Error updating device",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   // API Routes
   // Get latest wind data for a specific device
   app.get("/api/wind/latest/:deviceId", isAuthenticated, async (req, res) => {
