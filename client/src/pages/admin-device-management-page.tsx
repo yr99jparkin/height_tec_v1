@@ -444,6 +444,12 @@ function UserDevicesTab() {
   const [contacts, setContacts] = useState<NotificationContact[]>([]);
   const [newContactEmail, setNewContactEmail] = useState("");
   const [newContactPhone, setNewContactPhone] = useState("");
+  
+  // For editing existing contacts
+  const [isEditContactDialogOpen, setIsEditContactDialogOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState<{id: number, email: string, phoneNumber: string} | null>(null);
+  const [editContactEmail, setEditContactEmail] = useState("");
+  const [editContactPhone, setEditContactPhone] = useState("");
 
   // Query all users for dropdown
   const { data: users = [], isLoading: isLoadingUsers } = useQuery<User[]>({
@@ -941,54 +947,11 @@ function UserDevicesTab() {
                                 size="sm"
                                 className="h-8 w-8 p-0"
                                 onClick={() => {
-                                  // Open a dialog to edit the contact
-                                  const newEmail = prompt("Edit email address", contact.email);
-                                  if (newEmail !== null) {
-                                    const newPhone = prompt("Edit phone number", contact.phoneNumber || "");
-                                    if (newPhone !== null) {
-                                      // Validate inputs
-                                      if (!newEmail.includes('@')) {
-                                        toast({
-                                          title: "Invalid email",
-                                          description: "Please enter a valid email address",
-                                          variant: "destructive"
-                                        });
-                                        return;
-                                      }
-                                      
-                                      fetch(`/api/admin/contacts/${contact.id}`, {
-                                        method: 'PATCH',
-                                        headers: {
-                                          'Content-Type': 'application/json'
-                                        },
-                                        body: JSON.stringify({
-                                          email: newEmail,
-                                          phoneNumber: newPhone
-                                        })
-                                      })
-                                      .then(response => {
-                                        if (!response.ok) throw new Error("Failed to update contact");
-                                        return response.json();
-                                      })
-                                      .then(() => {
-                                        toast({
-                                          title: "Contact updated",
-                                          description: "The contact has been updated successfully."
-                                        });
-                                        // Refresh contacts
-                                        fetch(`/api/devices/${selectedDevice?.deviceId}/contacts`)
-                                          .then(response => response.ok ? response.json() : [])
-                                          .then(data => setContacts(data || []));
-                                      })
-                                      .catch(error => {
-                                        toast({
-                                          title: "Error",
-                                          description: error.message,
-                                          variant: "destructive"
-                                        });
-                                      });
-                                    }
-                                  }
+                                  // Open dialog to edit the contact
+                                  setEditingContact(contact);
+                                  setEditContactEmail(contact.email);
+                                  setEditContactPhone(contact.phoneNumber || "");
+                                  setIsEditContactDialogOpen(true);
                                 }}
                               >
                                 <Pencil className="h-4 w-4 text-blue-500" />
@@ -1094,6 +1057,72 @@ function UserDevicesTab() {
       {/* Confirm Delete Dialog */}
       <ConfirmDeleteDialog />
     </div>
+  );
+}
+
+// Edit Contact Dialog Component
+function EditContactDialog({ 
+  isOpen, 
+  onClose, 
+  contact, 
+  email, 
+  setEmail, 
+  phone, 
+  setPhone, 
+  onSave 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  contact: {id: number, email: string, phoneNumber: string} | null;
+  email: string;
+  setEmail: (email: string) => void;
+  phone: string;
+  setPhone: (phone: string) => void;
+  onSave: () => void;
+}) {
+  if (!isOpen || !contact) return null;
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Edit Contact</DialogTitle>
+          <DialogDescription>
+            Update the notification contact information.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="edit-email" className="text-right">
+              Email
+            </Label>
+            <Input
+              id="edit-email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="edit-phone" className="text-right">
+              Phone
+            </Label>
+            <Input
+              id="edit-phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={onSave}>Save changes</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
