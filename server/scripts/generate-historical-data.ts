@@ -9,7 +9,7 @@ function generateWindSpeed(baseSpeed: number, variance: number): number {
 }
 
 async function generateHistoricalData() {
-  const deviceId = "HT-ANEM-002";
+  const deviceId = "HT-ANEM-001";
   const startDate = new Date("2025-04-01T00:00:00Z");
   const totalIntervals = 8064; // 4 weeks worth of 10-minute intervals
 
