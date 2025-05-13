@@ -173,6 +173,23 @@ export async function exportToPdf({
     pdf.save(`wind-report-${device.deviceName}-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`);
   } catch (error) {
     console.error('Error generating PDF:', error);
+    console.error('Error details:', {
+      errorName: error instanceof Error ? error.name : 'Unknown',
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack : 'No stack trace available'
+    });
+    
+    // Log the state that was being processed
+    console.error('PDF generation state:', {
+      deviceName: device.deviceName,
+      dateRange: dateRange,
+      statsAvailable: Boolean(stats),
+      elementDimensions: reportElement ? {
+        width: reportElement.offsetWidth,
+        height: reportElement.offsetHeight
+      } : 'Element not available'
+    });
+    
     throw error;
   }
 }
