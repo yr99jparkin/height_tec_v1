@@ -44,6 +44,8 @@ export async function generatePdf(req: Request, res: Response) {
           headless: true,
           args: chromium.args,
           defaultViewport: chromium.defaultViewport,
+          // ignoreHTTPSErrors is not in the type definitions, but it's a valid option
+          // @ts-ignore
           ignoreHTTPSErrors: true,
         });
         log('Successfully launched browser using chrome-aws-lambda', 'pdf');
@@ -63,7 +65,8 @@ export async function generatePdf(req: Request, res: Response) {
           ],
         });
       }
-    } catch (browserError) {
+    } catch (error) {
+      const browserError = error as Error;
       log(`Error launching browser: ${browserError}`, 'pdf');
       console.error('Browser launch error:', browserError);
       throw new Error(`Failed to launch browser: ${browserError.message}`);
