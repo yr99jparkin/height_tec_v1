@@ -228,15 +228,16 @@ export async function exportToPdf(options: ExportToPdfOptions): Promise<void> {
     // Create the HTML content for the report
     const reportHtml = createReportHtml(options);
     
-    // Create a FormData object to send to the server
-    const formData = new FormData();
-    formData.append('html', reportHtml);
-    formData.append('filename', filename);
-    
-    // Send request to the server to generate PDF
+    // Send request to the server to generate PDF using JSON
     const response = await fetch('/api/generate-pdf', {
       method: 'POST',
-      body: formData,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        html: reportHtml,
+        filename: filename,
+      }),
     });
     
     if (!response.ok) {
