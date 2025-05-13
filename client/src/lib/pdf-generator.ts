@@ -1,8 +1,10 @@
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts, PageSizes } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import { format } from 'date-fns';
 import { WindDataHistorical, WindAlertThreshold } from '@shared/schema';
 import { DeviceWithLatestData } from '@shared/types';
+// Logo path for PDF generation
+const logoPath = '/client/public/height-tec-logo.png';
 
 interface ReportStats {
   maxWindSpeed: number;
