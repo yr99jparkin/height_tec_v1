@@ -866,6 +866,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error fetching downtime data" });
     }
   });
+  
+  // PDF Generation endpoint for reports
+  app.post("/api/generate-pdf", isAuthenticated, handlePdfGeneration);
 
   // Get all devices for the logged-in user with latest data
   app.get("/api/devices", isAuthenticated, async (req, res) => {
