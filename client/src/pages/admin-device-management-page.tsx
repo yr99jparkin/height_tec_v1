@@ -1056,6 +1056,65 @@ function UserDevicesTab() {
       
       {/* Confirm Delete Dialog */}
       <ConfirmDeleteDialog />
+      
+      {/* Edit Contact Dialog */}
+      <EditContactDialog
+        isOpen={isEditContactDialogOpen}
+        onClose={() => setIsEditContactDialogOpen(false)}
+        contact={editingContact}
+        email={editContactEmail}
+        setEmail={setEditContactEmail}
+        phone={editContactPhone}
+        setPhone={setEditContactPhone}
+        onSave={() => {
+          if (!editingContact) return;
+          
+          // Validate inputs
+          if (!editContactEmail.includes('@')) {
+            toast({
+              title: "Invalid email",
+              description: "Please enter a valid email address",
+              variant: "destructive"
+            });
+            return;
+          }
+          
+          fetch(`/api/admin/contacts/${editingContact.id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              email: editContactEmail,
+              phoneNumber: editContactPhone
+            })
+          })
+          .then(response => {
+            if (!response.ok) throw new Error("Failed to update contact");
+            return response.json();
+          })
+          .then(() => {
+            toast({
+              title: "Contact updated",
+              description: "The contact has been updated successfully."
+            });
+            setIsEditContactDialogOpen(false);
+            // Refresh contacts
+            if (selectedDevice) {
+              fetch(`/api/devices/${selectedDevice.deviceId}/contacts`)
+                .then(response => response.ok ? response.json() : [])
+                .then(data => setContacts(data || []));
+            }
+          })
+          .catch(error => {
+            toast({
+              title: "Error",
+              description: error.message,
+              variant: "destructive"
+            });
+          });
+        }}
+      />
     </div>
   );
 }
