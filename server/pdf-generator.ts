@@ -36,10 +36,7 @@ export async function generatePdf(req: Request, res: Response) {
     // Use @sparticuz/chromium which is better suited for serverless environments like Replit
     let browser;
     try {
-      // Set up Chromium options
-      await chromium.font('https://raw.githack.com/googlei18n/noto-emoji/master/fonts/NotoColorEmoji.ttf');
-      
-      // Launch browser with appropriate options
+      // Launch browser with appropriate options - no font loading needed
       browser = await puppeteer.launch({
         executablePath: await chromium.executablePath(),
         args: await chromium.args,
